@@ -7,6 +7,9 @@ import tempfile
 from pathlib import Path
 
 from engine.modules.dwg_parts.tests.plans import build_facade_plan
+from engine.modules.pdf_report.tests.plans import build_report_plan
+from engine.modules.soumission.tests.workbooks import submission_bytes
+from engine.testing.pdf import PdfSpec, TextItem, write_pdf
 
 EXPECTED_MODULE_ID = "hello"
 PARALLEL_BATCH_SIZE = 2
@@ -53,6 +56,8 @@ def main(binary: Path) -> None:
         if events[-1]["type"] != "result":
             raise SystemExit(f"Last event is not a result: {events[-1]}")
         events += smoke_parts_list(binary, Path(workdir))
+        events += smoke_report(binary, Path(workdir))
+        events += smoke_soumission(binary, Path(workdir))
     sys.stdout.write(f"Smoke OK: {len(events)} events\n")
 
 
@@ -86,6 +91,45 @@ def smoke_parts_list(binary: Path, workdir: Path) -> list[dict[str, object]]:
     if events[-1]["type"] != "result" or not Path(events[-1]["outputs"][0]).is_file():
         raise SystemExit(f"Parts list failed: {events[-1]}")
     return events
+
+
+def run_module(
+    binary: Path, workdir: Path, module_id: str, inputs: dict[str, object]
+) -> list[dict[str, object]]:
+    input_file = workdir / f"{module_id}.json"
+    input_file.write_text(json.dumps(inputs), encoding="utf-8")
+    stdout = run_binary(binary, "run", module_id, "--input", str(input_file))
+    events = [json.loads(line) for line in stdout.splitlines()]
+    last = events[-1]
+    if last["type"] != "result" or not Path(str(last["outputs"][0])).is_file():  # type: ignore[index]
+        raise SystemExit(f"{module_id} failed: {last}")
+    return events
+
+
+def smoke_report(binary: Path, workdir: Path) -> list[dict[str, object]]:
+    """Exercises pdfplumber/pdfminer and docxtpl/python-docx data files."""
+    plan = build_report_plan(workdir / "F-101.pdf", "F-101", "B", ["EQ-40"])
+    return run_module(
+        binary,
+        workdir,
+        "pdf-report",
+        {"files": [str(plan)], "output_folder": str(workdir / "Sortie")},
+    )
+
+
+def smoke_soumission(binary: Path, workdir: Path) -> list[dict[str, object]]:
+    """Exercises pypdf attachments and read-only openpyxl."""
+    spec = PdfSpec(
+        pages=[[TextItem(50, 50, "Offre")]],
+        attachments={"lot.xlsx": submission_bytes()},
+    )
+    pdf = write_pdf(workdir / "Offre.pdf", spec)
+    return run_module(
+        binary,
+        workdir,
+        "soumission",
+        {"files": [str(pdf)], "output_folder": str(workdir / "Sortie")},
+    )
 
 
 if __name__ == "__main__":
