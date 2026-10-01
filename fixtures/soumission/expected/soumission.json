@@ -1,0 +1,74 @@
+{
+  "rows": [
+    [
+      "Position",
+      "Désignation",
+      "Quantité",
+      "Unité",
+      "Prix unitaire",
+      "Total",
+      "Fichier source",
+      "Feuille"
+    ],
+    [
+      "1.1",
+      "Panneau composite RAL 7016",
+      12,
+      "m2",
+      1234.5,
+      null,
+      "Façadier.xlsx",
+      "Offre"
+    ],
+    [
+      "1.2",
+      "Équerre alu",
+      40,
+      "pce",
+      3.5,
+      140,
+      "Façadier.xlsx",
+      "Offre"
+    ],
+    [
+      "1.3",
+      "Montage",
+      "forfait",
+      "gl",
+      2000,
+      2000,
+      "Façadier.xlsx",
+      "Offre"
+    ],
+    [
+      "1.1",
+      "Panneau composite RAL 7016",
+      12,
+      "m2",
+      1234.5,
+      null,
+      "Menuisier.pdf > menuiserie.xlsx",
+      "Offre"
+    ],
+    [
+      "1.2",
+      "Équerre alu",
+      40,
+      "pce",
+      3.5,
+      140,
+      "Menuisier.pdf > menuiserie.xlsx",
+      "Offre"
+    ],
+    [
+      "1.3",
+      "Montage",
+      "forfait",
+      "gl",
+      2000,
+      2000,
+      "Menuisier.pdf > menuiserie.xlsx",
+      "Offre"
+    ]
+  ]
+}
