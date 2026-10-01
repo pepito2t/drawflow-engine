@@ -1,6 +1,7 @@
 import { Suspense, use, useState } from "react";
 import { RunsProvider, useRunsStore } from "../hooks/runs-context";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { useRunNotifications } from "../hooks/use-run-notifications";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
 import { listModules } from "../lib/tauri/engine";
@@ -58,7 +59,8 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const modules = use(catalogPromise);
   const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { dispatch } = useRunsStore();
+  const { state, dispatch } = useRunsStore();
+  useRunNotifications(state, modules);
 
   const select = (moduleId: string) => {
     for (const visited of [selectedId, moduleId]) {

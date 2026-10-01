@@ -59,3 +59,13 @@ export function toSettingsPayload(
     ]),
   );
 }
+
+const GENERAL_SECTION_ID = "general";
+const NOTIFICATION_THRESHOLD_FIELD = "notification_threshold_seconds";
+const DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10;
+
+export function readNotificationThreshold(rawJson: string): number {
+  const general = parseSettings(rawJson).find((section) => section.id === GENERAL_SECTION_ID);
+  const threshold = Number(general?.values[NOTIFICATION_THRESHOLD_FIELD]);
+  return Number.isFinite(threshold) ? threshold : DEFAULT_NOTIFICATION_THRESHOLD_SECONDS;
+}
