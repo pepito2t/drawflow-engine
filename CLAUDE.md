@@ -72,6 +72,7 @@ Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 - Traitements par lots parallélisés (`ProcessPoolExecutor`), taille configurable.
 - Cache DWG → DXF par hash SHA-256 dans le dossier cache de l'app.
 - PDF lu page par page ; XLSX en `read_only` quand possible.
+- PDF : `pdfplumber` (texte + positions) et `pypdf` (fichiers intégrés). PyMuPDF est exclu (licence AGPL incompatible avec la diffusion de l'app).
 - Progression émise au moins par fichier traité ; l'UI ne doit jamais geler.
 - Tout traitement > 2 s sur les fixtures doit avoir un test de non-régression de durée raisonnable.
 
