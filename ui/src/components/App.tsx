@@ -2,7 +2,11 @@ import { Suspense, use, useState } from "react";
 import { RunsProvider, useRunsStore } from "../hooks/runs-context";
 import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
-import { useRunNotifications } from "../hooks/use-run-notifications";
+import { CommandProvider } from "../hooks/command-registry";
+import { NotificationProvider } from "../hooks/notification-center";
+import { UpdateProvider } from "../hooks/update-center";
+import { useRunEvents } from "../hooks/use-run-events";
+import { useSystemNotifications } from "../hooks/use-system-notifications";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
 import { getLockStatus, type LockStatus } from "../lib/tauri/access";
@@ -16,6 +20,8 @@ import { ModuleTabs, tabPanelId } from "./ModuleTabs";
 import { SettingsDialog } from "./SettingsDialog";
 import { ModuleWorkspace } from "./ModuleWorkspace";
 import { RunsIndicator } from "./RunsIndicator";
+import { Toaster } from "./Toaster";
+import { UpdateIndicator } from "./UpdateIndicator";
 import { Loader } from "./Spinner";
 
 function loadCatalog(): Promise<CatalogModule[]> {
@@ -69,7 +75,11 @@ function CatalogApp() {
         }
       >
         <RunsProvider>
-          <CatalogView catalogPromise={promise} />
+          <NotificationProvider>
+            <CommandProvider>
+              <CatalogView catalogPromise={promise} />
+            </CommandProvider>
+          </NotificationProvider>
         </RunsProvider>
       </Suspense>
     </ErrorBoundary>
@@ -97,7 +107,8 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { state, dispatch } = useRunsStore();
-  useRunNotifications(state, modules);
+  useRunEvents(state, modules);
+  useSystemNotifications();
 
   const select = (moduleId: string) => {
     for (const visited of [selectedId, moduleId]) {
@@ -126,38 +137,41 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   );
 
   return (
-    <AppShell
-      engine={{ state: "ready", moduleCount: modules.length }}
-      canInstallUpdate={runningModuleIds(state).length === 0}
-    >
-      <div className="layout">
-        <ModuleTabs
-          modules={modules}
-          selectedId={selectedId}
-          onSelect={select}
-          footer={sidebarActions}
-        />
-        <main className="workspace">
-          {modules.length === 0 && <p className="muted">Aucune fonctionnalité disponible.</p>}
-          {modules.map((module) => (
-            <div
-              key={module.manifest.id}
-              role="tabpanel"
-              id={tabPanelId(module.manifest.id)}
-              hidden={selectedId !== module.manifest.id}
-            >
-              <ModuleWorkspace module={module} />
-            </div>
-          ))}
-        </main>
-      </div>
-      {isSettingsOpen && (
-        <SettingsDialog
-          onClose={() => {
-            setIsSettingsOpen(false);
-          }}
-        />
-      )}
-    </AppShell>
+    <UpdateProvider canInstall={runningModuleIds(state).length === 0}>
+      <AppShell
+        engine={{ state: "ready", moduleCount: modules.length }}
+        updates={<UpdateIndicator />}
+      >
+        <div className="layout">
+          <ModuleTabs
+            modules={modules}
+            selectedId={selectedId}
+            onSelect={select}
+            footer={sidebarActions}
+          />
+          <main className="workspace">
+            {modules.length === 0 && <p className="muted">Aucune fonctionnalité disponible.</p>}
+            {modules.map((module) => (
+              <div
+                key={module.manifest.id}
+                role="tabpanel"
+                id={tabPanelId(module.manifest.id)}
+                hidden={selectedId !== module.manifest.id}
+              >
+                <ModuleWorkspace module={module} />
+              </div>
+            ))}
+          </main>
+        </div>
+        <Toaster onOpenModule={select} />
+        {isSettingsOpen && (
+          <SettingsDialog
+            onClose={() => {
+              setIsSettingsOpen(false);
+            }}
+          />
+        )}
+      </AppShell>
+    </UpdateProvider>
   );
 }

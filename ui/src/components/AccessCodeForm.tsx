@@ -2,6 +2,7 @@ import { useState, type SyntheticEvent } from "react";
 import { ACCESS_CODE_ISSUE_MESSAGES, checkNewAccessCode } from "../lib/access-code";
 import { changeAccessCode } from "../lib/tauri/access";
 import { describeBridgeError } from "../lib/tauri/engine";
+import { useNotificationCenter } from "../hooks/notification-center";
 import { ErrorPanel } from "./ErrorPanel";
 import { Spinner } from "./Spinner";
 
@@ -20,6 +21,7 @@ const EMPTY_CODES: Record<CodeFieldName, string> = { current: "", next: "", conf
 export function AccessCodeForm() {
   const [codes, setCodes] = useState(EMPTY_CODES);
   const [state, setState] = useState<ChangeState>({ status: "idle" });
+  const { publish } = useNotificationCenter();
 
   const submit = (event: SyntheticEvent) => {
     event.preventDefault();
@@ -33,6 +35,7 @@ export function AccessCodeForm() {
       .then(() => {
         setCodes(EMPTY_CODES);
         setState({ status: "saved" });
+        publish({ type: "accessCodeChanged" });
       })
       .catch((error: unknown) => {
         setState({ status: "failed", message: describeBridgeError(error) });

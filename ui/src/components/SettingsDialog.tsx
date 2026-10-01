@@ -12,6 +12,7 @@ import {
 } from "../lib/settings";
 import { getSettings, saveSettings } from "../lib/tauri/engine";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { useNotificationCenter } from "../hooks/notification-center";
 import { ErrorPanel } from "./ErrorPanel";
 import { AccessCodeForm } from "./AccessCodeForm";
 import { CloseIcon } from "./icons";
@@ -103,6 +104,7 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
   const [sections, setSections] = useState(use(sectionsPromise));
   const [values, setValues] = useState<SettingsValues>(() => valuesBySection(sections));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
+  const { publish } = useNotificationCenter();
   const [activeId, setActiveId] = useState(sections[0]?.id ?? null);
   const isSaving = saveState.status === "saving";
 
@@ -114,6 +116,7 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
         setSections(saved);
         setValues(valuesBySection(saved));
         setSaveState({ status: "saved" });
+        publish({ type: "settingsSaved" });
       })
       .catch((error: unknown) => {
         setSaveState({ status: "failed", error: toReadableError(error) });
