@@ -1,5 +1,7 @@
 import pytest
+from pydantic import ValidationError
 
+from engine.core.contract import ModuleManifest
 from engine.core.errors import UnknownModuleError
 from engine.core.fields import UI_KIND_SCHEMA_KEY
 from engine.core.registry import discover_modules, get_module
@@ -32,3 +34,18 @@ def test_unknown_module_lists_available_ones() -> None:
 def test_every_module_documents_how_to_use_it() -> None:
     for module in discover_modules().values():
         assert module.manifest.instructions, module.manifest.id
+
+
+def test_manifest_icon_defaults_to_generic_and_rejects_unknown() -> None:
+    base = {
+        "id": "x",
+        "name": "X",
+        "description": "",
+        "version": "0.1.0",
+        "order": 0,
+        "instructions": ["a"],
+    }
+
+    assert ModuleManifest.model_validate(base).icon == "module"
+    with pytest.raises(ValidationError):
+        ModuleManifest.model_validate({**base, "icon": "rocket"})

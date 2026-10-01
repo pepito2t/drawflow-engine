@@ -12,6 +12,7 @@ MANIFEST = ModuleManifest(
     ),
     version="0.1.0",
     order=DIAGNOSTIC_TAB_ORDER,
+    icon="check",
     instructions=[
         "Saisissez un nom.",
         "Choisissez un dossier de sortie avec « Parcourir » ou par glisser-déposer.",

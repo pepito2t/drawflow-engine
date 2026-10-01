@@ -2,6 +2,9 @@ import { z } from "zod";
 import { parseJsonOrNull } from "./json";
 import { describeFields, inputsSchemaSchema, type FieldDescriptor } from "./form-schema";
 
+export const MODULE_ICONS = ["module", "list", "report", "table", "check"] as const;
+export type ModuleIconName = (typeof MODULE_ICONS)[number];
+
 const manifestSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -9,6 +12,7 @@ const manifestSchema = z.object({
   version: z.string(),
   order: z.number().int(),
   instructions: z.array(z.string()),
+  icon: z.enum(MODULE_ICONS).catch("module"),
 });
 
 const catalogSchema = z.array(z.object({ manifest: manifestSchema, inputs_schema: z.unknown() }));
