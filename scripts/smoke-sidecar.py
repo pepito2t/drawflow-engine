@@ -31,6 +31,12 @@ def main(binary: Path) -> None:
         raise SystemExit(f"Module {EXPECTED_MODULE_ID!r} not discovered: {module_ids}")
 
     with tempfile.TemporaryDirectory() as workdir:
+        settings_file = Path(workdir) / "Réglages" / "settings.json"
+        sections = json.loads(
+            run_binary(binary, "settings", "get", "--settings", str(settings_file))
+        )
+        if sections["sections"][0]["id"] != "general":
+            raise SystemExit(f"Unexpected settings sections: {sections}")
         output_folder = Path(workdir) / "Sortie é"
         input_file = Path(workdir) / "entrées.json"
         input_file.write_text(

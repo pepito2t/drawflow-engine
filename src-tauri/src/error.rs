@@ -8,14 +8,12 @@ pub enum BridgeError {
     InputFile(#[from] std::io::Error),
     #[error("Paramètres non sérialisables : {0}")]
     Serialization(#[from] serde_json::Error),
-    #[error("Impossible de transmettre un message à l'interface : {0}")]
-    Channel(#[from] tauri::Error),
+    #[error("Erreur de l'application : {0}")]
+    Tauri(#[from] tauri::Error),
     #[error("Un traitement est déjà en cours.")]
     RunInProgress,
     #[error("État interne du moteur indisponible.")]
     StatePoisoned,
-    #[error("Le moteur a échoué (code {code:?}) : {details}")]
-    EngineFailed { code: Option<i32>, details: String },
 }
 
 impl Serialize for BridgeError {

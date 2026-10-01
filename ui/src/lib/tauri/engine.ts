@@ -1,9 +1,18 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { engineMessageSchema, type EngineMessage } from "../engine-message";
+import { unwrapEngineOutput } from "../engine-output";
 import type { FormValues } from "../form-schema";
 
-export function listModules(): Promise<string> {
-  return invoke<string>("list_modules");
+export async function listModules(): Promise<string> {
+  return unwrapEngineOutput(await invoke("list_modules"));
+}
+
+export async function getSettings(): Promise<string> {
+  return unwrapEngineOutput(await invoke("get_settings"));
+}
+
+export async function saveSettings(values: Record<string, FormValues>): Promise<string> {
+  return unwrapEngineOutput(await invoke("save_settings", { values }));
 }
 
 export function runModule(

@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
 use serde::Serialize;
@@ -8,6 +9,7 @@ use tauri_plugin_shell::ShellExt;
 use tempfile::NamedTempFile;
 
 use crate::error::BridgeError;
+use crate::paths::settings_file;
 
 const SIDECAR_NAME: &str = "engine";
 const INPUT_FILE_PREFIX: &str = "drawflow-input-";
@@ -31,22 +33,35 @@ pub enum EngineMessage {
     Exit { code: Option<i32> },
 }
 
+/// Output of a one-shot engine command; on failure stdout carries an NDJSON error event.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct EngineOutput {
+    success: bool,
+    stdout: String,
+}
+
 #[tauri::command]
-pub async fn list_modules(app: AppHandle) -> Result<String, BridgeError> {
-    let output = app
-        .shell()
-        .sidecar(SIDECAR_NAME)?
-        .args(["list-modules"])
-        .output()
-        .await?;
-    let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
-    if output.status.success() {
-        return Ok(stdout);
-    }
-    Err(BridgeError::EngineFailed {
-        code: output.status.code(),
-        details: stdout,
-    })
+pub async fn list_modules(app: AppHandle) -> Result<EngineOutput, BridgeError> {
+    query_engine(&app, vec!["list-modules".to_owned()]).await
+}
+
+#[tauri::command]
+pub async fn get_settings(app: AppHandle) -> Result<EngineOutput, BridgeError> {
+    let settings = path_argument(settings_file(&app)?);
+    query_engine(&app, settings_arguments("get", settings, None)).await
+}
+
+#[tauri::command]
+pub async fn save_settings(
+    app: AppHandle,
+    values: serde_json::Value,
+) -> Result<EngineOutput, BridgeError> {
+    let settings = path_argument(settings_file(&app)?);
+    let input_file = write_input_file(&values)?;
+    let input = path_argument(input_file.path().to_path_buf());
+    let output = query_engine(&app, settings_arguments("set", settings, Some(input))).await;
+    drop(input_file);
+    output
 }
 
 #[tauri::command]
@@ -58,7 +73,8 @@ pub async fn run_module(
     on_event: Channel<EngineMessage>,
 ) -> Result<(), BridgeError> {
     let input_file = write_input_file(&inputs)?;
-    let input_path = input_file.path().to_string_lossy().into_owned();
+    let input_path = path_argument(input_file.path().to_path_buf());
+    let settings_path = path_argument(settings_file(&app)?);
     let mut receiver = {
         let mut running = engine.lock()?;
         if running.is_some() {
@@ -67,7 +83,7 @@ pub async fn run_module(
         let (receiver, child) = app
             .shell()
             .sidecar(SIDECAR_NAME)?
-            .args(["run", module_id.as_str(), "--input", input_path.as_str()])
+            .args(run_arguments(&module_id, input_path, settings_path))
             .spawn()?;
         *running = Some(child);
         receiver
@@ -85,6 +101,50 @@ pub fn cancel_run(engine: State<'_, RunningEngine>) -> Result<(), BridgeError> {
         child.kill()?;
     }
     Ok(())
+}
+
+async fn query_engine(
+    app: &AppHandle,
+    arguments: Vec<String>,
+) -> Result<EngineOutput, BridgeError> {
+    let output = app
+        .shell()
+        .sidecar(SIDECAR_NAME)?
+        .args(arguments)
+        .output()
+        .await?;
+    Ok(EngineOutput {
+        success: output.status.success(),
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+    })
+}
+
+fn run_arguments(module_id: &str, input: String, settings: String) -> Vec<String> {
+    vec![
+        "run".to_owned(),
+        module_id.to_owned(),
+        "--input".to_owned(),
+        input,
+        "--settings".to_owned(),
+        settings,
+    ]
+}
+
+fn settings_arguments(action: &str, settings: String, input: Option<String>) -> Vec<String> {
+    let mut arguments = vec![
+        "settings".to_owned(),
+        action.to_owned(),
+        "--settings".to_owned(),
+        settings,
+    ];
+    if let Some(input) = input {
+        arguments.extend(["--input".to_owned(), input]);
+    }
+    arguments
+}
+
+fn path_argument(path: PathBuf) -> String {
+    path.to_string_lossy().into_owned()
 }
 
 async fn relay_events(
@@ -166,6 +226,45 @@ mod tests {
         assert_eq!(
             to_message(CommandEvent::Terminated(payload)),
             Some(EngineMessage::Exit { code: Some(2) })
+        );
+    }
+
+    #[test]
+    fn run_arguments_pass_input_and_settings_files() {
+        let arguments = run_arguments(
+            "hello",
+            "in é.json".to_owned(),
+            "C:\\cfg\\settings.json".to_owned(),
+        );
+        assert_eq!(
+            arguments,
+            [
+                "run",
+                "hello",
+                "--input",
+                "in é.json",
+                "--settings",
+                "C:\\cfg\\settings.json"
+            ]
+        );
+    }
+
+    #[test]
+    fn settings_arguments_add_input_only_when_saving() {
+        assert_eq!(
+            settings_arguments("get", "s.json".to_owned(), None),
+            ["settings", "get", "--settings", "s.json"]
+        );
+        assert_eq!(
+            settings_arguments("set", "s.json".to_owned(), Some("v.json".to_owned())),
+            [
+                "settings",
+                "set",
+                "--settings",
+                "s.json",
+                "--input",
+                "v.json"
+            ]
         );
     }
 

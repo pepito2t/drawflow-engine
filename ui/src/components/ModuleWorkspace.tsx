@@ -1,13 +1,8 @@
 import { useCallback, useState } from "react";
-import { useFileDrop } from "../hooks/use-file-drop";
+import { useFieldDrop } from "../hooks/use-field-drop";
 import { useModuleRun } from "../hooks/use-module-run";
 import type { CatalogModule } from "../lib/catalog";
-import {
-  initialValues,
-  mergeDroppedPaths,
-  toEngineInputs,
-  type FormValue,
-} from "../lib/form-schema";
+import { initialValues, toEngineInputs, type FormValue } from "../lib/form-schema";
 import { ModuleForm } from "./ModuleForm";
 import { ModuleInstructions } from "./ModuleInstructions";
 import { RunPanel } from "./RunPanel";
@@ -25,20 +20,7 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
   const setValue = useCallback((name: string, value: FormValue) => {
     setValues((current) => ({ ...current, [name]: value }));
   }, []);
-
-  const handleDrop = useCallback(
-    (fieldName: string, paths: string[]) => {
-      const field = fields.find((candidate) => candidate.name === fieldName);
-      if (field && !isRunning) {
-        setValues((current) => ({
-          ...current,
-          [fieldName]: mergeDroppedPaths(field.kind, current[fieldName] ?? "", paths),
-        }));
-      }
-    },
-    [fields, isRunning],
-  );
-  useFileDrop(manifest.id, handleDrop);
+  useFieldDrop(manifest.id, fields, setValues, isRunning);
 
   return (
     <section className="module-workspace">

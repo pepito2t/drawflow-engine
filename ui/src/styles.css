@@ -76,6 +76,7 @@ button:disabled {
 }
 
 input[type="text"],
+input[type="number"],
 select {
   font: inherit;
   color: var(--color-text);
@@ -187,6 +188,25 @@ input[type="checkbox"] {
 .side-tab.selected {
   background: var(--color-surface-hover);
   color: var(--color-text);
+}
+
+.settings-tab {
+  margin-top: auto;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.settings-section legend {
+  padding: 0 6px;
+  font-weight: 600;
 }
 
 .side-tab:focus-visible {

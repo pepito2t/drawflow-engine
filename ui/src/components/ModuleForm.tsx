@@ -96,7 +96,7 @@ function FieldInput({ moduleId, field, value, disabled, onChange }: FieldInputPr
   return (
     <input
       id={field.name}
-      type="text"
+      type={field.kind === "number" ? "number" : "text"}
       value={String(value)}
       disabled={disabled}
       onChange={(event) => {
