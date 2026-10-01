@@ -3,7 +3,10 @@ name = "engine"
 version = "0.1.0"
 description = "Moteur de traitement drawflow-engine (sidecar Tauri)"
 requires-python = ">=3.12,<3.13"
-dependencies = ["pydantic>=2.13,<3"]
+dependencies = [
+    "ezdxf>=1.4.4,<2",
+    "pydantic>=2.13,<3",
+]
 
 [project.scripts]
 engine = "engine.cli:main"
