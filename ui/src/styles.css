@@ -177,7 +177,6 @@ input[type="checkbox"] {
   text-align: left;
   background: transparent;
   color: var(--color-muted);
-  box-shadow: inset 2px 0 0 transparent;
 }
 
 .side-tab:hover:not(:disabled) {
@@ -188,7 +187,11 @@ input[type="checkbox"] {
 .side-tab.selected {
   background: var(--color-surface-hover);
   color: var(--color-text);
-  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.side-tab:focus-visible {
+  outline: none;
+  background: var(--color-surface-hover);
 }
 
 .workspace {
