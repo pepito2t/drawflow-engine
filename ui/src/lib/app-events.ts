@@ -10,6 +10,8 @@ export type AppEvent =
       message: string;
       durationMs: number;
     }
+  | { type: "updateAvailable"; version: string }
+  | { type: "updateDeferred" }
   | { type: "settingsSaved" }
   | { type: "accessCodeChanged" };
 

@@ -33,6 +33,18 @@ describe("updateReducer", () => {
     });
   });
 
+  it("applies the startup check result only once", () => {
+    const checked = updateReducer(
+      { status: "checking" },
+      { type: "checked", state: { status: "upToDate" } },
+    );
+
+    expect(checked).toEqual({ status: "upToDate" });
+    expect(updateReducer(checked, { type: "checked", state: { status: "unconfigured" } })).toEqual(
+      checked,
+    );
+  });
+
   it("reports failures", () => {
     expect(updateReducer({ status: "upToDate" }, { type: "failed", message: "réseau" })).toEqual({
       status: "error",

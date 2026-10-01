@@ -1,6 +1,5 @@
-import { Suspense, use } from "react";
+import { Suspense, use, type ReactNode } from "react";
 import { getAppVersion } from "../lib/tauri/app";
-import { UpdateIndicator } from "./UpdateIndicator";
 
 export type EngineStatus =
   { state: "loading" } | { state: "ready"; moduleCount: number } | { state: "failed" };
@@ -14,17 +13,17 @@ const appVersionPromise: Promise<string> = getAppVersion().catch((error: unknown
 
 interface StatusBarProps {
   engine: EngineStatus;
-  canInstallUpdate: boolean;
+  updates?: ReactNode;
 }
 
-export function StatusBar({ engine, canInstallUpdate }: StatusBarProps) {
+export function StatusBar({ engine, updates }: StatusBarProps) {
   return (
     <footer className="status-bar">
       <div className="status-group">
         <EngineIndicator engine={engine} />
       </div>
       <div className="status-group">
-        <UpdateIndicator canInstall={canInstallUpdate} />
+        {updates}
         <span className="status-item">
           Drawflow v
           <Suspense fallback="…">

@@ -3,15 +3,15 @@ import { StatusBar, type EngineStatus } from "./StatusBar";
 
 interface AppShellProps {
   engine: EngineStatus;
-  canInstallUpdate?: boolean;
+  updates?: ReactNode;
   children: ReactNode;
 }
 
-export function AppShell({ engine, canInstallUpdate = true, children }: AppShellProps) {
+export function AppShell({ engine, updates, children }: AppShellProps) {
   return (
     <div className="app-shell">
       <div className="app-content">{children}</div>
-      <StatusBar engine={engine} canInstallUpdate={canInstallUpdate} />
+      <StatusBar engine={engine} updates={updates} />
     </div>
   );
 }

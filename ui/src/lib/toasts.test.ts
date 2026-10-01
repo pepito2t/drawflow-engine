@@ -15,6 +15,7 @@ const spec = (title: string): ToastSpec => ({
   body: null,
   moduleId: null,
   durationMs: 1000,
+  actions: [],
 });
 
 const finished = (outcome: "succeeded" | "failed" | "cancelled"): AppEvent => ({
@@ -77,5 +78,12 @@ describe("toastFor", () => {
 
   it("ignores run starts", () => {
     expect(toastFor({ type: "runStarted", moduleId: "a", moduleName: "A" })).toBeNull();
+  });
+
+  it("asks before installing an update and stays until answered", () => {
+    const toast = toastFor({ type: "updateAvailable", version: "1.2.0" });
+
+    expect(toast).toMatchObject({ title: "Version 1.2.0 disponible", durationMs: null });
+    expect(toast?.actions.map((action) => action.command)).toEqual(["update.install", null]);
   });
 });

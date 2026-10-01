@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useCommands } from "../hooks/command-registry";
 import { useNotificationCenter } from "../hooks/notification-center";
 import type { Toast } from "../lib/toasts";
 import { CloseIcon } from "./icons";
@@ -21,7 +22,12 @@ interface ToastItemProps {
 }
 
 function ToastItem({ toast, onDismiss, onOpenModule }: ToastItemProps) {
+  const { execute } = useCommands();
+
   useEffect(() => {
+    if (toast.durationMs === null) {
+      return;
+    }
     const timer = setTimeout(() => {
       onDismiss(toast.id);
     }, toast.durationMs);
@@ -43,6 +49,25 @@ function ToastItem({ toast, onDismiss, onOpenModule }: ToastItemProps) {
         <strong>{toast.title}</strong>
         {toast.body && <span>{toast.body}</span>}
       </button>
+      {toast.actions.length > 0 && (
+        <div className="toast-actions">
+          {toast.actions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              className={action.primary ? "primary" : undefined}
+              onClick={() => {
+                if (action.command) {
+                  execute(action.command);
+                }
+                onDismiss(toast.id);
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
       <button
         type="button"
         className="icon-button"

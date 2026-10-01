@@ -257,6 +257,7 @@ input[type="checkbox"] {
 
 .toast {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 4px;
   border: 1px solid var(--color-border);
@@ -302,6 +303,14 @@ input[type="checkbox"] {
 .toast-body span {
   color: var(--color-muted);
   font-size: 13px;
+}
+
+.toast-actions {
+  display: flex;
+  flex-basis: 100%;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0 10px 10px;
 }
 
 @keyframes toast-in {

@@ -1,6 +1,14 @@
 import type { AppEvent } from "./app-events";
+import { COMMANDS, type CommandId } from "./commands";
 
 export type ToastTone = "success" | "info" | "warning" | "error";
+
+export interface ToastAction {
+  label: string;
+  /** `null` only closes the toast. */
+  command: CommandId | null;
+  primary: boolean;
+}
 
 export interface Toast {
   id: number;
@@ -8,7 +16,9 @@ export interface Toast {
   title: string;
   body: string | null;
   moduleId: string | null;
-  durationMs: number;
+  /** `null` keeps the toast until the user answers. */
+  durationMs: number | null;
+  actions: ToastAction[];
 }
 
 export type ToastSpec = Omit<Toast, "id">;
@@ -42,6 +52,23 @@ export function toastFor(event: AppEvent): ToastSpec | null {
       return null;
     case "runFinished":
       return runToast(event);
+    case "updateAvailable":
+      return {
+        tone: "info",
+        title: `Version ${event.version} disponible`,
+        body: "Voulez-vous mettre à jour maintenant ?",
+        moduleId: null,
+        durationMs: null,
+        actions: [
+          { label: "Mettre à jour", command: COMMANDS.installUpdate, primary: true },
+          { label: "Plus tard", command: null, primary: false },
+        ],
+      };
+    case "updateDeferred":
+      return {
+        ...plain("warning", "Mise à jour en attente"),
+        body: "Elle pourra être installée une fois les traitements en cours terminés.",
+      };
     case "settingsSaved":
       return plain("success", "Paramètres enregistrés");
     case "accessCodeChanged":
@@ -50,7 +77,7 @@ export function toastFor(event: AppEvent): ToastSpec | null {
 }
 
 function runToast(event: Extract<AppEvent, { type: "runFinished" }>): ToastSpec {
-  const base = { body: event.message, moduleId: event.moduleId };
+  const base = { body: event.message, moduleId: event.moduleId, actions: [] };
   switch (event.outcome) {
     case "succeeded":
       return {
@@ -77,5 +104,5 @@ function runToast(event: Extract<AppEvent, { type: "runFinished" }>): ToastSpec 
 }
 
 function plain(tone: ToastTone, title: string): ToastSpec {
-  return { tone, title, body: null, moduleId: null, durationMs: SHORT_TOAST_MS };
+  return { tone, title, body: null, moduleId: null, durationMs: SHORT_TOAST_MS, actions: [] };
 }

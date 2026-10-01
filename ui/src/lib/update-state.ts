@@ -1,4 +1,5 @@
 export type UpdateState =
+  | { status: "checking" }
   | { status: "unconfigured" }
   | { status: "upToDate" }
   | { status: "available"; version: string }
@@ -7,6 +8,7 @@ export type UpdateState =
   | { status: "error"; message: string };
 
 export type UpdateAction =
+  | { type: "checked"; state: UpdateState }
   | { type: "downloadStarted" }
   | { type: "progressed"; downloaded: number; total: number | null }
   | { type: "downloaded" }
@@ -14,6 +16,8 @@ export type UpdateAction =
 
 export function updateReducer(state: UpdateState, action: UpdateAction): UpdateState {
   switch (action.type) {
+    case "checked":
+      return state.status === "checking" ? action.state : state;
     case "downloadStarted":
       return state.status === "available"
         ? { status: "downloading", version: state.version, progress: null }
@@ -38,6 +42,8 @@ const PERCENT = 100;
 
 export function describeUpdate(state: UpdateState): string {
   switch (state.status) {
+    case "checking":
+      return "Recherche de mises à jour…";
     case "unconfigured":
       return "Mises à jour : non configurées";
     case "upToDate":
