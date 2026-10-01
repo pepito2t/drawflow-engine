@@ -6,7 +6,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+from engine.modules.dwg_parts.tests.plans import build_facade_plan
+
 EXPECTED_MODULE_ID = "hello"
+PARALLEL_BATCH_SIZE = 2
 
 
 def run_binary(binary: Path, *arguments: str) -> str:
@@ -49,7 +52,40 @@ def main(binary: Path) -> None:
         events = [json.loads(line) for line in stdout.splitlines()]
         if events[-1]["type"] != "result":
             raise SystemExit(f"Last event is not a result: {events[-1]}")
+        events += smoke_parts_list(binary, Path(workdir))
     sys.stdout.write(f"Smoke OK: {len(events)} events\n")
+
+
+def smoke_parts_list(binary: Path, workdir: Path) -> list[dict[str, object]]:
+    """Exercises the process pool, ezdxf and openpyxl inside the frozen executable."""
+    plans = workdir / "Plans"
+    plans.mkdir()
+    for name in ("Nord.dxf", "Sud.dxf"):
+        build_facade_plan(plans / name)
+    settings_file = workdir / "parallel-settings.json"
+    settings_file.write_text(
+        json.dumps({"general": {"batch_size": PARALLEL_BATCH_SIZE}}), encoding="utf-8"
+    )
+    input_file = workdir / "parts.json"
+    input_file.write_text(
+        json.dumps({"folders": [str(plans)], "output_folder": str(workdir / "Sortie")}),
+        encoding="utf-8",
+    )
+    stdout = run_binary(
+        binary,
+        *(
+            "run",
+            "dwg-parts",
+            "--input",
+            str(input_file),
+            "--settings",
+            str(settings_file),
+        ),
+    )
+    events = [json.loads(line) for line in stdout.splitlines()]
+    if events[-1]["type"] != "result" or not Path(events[-1]["outputs"][0]).is_file():
+        raise SystemExit(f"Parts list failed: {events[-1]}")
+    return events
 
 
 if __name__ == "__main__":
