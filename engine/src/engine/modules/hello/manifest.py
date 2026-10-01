@@ -15,6 +15,7 @@ MANIFEST = ModuleManifest(
     instructions=[
         "Saisissez un nom.",
         "Choisissez un dossier de sortie avec « Parcourir » ou par glisser-déposer.",
-        "Cliquez sur « Lancer » : un fichier bonjour.txt est créé dans ce dossier.",
+        "Cliquez sur « Lancer » : un fichier texte est créé dans ce dossier.",
+        "Le nom du fichier suit la norme définie dans Paramètres.",
     ],
 )
