@@ -18,4 +18,4 @@ L'application installée demande un code au démarrage (pas en développement). 
 2. Une fois mergé : `git tag vX.Y.Z && git push origin vX.Y.Z`.
 3. Le workflow `Release` construit l'installeur Windows (NSIS) et publie la release avec `latest.json` signé.
 
-Prérequis (une fois) : secrets `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (`pnpm tauri signer generate`). Pour publier les releases dans un repo public séparé : variables `RELEASES_OWNER` / `RELEASES_REPO` et secret `RELEASES_TOKEN` (token avec droit `contents:write` sur ce repo).
+Prérequis (une fois) : `pnpm tauri signer generate`, puis secrets `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, et variable `UPDATER_PUBKEY` (clé publique). L'app installée vérifie les mises à jour au démarrage (barre d'état) ; en développement, l'updater est désactivé. Pour publier les releases dans un repo public séparé : variables `RELEASES_OWNER` / `RELEASES_REPO` et secret `RELEASES_TOKEN` (token avec droit `contents:write` sur ce repo).

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
+SEMVER = re.compile(r"^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$")
 TAG_PREFIX = "v"
 
 
@@ -76,7 +76,7 @@ def check(tag: str | None) -> None:
 
 def bump(version: str) -> None:
     if not SEMVER.match(version):
-        raise SystemExit(f"Version invalide : {version} (attendu X.Y.Z)")
+        raise SystemExit(f"Version invalide : {version} (attendu X.Y.Z ou X.Y.Z-rc.N)")
     for source in SOURCES:
         content = source.path.read_text(encoding="utf-8")
         updated = source.pattern.sub(
