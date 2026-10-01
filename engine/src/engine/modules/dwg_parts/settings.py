@@ -40,6 +40,12 @@ class DwgPartsSettings(ModuleSettings):
         description="Laisser vide ou absent du bloc : chaque bloc compte pour 1.",
     )
     include_block_name: bool = ui_field("bool", label="Ajouter une colonne « Bloc »", default=True)
+    group_identical: bool = ui_field(
+        "bool",
+        label="Regrouper les pièces identiques",
+        default=True,
+        description="Les pièces dont toutes les colonnes sont égales forment une seule ligne.",
+    )
     file_name_template: FileNameTemplate = file_name_template_field(DEFAULT_FILE_NAME_TEMPLATE)
 
     @field_validator("columns")
