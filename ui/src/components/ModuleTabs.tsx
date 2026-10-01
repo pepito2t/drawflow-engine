@@ -1,54 +1,62 @@
+import type { ReactNode } from "react";
+import { useRunsStore } from "../hooks/runs-context";
 import type { CatalogModule } from "../lib/catalog";
-
-export type Selection = { kind: "module"; id: string } | { kind: "settings" };
+import { entryFor } from "../lib/runs-store";
+import type { RunStatus } from "../lib/run-state";
+import { Spinner } from "./Spinner";
 
 interface ModuleTabsProps {
   modules: CatalogModule[];
-  selection: Selection | null;
-  onSelect: (selection: Selection) => void;
+  selectedId: string | null;
+  onSelect: (moduleId: string) => void;
+  footer: ReactNode;
 }
 
 export const tabPanelId = (moduleId: string) => `panel-${moduleId}`;
-export const SETTINGS_PANEL_ID = "panel-settings";
 
-export function ModuleTabs({ modules, selection, onSelect }: ModuleTabsProps) {
-  const isModuleSelected = (id: string) => selection?.kind === "module" && selection.id === id;
-  const isSettingsSelected = selection?.kind === "settings";
+export function ModuleTabs({ modules, selectedId, onSelect, footer }: ModuleTabsProps) {
+  const { state } = useRunsStore();
 
   return (
-    <nav
-      className="side-tabs"
-      role="tablist"
-      aria-orientation="vertical"
-      aria-label="Fonctionnalités"
-    >
-      {modules.map(({ manifest }) => (
-        <button
-          key={manifest.id}
-          type="button"
-          role="tab"
-          aria-selected={isModuleSelected(manifest.id)}
-          aria-controls={tabPanelId(manifest.id)}
-          className={isModuleSelected(manifest.id) ? "side-tab selected" : "side-tab"}
-          onClick={() => {
-            onSelect({ kind: "module", id: manifest.id });
-          }}
-        >
-          {manifest.name}
-        </button>
-      ))}
-      <button
-        type="button"
-        role="tab"
-        aria-selected={isSettingsSelected}
-        aria-controls={SETTINGS_PANEL_ID}
-        className={isSettingsSelected ? "side-tab settings-tab selected" : "side-tab settings-tab"}
-        onClick={() => {
-          onSelect({ kind: "settings" });
-        }}
+    <aside className="sidebar">
+      <nav
+        className="side-tabs"
+        role="tablist"
+        aria-orientation="vertical"
+        aria-label="Fonctionnalités"
       >
-        Paramètres
-      </button>
-    </nav>
+        {modules.map(({ manifest }) => {
+          const entry = entryFor(state, manifest.id);
+          const isSelected = manifest.id === selectedId;
+          return (
+            <button
+              key={manifest.id}
+              type="button"
+              role="tab"
+              aria-selected={isSelected}
+              aria-controls={tabPanelId(manifest.id)}
+              className={isSelected ? "side-tab selected" : "side-tab"}
+              onClick={() => {
+                onSelect(manifest.id);
+              }}
+            >
+              <span>{manifest.name}</span>
+              <TabRunBadge status={entry.run.status} unseen={entry.unseenOutcome && !isSelected} />
+            </button>
+          );
+        })}
+      </nav>
+      <div className="sidebar-footer">{footer}</div>
+    </aside>
   );
+}
+
+function TabRunBadge({ status, unseen }: { status: RunStatus; unseen: boolean }) {
+  if (status === "running") {
+    return <Spinner label="En cours" />;
+  }
+  if (!unseen) {
+    return null;
+  }
+  return <span className={`status-dot ${status === "succeeded" ? "ready" : "failed"}`} />;
 }

@@ -1,0 +1,220 @@
+import { Suspense, use, useCallback, useState, type SetStateAction } from "react";
+import { useFieldDrop } from "../hooks/use-field-drop";
+import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { toReadableError, type ReadableError } from "../lib/error-message";
+import type { FormValue, FormValues } from "../lib/form-schema";
+import {
+  parseSettings,
+  toSettingsPayload,
+  valuesBySection,
+  type SettingsSection,
+  type SettingsValues,
+} from "../lib/settings";
+import { getSettings, saveSettings } from "../lib/tauri/engine";
+import { ErrorBoundary } from "./ErrorBoundary";
+import { ErrorPanel } from "./ErrorPanel";
+import { CloseIcon } from "./icons";
+import { ModuleForm } from "./ModuleForm";
+import { Loader, Spinner } from "./Spinner";
+
+type SaveState =
+  { status: "idle" | "saving" | "saved" } | { status: "failed"; error: ReadableError };
+
+function loadSettings(): Promise<SettingsSection[]> {
+  return getSettings().then(parseSettings);
+}
+
+export function SettingsDialog({ onClose }: { onClose: () => void }) {
+  const { id, promise, retry } = useRetryablePromise(loadSettings);
+  return (
+    <div
+      className="dialog-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          onClose();
+        }
+      }}
+    >
+      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <header className="dialog-header">
+          <h2 id="settings-title">Paramètres</h2>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Fermer"
+            autoFocus
+            onClick={onClose}
+          >
+            <CloseIcon />
+          </button>
+        </header>
+        <SettingsContent attemptId={id} promise={promise} retry={retry} />
+      </div>
+    </div>
+  );
+}
+
+interface SettingsContentProps {
+  attemptId: number;
+  promise: Promise<SettingsSection[]>;
+  retry: () => void;
+}
+
+function SettingsContent({ attemptId, promise, retry }: SettingsContentProps) {
+  return (
+    <ErrorBoundary
+      key={attemptId}
+      fallback={(error) => {
+        const { message, hint } = toReadableError(error);
+        return (
+          <div className="dialog-body centered">
+            <ErrorPanel
+              title="Impossible de charger les paramètres"
+              message={message}
+              hint={hint}
+              onRetry={retry}
+            />
+          </div>
+        );
+      }}
+    >
+      <Suspense
+        fallback={
+          <div className="dialog-body">
+            <Loader label="Chargement des paramètres…" />
+          </div>
+        }
+      >
+        <SettingsEditor sectionsPromise={promise} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<SettingsSection[]> }) {
+  const [sections, setSections] = useState(use(sectionsPromise));
+  const [values, setValues] = useState<SettingsValues>(() => valuesBySection(sections));
+  const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
+  const [activeId, setActiveId] = useState(sections[0]?.id ?? null);
+  const isSaving = saveState.status === "saving";
+
+  const save = () => {
+    setSaveState({ status: "saving" });
+    saveSettings(toSettingsPayload(sections, values))
+      .then(parseSettings)
+      .then((saved) => {
+        setSections(saved);
+        setValues(valuesBySection(saved));
+        setSaveState({ status: "saved" });
+      })
+      .catch((error: unknown) => {
+        setSaveState({ status: "failed", error: toReadableError(error) });
+      });
+  };
+
+  const activeSection = sections.find((section) => section.id === activeId) ?? sections[0];
+
+  return (
+    <>
+      <div className="dialog-body settings-layout">
+        <nav
+          className="side-tabs"
+          role="tablist"
+          aria-orientation="vertical"
+          aria-label="Catégories"
+        >
+          {sections.map((section) => (
+            <button
+              key={section.id}
+              type="button"
+              role="tab"
+              aria-selected={section.id === activeSection?.id}
+              className={section.id === activeSection?.id ? "side-tab selected" : "side-tab"}
+              onClick={() => {
+                setActiveId(section.id);
+              }}
+            >
+              <span>{section.title}</span>
+              {section.error && <span className="status-dot failed" />}
+            </button>
+          ))}
+        </nav>
+        <div className="settings-panel">
+          {sections.map((section) => (
+            <div key={section.id} role="tabpanel" hidden={section.id !== activeSection?.id}>
+              <SettingsSectionForm
+                section={section}
+                values={values[section.id] ?? section.values}
+                disabled={isSaving}
+                setValues={setValues}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <footer className="dialog-footer">
+        {saveState.status === "failed" && (
+          <ErrorPanel
+            title="Paramètres non enregistrés"
+            message={saveState.error.message}
+            hint={saveState.error.hint}
+            file={saveState.error.file}
+          />
+        )}
+        <div className="run-controls">
+          {saveState.status === "saved" && (
+            <span className="run-status succeeded">Paramètres enregistrés</span>
+          )}
+          {isSaving && <Spinner label="Enregistrement" />}
+          <button type="button" className="primary" onClick={save} disabled={isSaving}>
+            Enregistrer
+          </button>
+        </div>
+      </footer>
+    </>
+  );
+}
+
+interface SettingsSectionFormProps {
+  section: SettingsSection;
+  values: FormValues;
+  disabled: boolean;
+  setValues: (update: SetStateAction<SettingsValues>) => void;
+}
+
+function SettingsSectionForm({ section, values, disabled, setValues }: SettingsSectionFormProps) {
+  const namespace = `settings-${section.id}`;
+  const setSectionValues = useCallback(
+    (update: SetStateAction<FormValues>) => {
+      setValues((all) => {
+        const current = all[section.id] ?? section.values;
+        return { ...all, [section.id]: typeof update === "function" ? update(current) : update };
+      });
+    },
+    [section.id, section.values, setValues],
+  );
+  useFieldDrop(namespace, section.fields, setSectionValues, disabled);
+
+  return (
+    <section className="settings-section">
+      <h3>{section.title}</h3>
+      {section.error && (
+        <ErrorPanel title="Valeurs enregistrées invalides" message={section.error} />
+      )}
+      <ModuleForm
+        moduleId={namespace}
+        fields={section.fields}
+        values={values}
+        disabled={disabled}
+        onChange={(name: string, value: FormValue) => {
+          setSectionValues((current) => ({ ...current, [name]: value }));
+        }}
+      />
+    </section>
+  );
+}

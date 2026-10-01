@@ -1,7 +1,9 @@
-import { useCallback, useReducer, useRef } from "react";
+import { useCallback } from "react";
 import type { FormValues } from "../lib/form-schema";
-import { INITIAL_RUN_STATE, runReducer, type RunState } from "../lib/run-state";
+import type { RunState } from "../lib/run-state";
+import { entryFor } from "../lib/runs-store";
 import { cancelRun, describeBridgeError, runModule } from "../lib/tauri/engine";
+import { useRunsStore } from "./runs-context";
 
 interface ModuleRun {
   state: RunState;
@@ -10,35 +12,36 @@ interface ModuleRun {
 }
 
 export function useModuleRun(moduleId: string): ModuleRun {
-  const [state, dispatch] = useReducer(runReducer, INITIAL_RUN_STATE);
-  const runIdRef = useRef<string | null>(null);
+  const { state, dispatch } = useRunsStore();
+  const { run, runId } = entryFor(state, moduleId);
 
   const start = useCallback(
     (inputs: FormValues) => {
-      dispatch({ type: "started" });
+      dispatch({ type: "run", moduleId, action: { type: "started" } });
       runModule(moduleId, inputs, (message) => {
-        dispatch({ type: "message", message });
+        dispatch({ type: "run", moduleId, action: { type: "message", message } });
       })
-        .then((runId) => {
-          runIdRef.current = runId;
+        .then((assignedRunId) => {
+          dispatch({ type: "runIdAssigned", moduleId, runId: assignedRunId });
         })
         .catch((error: unknown) => {
-          dispatch({ type: "bridgeFailed", message: describeBridgeError(error) });
+          const message = describeBridgeError(error);
+          dispatch({ type: "run", moduleId, action: { type: "bridgeFailed", message } });
         });
     },
-    [moduleId],
+    [dispatch, moduleId],
   );
 
   const cancel = useCallback(() => {
-    const runId = runIdRef.current;
     if (runId === null) {
       return;
     }
-    dispatch({ type: "cancelRequested" });
+    dispatch({ type: "run", moduleId, action: { type: "cancelRequested" } });
     cancelRun(runId).catch((error: unknown) => {
-      dispatch({ type: "bridgeFailed", message: describeBridgeError(error) });
+      const message = describeBridgeError(error);
+      dispatch({ type: "run", moduleId, action: { type: "bridgeFailed", message } });
     });
-  }, []);
+  }, [dispatch, moduleId, runId]);
 
-  return { state, start, cancel };
+  return { state: run, start, cancel };
 }

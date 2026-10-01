@@ -1,4 +1,5 @@
 import { Suspense, use, useState } from "react";
+import { RunsProvider, useRunsStore } from "../hooks/runs-context";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
@@ -6,9 +7,11 @@ import { listModules } from "../lib/tauri/engine";
 import { AppShell } from "./AppShell";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
-import { ModuleTabs, SETTINGS_PANEL_ID, tabPanelId, type Selection } from "./ModuleTabs";
-import { SettingsView } from "./SettingsView";
+import { GearIcon } from "./icons";
+import { ModuleTabs, tabPanelId } from "./ModuleTabs";
+import { SettingsDialog } from "./SettingsDialog";
 import { ModuleWorkspace } from "./ModuleWorkspace";
+import { RunsIndicator } from "./RunsIndicator";
 import { Loader } from "./Spinner";
 
 function loadCatalog(): Promise<CatalogModule[]> {
@@ -27,7 +30,9 @@ export function App() {
           </AppShell>
         }
       >
-        <CatalogView catalogPromise={promise} />
+        <RunsProvider>
+          <CatalogView catalogPromise={promise} />
+        </RunsProvider>
       </Suspense>
     </ErrorBoundary>
   );
@@ -51,17 +56,45 @@ function CatalogFailure({ error, onRetry }: { error: unknown; onRetry: () => voi
 
 function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule[]> }) {
   const modules = use(catalogPromise);
-  const firstModuleId = modules[0]?.manifest.id;
-  const [selection, setSelection] = useState<Selection | null>(
-    firstModuleId ? { kind: "module", id: firstModuleId } : { kind: "settings" },
+  const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { dispatch } = useRunsStore();
+
+  const select = (moduleId: string) => {
+    for (const visited of [selectedId, moduleId]) {
+      if (visited !== null) {
+        dispatch({ type: "acknowledge", moduleId: visited });
+      }
+    }
+    setSelectedId(moduleId);
+  };
+
+  const sidebarActions = (
+    <>
+      <button
+        type="button"
+        className="icon-button"
+        aria-label="Paramètres"
+        title="Paramètres"
+        onClick={() => {
+          setIsSettingsOpen(true);
+        }}
+      >
+        <GearIcon />
+      </button>
+      <RunsIndicator modules={modules} onOpenModule={select} />
+    </>
   );
-  const isModuleSelected = (moduleId: string) =>
-    selection?.kind === "module" && selection.id === moduleId;
 
   return (
     <AppShell engine={{ state: "ready", moduleCount: modules.length }}>
       <div className="layout">
-        <ModuleTabs modules={modules} selection={selection} onSelect={setSelection} />
+        <ModuleTabs
+          modules={modules}
+          selectedId={selectedId}
+          onSelect={select}
+          footer={sidebarActions}
+        />
         <main className="workspace">
           {modules.length === 0 && <p className="muted">Aucune fonctionnalité disponible.</p>}
           {modules.map((module) => (
@@ -69,18 +102,20 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
               key={module.manifest.id}
               role="tabpanel"
               id={tabPanelId(module.manifest.id)}
-              hidden={!isModuleSelected(module.manifest.id)}
+              hidden={selectedId !== module.manifest.id}
             >
               <ModuleWorkspace module={module} />
             </div>
           ))}
-          {selection?.kind === "settings" && (
-            <div role="tabpanel" id={SETTINGS_PANEL_ID}>
-              <SettingsView />
-            </div>
-          )}
         </main>
       </div>
+      {isSettingsOpen && (
+        <SettingsDialog
+          onClose={() => {
+            setIsSettingsOpen(false);
+          }}
+        />
+      )}
     </AppShell>
   );
 }
