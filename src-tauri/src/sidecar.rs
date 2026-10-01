@@ -7,6 +7,7 @@ use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use tempfile::NamedTempFile;
 
+use crate::access::AccessLock;
 use crate::error::BridgeError;
 use crate::paths::settings_file;
 use crate::runs::{Killable, RunId, RunRegistry};
@@ -40,12 +41,20 @@ pub struct EngineOutput {
 }
 
 #[tauri::command]
-pub async fn list_modules(app: AppHandle) -> Result<EngineOutput, BridgeError> {
+pub async fn list_modules(
+    app: AppHandle,
+    lock: State<'_, AccessLock>,
+) -> Result<EngineOutput, BridgeError> {
+    lock.ensure_unlocked()?;
     query_engine(&app, vec!["list-modules".to_owned()]).await
 }
 
 #[tauri::command]
-pub async fn get_settings(app: AppHandle) -> Result<EngineOutput, BridgeError> {
+pub async fn get_settings(
+    app: AppHandle,
+    lock: State<'_, AccessLock>,
+) -> Result<EngineOutput, BridgeError> {
+    lock.ensure_unlocked()?;
     let settings = path_argument(settings_file(&app)?);
     query_engine(&app, settings_arguments("get", settings, None)).await
 }
@@ -53,8 +62,10 @@ pub async fn get_settings(app: AppHandle) -> Result<EngineOutput, BridgeError> {
 #[tauri::command]
 pub async fn save_settings(
     app: AppHandle,
+    lock: State<'_, AccessLock>,
     values: serde_json::Value,
 ) -> Result<EngineOutput, BridgeError> {
+    lock.ensure_unlocked()?;
     let settings = path_argument(settings_file(&app)?);
     let input_file = write_input_file(&values)?;
     let input = path_argument(input_file.path().to_path_buf());
@@ -67,10 +78,12 @@ pub async fn save_settings(
 pub fn run_module(
     app: AppHandle,
     runs: State<'_, EngineRuns>,
+    lock: State<'_, AccessLock>,
     module_id: String,
     inputs: serde_json::Value,
     on_event: Channel<EngineMessage>,
 ) -> Result<RunId, BridgeError> {
+    lock.ensure_unlocked()?;
     let input_file = write_input_file(&inputs)?;
     let input_path = path_argument(input_file.path().to_path_buf());
     let settings_path = path_argument(settings_file(&app)?);
