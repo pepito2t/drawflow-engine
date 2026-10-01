@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import { CatalogError, parseCatalog } from "./catalog";
 
 const helloEntry = {
-  manifest: { id: "hello", name: "Bonjour", description: "Exemple", version: "0.1.0" },
+  manifest: {
+    id: "hello",
+    name: "Bonjour",
+    description: "Exemple",
+    version: "0.1.0",
+    order: 0,
+    instructions: ["Choisir un dossier."],
+  },
   inputs_schema: { properties: { name: { title: "Nom", "x-ui": "text" } }, required: ["name"] },
 };
 

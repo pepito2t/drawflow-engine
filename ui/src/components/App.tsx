@@ -8,7 +8,6 @@ import { ErrorPanel } from "./ErrorPanel";
 import { ModuleTabs, tabPanelId } from "./ModuleTabs";
 import { ModuleWorkspace } from "./ModuleWorkspace";
 import { Loader } from "./Spinner";
-import { WelcomeView } from "./WelcomeView";
 
 interface CatalogAttempt {
   id: number;
@@ -61,16 +60,14 @@ function CatalogFailure({ error, onRetry }: { error: unknown; onRetry: () => voi
 
 function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule[]> }) {
   const modules = use(catalogPromise);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
 
   return (
     <AppShell engine={{ state: "ready", moduleCount: modules.length }}>
       <div className="layout">
         <ModuleTabs modules={modules} selectedId={selectedId} onSelect={setSelectedId} />
         <main className="workspace">
-          <div role="tabpanel" id={tabPanelId(null)} hidden={selectedId !== null}>
-            <WelcomeView />
-          </div>
+          {modules.length === 0 && <p className="muted">Aucune fonctionnalité disponible.</p>}
           {modules.map((module) => (
             <div
               key={module.manifest.id}

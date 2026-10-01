@@ -9,6 +9,7 @@ import {
   type FormValue,
 } from "../lib/form-schema";
 import { ModuleForm } from "./ModuleForm";
+import { ModuleInstructions } from "./ModuleInstructions";
 import { RunPanel } from "./RunPanel";
 
 interface ModuleWorkspaceProps {
@@ -45,6 +46,7 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
         <h1>{manifest.name}</h1>
         <p>{manifest.description}</p>
       </header>
+      <ModuleInstructions steps={manifest.instructions} />
       <ModuleForm
         moduleId={manifest.id}
         fields={fields}

@@ -7,6 +7,8 @@ const manifestSchema = z.object({
   name: z.string(),
   description: z.string(),
   version: z.string(),
+  order: z.number().int(),
+  instructions: z.array(z.string()),
 });
 
 const catalogSchema = z.array(z.object({ manifest: manifestSchema, inputs_schema: z.unknown() }));

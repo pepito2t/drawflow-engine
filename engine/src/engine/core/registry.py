@@ -22,7 +22,7 @@ def discover_modules() -> dict[str, AnyModule]:
                 f"Deux modules utilisent l'identifiant « {module.manifest.id} »."
             )
         found[module.manifest.id] = module
-    return found
+    return dict(sorted(found.items(), key=lambda item: (item[1].manifest.order, item[0])))
 
 
 def get_module(module_id: str) -> AnyModule:

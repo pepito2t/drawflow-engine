@@ -27,3 +27,8 @@ def test_unknown_module_lists_available_ones() -> None:
 
     assert caught.value.hint is not None
     assert "hello" in caught.value.hint
+
+
+def test_every_module_documents_how_to_use_it() -> None:
+    for module in discover_modules().values():
+        assert module.manifest.instructions, module.manifest.id

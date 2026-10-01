@@ -3,34 +3,34 @@ import type { CatalogModule } from "../lib/catalog";
 interface ModuleTabsProps {
   modules: CatalogModule[];
   selectedId: string | null;
-  onSelect: (moduleId: string | null) => void;
+  onSelect: (moduleId: string) => void;
 }
 
-export const tabPanelId = (moduleId: string | null) => `panel-${moduleId ?? "welcome"}`;
+export const tabPanelId = (moduleId: string) => `panel-${moduleId}`;
 
 export function ModuleTabs({ modules, selectedId, onSelect }: ModuleTabsProps) {
-  const tabs = [
-    { id: null, label: "Comment ça marche" },
-    ...modules.map(({ manifest }) => ({ id: manifest.id, label: manifest.name })),
-  ];
-
   return (
-    <div className="tab-bar" role="tablist" aria-label="Fonctionnalités">
-      {tabs.map((tab) => (
+    <nav
+      className="side-tabs"
+      role="tablist"
+      aria-orientation="vertical"
+      aria-label="Fonctionnalités"
+    >
+      {modules.map(({ manifest }) => (
         <button
-          key={tab.id ?? "welcome"}
+          key={manifest.id}
           type="button"
           role="tab"
-          aria-selected={tab.id === selectedId}
-          aria-controls={tabPanelId(tab.id)}
-          className={tab.id === selectedId ? "tab selected" : "tab"}
+          aria-selected={manifest.id === selectedId}
+          aria-controls={tabPanelId(manifest.id)}
+          className={manifest.id === selectedId ? "side-tab selected" : "side-tab"}
           onClick={() => {
-            onSelect(tab.id);
+            onSelect(manifest.id);
           }}
         >
-          {tab.label}
+          {manifest.name}
         </button>
       ))}
-    </div>
+    </nav>
   );
 }

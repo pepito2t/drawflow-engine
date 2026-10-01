@@ -30,6 +30,10 @@ class ModuleManifest(BaseModel):
     name: str = Field(min_length=1)
     description: str
     version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
+    order: int = Field(ge=0, description="Position de l'onglet dans l'interface.")
+    instructions: list[str] = Field(
+        min_length=1, description="Mode d'emploi, une étape par entrée."
+    )
 
 
 class ModuleInputs(BaseModel):
