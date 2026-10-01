@@ -10,7 +10,7 @@ pub enum BridgeError {
     Serialization(#[from] serde_json::Error),
     #[error("Erreur de l'application : {0}")]
     Tauri(#[from] tauri::Error),
-    #[error("Un traitement est déjà en cours.")]
+    #[error("Cette fonctionnalité est déjà en cours d'exécution.")]
     RunInProgress,
     #[error("État interne du moteur indisponible.")]
     StatePoisoned,
