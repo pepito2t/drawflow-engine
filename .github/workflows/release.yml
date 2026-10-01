@@ -25,11 +25,30 @@ jobs:
       - name: Signing secrets present
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          UPDATER_PUBKEY: ${{ vars.UPDATER_PUBKEY }}
         run: |
           if [[ -z "$TAURI_SIGNING_PRIVATE_KEY" ]]; then
             echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY manquant : générez la clé avec 'pnpm tauri signer generate' et ajoutez-la aux secrets du repo."
             exit 1
           fi
+          if [[ -z "$UPDATER_PUBKEY" ]]; then
+            echo "::error::Variable UPDATER_PUBKEY manquante : ajoutez la clé publique générée par 'pnpm tauri signer generate' aux variables du repo."
+            exit 1
+          fi
+
+      - name: Updater configuration
+        env:
+          UPDATER_PUBKEY: ${{ vars.UPDATER_PUBKEY }}
+        run: |
+          endpoint="https://github.com/${RELEASES_OWNER}/${RELEASES_REPO}/releases/latest/download/latest.json"
+          python - "$endpoint" > updater-config.json <<'PY'
+          import json, os, sys
+          print(json.dumps({"plugins": {"updater": {
+              "pubkey": os.environ["UPDATER_PUBKEY"],
+              "endpoints": [sys.argv[1]],
+              "windows": {"installMode": "passive"},
+          }}}))
+          PY
 
       - uses: astral-sh/setup-uv@v10.2.0
         with:
@@ -70,4 +89,4 @@ jobs:
           repo: ${{ env.RELEASES_REPO }}
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
-          args: --bundles nsis
+          args: --bundles nsis --config updater-config.json
