@@ -1,8 +1,10 @@
+mod access;
 mod error;
 mod paths;
 mod runs;
 mod sidecar;
 
+use access::AccessLock;
 use sidecar::EngineRuns;
 use tauri::{Manager, RunEvent};
 
@@ -12,7 +14,11 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .manage(EngineRuns::default())
+        .manage(AccessLock::default())
         .invoke_handler(tauri::generate_handler![
+            access::lock_status,
+            access::unlock,
+            access::change_access_code,
             sidecar::list_modules,
             sidecar::get_settings,
             sidecar::save_settings,

@@ -13,9 +13,12 @@ import {
 import { getSettings, saveSettings } from "../lib/tauri/engine";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
+import { AccessCodeForm } from "./AccessCodeForm";
 import { CloseIcon } from "./icons";
 import { ModuleForm } from "./ModuleForm";
 import { Loader, Spinner } from "./Spinner";
+
+const ACCESS_CODE_TAB_ID = "access-code";
 
 type SaveState =
   { status: "idle" | "saving" | "saved" } | { status: "failed"; error: ReadableError };
@@ -117,7 +120,10 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
       });
   };
 
-  const activeSection = sections.find((section) => section.id === activeId) ?? sections[0];
+  const isAccessTab = activeId === ACCESS_CODE_TAB_ID;
+  const activeSection = isAccessTab
+    ? undefined
+    : (sections.find((section) => section.id === activeId) ?? sections[0]);
 
   return (
     <>
@@ -143,8 +149,20 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
               {section.error && <span className="status-dot failed" />}
             </button>
           ))}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={isAccessTab}
+            className={isAccessTab ? "side-tab selected" : "side-tab"}
+            onClick={() => {
+              setActiveId(ACCESS_CODE_TAB_ID);
+            }}
+          >
+            <span>Code d'accès</span>
+          </button>
         </nav>
         <div className="settings-panel">
+          {isAccessTab && <AccessCodeForm />}
           {sections.map((section) => (
             <div key={section.id} role="tabpanel" hidden={section.id !== activeSection?.id}>
               <SettingsSectionForm
@@ -157,7 +175,7 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
           ))}
         </div>
       </div>
-      <footer className="dialog-footer">
+      <footer className="dialog-footer" hidden={isAccessTab}>
         {saveState.status === "failed" && (
           <ErrorPanel
             title="Paramètres non enregistrés"

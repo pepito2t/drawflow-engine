@@ -4,11 +4,13 @@ import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { useRunNotifications } from "../hooks/use-run-notifications";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
+import { getLockStatus, type LockStatus } from "../lib/tauri/access";
 import { listModules } from "../lib/tauri/engine";
 import { AppShell } from "./AppShell";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { GearIcon } from "./icons";
+import { LockScreen } from "./LockScreen";
 import { ModuleTabs, tabPanelId } from "./ModuleTabs";
 import { SettingsDialog } from "./SettingsDialog";
 import { ModuleWorkspace } from "./ModuleWorkspace";
@@ -20,6 +22,40 @@ function loadCatalog(): Promise<CatalogModule[]> {
 }
 
 export function App() {
+  const { id, promise, retry } = useRetryablePromise(getLockStatus);
+  return (
+    <ErrorBoundary key={id} fallback={(error) => <CatalogFailure error={error} onRetry={retry} />}>
+      <Suspense
+        fallback={
+          <AppShell engine={{ state: "loading" }}>
+            <Loader label="Démarrage…" />
+          </AppShell>
+        }
+      >
+        <LockGate statusPromise={promise} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function LockGate({ statusPromise }: { statusPromise: Promise<LockStatus> }) {
+  const status = use(statusPromise);
+  const [isUnlocked, setIsUnlocked] = useState(status.unlocked);
+  if (!isUnlocked) {
+    return (
+      <AppShell engine={{ state: "loading" }}>
+        <LockScreen
+          onUnlocked={() => {
+            setIsUnlocked(true);
+          }}
+        />
+      </AppShell>
+    );
+  }
+  return <CatalogApp />;
+}
+
+function CatalogApp() {
   const { id, promise, retry } = useRetryablePromise(loadCatalog);
 
   return (

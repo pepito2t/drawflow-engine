@@ -14,6 +14,18 @@ pub enum BridgeError {
     RunInProgress,
     #[error("État interne du moteur indisponible.")]
     StatePoisoned,
+    #[error("L'application est verrouillée. Saisissez le code d'accès.")]
+    Locked,
+    #[error("Code d'accès incorrect.")]
+    WrongAccessCode,
+    #[error("Trop de tentatives. Réessayez dans {0} s.")]
+    TooManyAttempts(u64),
+    #[error("Le code doit contenir uniquement des chiffres, entre {min} et {max}.")]
+    InvalidAccessCode { min: usize, max: usize },
+    #[error("Le fichier du code d'accès est illisible. Supprimez access-code.json dans le dossier de configuration pour revenir au code 0000.")]
+    AccessFileCorrupted,
+    #[error("Impossible d'enregistrer le code d'accès.")]
+    AccessHashing,
 }
 
 impl Serialize for BridgeError {
