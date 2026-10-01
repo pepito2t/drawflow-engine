@@ -3,6 +3,7 @@ import {
   isFolderKind,
   isMultipleKind,
   mergeDroppedPaths,
+  toPathList,
   type FieldDescriptor,
   type FormValue,
 } from "../lib/form-schema";
@@ -60,11 +61,4 @@ export function PathField({ moduleId, field, value, disabled, onChange }: PathFi
       </div>
     </div>
   );
-}
-
-function toPathList(value: FormValue): string[] {
-  if (Array.isArray(value)) {
-    return value;
-  }
-  return typeof value === "string" && value !== "" ? [value] : [];
 }

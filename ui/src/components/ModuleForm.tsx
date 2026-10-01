@@ -1,9 +1,11 @@
 import {
   isPathKind,
+  toTextValue,
   type FieldDescriptor,
   type FormValue,
   type FormValues,
 } from "../lib/form-schema";
+import { MappingField } from "./MappingField";
 import { PathField } from "./PathField";
 
 interface ModuleFormProps {
@@ -64,6 +66,9 @@ function FieldInput({ moduleId, field, value, disabled, onChange }: FieldInputPr
       />
     );
   }
+  if (field.kind === "mapping") {
+    return <MappingField field={field} value={value} disabled={disabled} onChange={onChange} />;
+  }
   if (field.kind === "bool") {
     return (
       <input
@@ -81,7 +86,7 @@ function FieldInput({ moduleId, field, value, disabled, onChange }: FieldInputPr
     return (
       <select
         id={field.name}
-        value={String(value)}
+        value={toTextValue(value)}
         disabled={disabled}
         onChange={(event) => {
           onChange(event.target.value);
@@ -97,7 +102,7 @@ function FieldInput({ moduleId, field, value, disabled, onChange }: FieldInputPr
     <input
       id={field.name}
       type={field.kind === "number" ? "number" : "text"}
-      value={String(value)}
+      value={toTextValue(value)}
       disabled={disabled}
       onChange={(event) => {
         onChange(event.target.value);
