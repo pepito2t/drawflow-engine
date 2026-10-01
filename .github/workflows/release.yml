@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    env:
+      # Releases may be published to a separate public repository so the updater can read them.
+      RELEASES_OWNER: ${{ vars.RELEASES_OWNER || github.repository_owner }}
+      RELEASES_REPO: ${{ vars.RELEASES_REPO || github.event.repository.name }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Signing secrets present
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$TAURI_SIGNING_PRIVATE_KEY" ]]; then
+            echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY manquant : générez la clé avec 'pnpm tauri signer generate' et ajoutez-la aux secrets du repo."
+            exit 1
+          fi
+
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Version matches tag
+        run: python scripts/version.py check --tag "${GITHUB_REF_NAME}"
+
+      - run: pnpm install --frozen-lockfile
+      - name: Build sidecar
+        run: |
+          (cd engine && uv sync --locked)
+          ./scripts/build-sidecar.sh
+      - name: Smoke test frozen sidecar
+        run: uv run --project engine python scripts/smoke-sidecar.py "$(ls src-tauri/binaries/engine-*)"
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN || secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Drawflow ${{ github.ref_name }}
+          releaseBody: Installez le fichier .exe ; les versions suivantes s'installent automatiquement.
+          releaseDraft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          owner: ${{ env.RELEASES_OWNER }}
+          repo: ${{ env.RELEASES_REPO }}
+          uploadUpdaterJson: true
+          updaterJsonPreferNsis: true
+          args: --bundles nsis

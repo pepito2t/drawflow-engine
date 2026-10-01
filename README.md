@@ -11,3 +11,11 @@ Les règles de développement sont dans [CLAUDE.md](CLAUDE.md).
 L'application installée demande un code au démarrage (pas en développement). Le code initial est `0000` ; il se change dans **Paramètres → Code d'accès**. Il est stocké uniquement haché (argon2id).
 
 **Code oublié :** fermer l'application et supprimer `access-code.json` dans le dossier de configuration (`%APPDATA%\ch.drawflow.desktop\` sous Windows). Le code redevient `0000`.
+
+## Publier une version
+
+1. `python scripts/version.py bump X.Y.Z` (met à jour UI, Tauri, Rust et moteur), commit via PR.
+2. Une fois mergé : `git tag vX.Y.Z && git push origin vX.Y.Z`.
+3. Le workflow `Release` construit l'installeur Windows (NSIS) et publie la release avec `latest.json` signé.
+
+Prérequis (une fois) : secrets `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (`pnpm tauri signer generate`). Pour publier les releases dans un repo public séparé : variables `RELEASES_OWNER` / `RELEASES_REPO` et secret `RELEASES_TOKEN` (token avec droit `contents:write` sur ce repo).
