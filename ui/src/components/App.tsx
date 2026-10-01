@@ -1,7 +1,9 @@
 import { Suspense, use, useState } from "react";
 import { RunsProvider, useRunsStore } from "../hooks/runs-context";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
-import { useRunNotifications } from "../hooks/use-run-notifications";
+import { NotificationProvider } from "../hooks/notification-center";
+import { useRunEvents } from "../hooks/use-run-events";
+import { useSystemNotifications } from "../hooks/use-system-notifications";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
 import { getLockStatus, type LockStatus } from "../lib/tauri/access";
@@ -15,6 +17,7 @@ import { ModuleTabs, tabPanelId } from "./ModuleTabs";
 import { SettingsDialog } from "./SettingsDialog";
 import { ModuleWorkspace } from "./ModuleWorkspace";
 import { RunsIndicator } from "./RunsIndicator";
+import { Toaster } from "./Toaster";
 import { Loader } from "./Spinner";
 
 function loadCatalog(): Promise<CatalogModule[]> {
@@ -68,7 +71,9 @@ function CatalogApp() {
         }
       >
         <RunsProvider>
-          <CatalogView catalogPromise={promise} />
+          <NotificationProvider>
+            <CatalogView catalogPromise={promise} />
+          </NotificationProvider>
         </RunsProvider>
       </Suspense>
     </ErrorBoundary>
@@ -96,7 +101,8 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { state, dispatch } = useRunsStore();
-  useRunNotifications(state, modules);
+  useRunEvents(state, modules);
+  useSystemNotifications();
 
   const select = (moduleId: string) => {
     for (const visited of [selectedId, moduleId]) {
@@ -147,6 +153,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
           ))}
         </main>
       </div>
+      <Toaster onOpenModule={select} />
       {isSettingsOpen && (
         <SettingsDialog
           onClose={() => {

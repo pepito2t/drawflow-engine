@@ -41,6 +41,11 @@ Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 - Les modules ne s'importent pas entre eux. Le partage passe par `core/` ou par une lib interne dédiée.
 - Ajouter un module ne doit nécessiter **aucune modification** de l'UI, de Rust ou du cœur (hormis l'enregistrement automatique par découverte).
 
+## Pilotage externe (Stream Deck)
+- Toute l'application doit rester pilotable depuis l'extérieur (Stream Deck, plus tard LLM local).
+- Chaque action de l'UI passe par une **commande nommée** (registre unique), jamais par une logique propre à un composant.
+- Chaque événement notable (début/fin de traitement, erreur, paramètres enregistrés, mise à jour…) passe par le **centre de notifications** ; toasts, notifications système et intégrations s'y abonnent.
+
 ## Règles de code — Clean Code
 - Fonctions courtes à responsabilité unique ; noms explicites ; pas d'abréviations obscures.
 - Séparation stricte : `service.py` = logique pure et testable sans fichiers réels ; `adapters.py` = I/O. Injection des adapters dans le service.
