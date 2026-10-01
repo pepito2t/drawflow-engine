@@ -4,11 +4,13 @@ import sys
 import traceback
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ErrorEvent, make_stream_emitter
 from engine.core.registry import discover_modules, get_module
 from engine.core.runner import read_input_file, run_module
+from engine.core.settings import describe_settings, load_run_settings, save_settings
 
 EXIT_SUCCESS = 0
 EXIT_BUSINESS_ERROR = 1
@@ -22,10 +24,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = _build_parser().parse_args(argv)
     emit = make_stream_emitter(sys.stdout)
     try:
-        if arguments.command == "list-modules":
-            _list_modules()
-        else:
-            _run(arguments.module_id, Path(arguments.input), emit)
+        _dispatch(arguments, emit)
     except EngineError as error:
         file = str(error.file) if error.file else None
         emit(ErrorEvent(message=error.message, file=file, hint=error.hint))
@@ -42,28 +41,49 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="engine")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("list-modules", help="Liste les manifestes des modules (JSON).")
+
     run_parser = commands.add_parser("run", help="Exécute un module (flux NDJSON).")
     run_parser.add_argument("module_id")
-    run_parser.add_argument("--input", required=True, help="Fichier JSON des paramètres.")
+    run_parser.add_argument("--input", type=Path, required=True, help="Paramètres du formulaire.")
+    run_parser.add_argument("--settings", type=Path, help="Fichier des paramètres de l'app.")
+
+    settings_parser = commands.add_parser("settings", help="Lit ou enregistre les paramètres.")
+    settings_commands = settings_parser.add_subparsers(dest="settings_command", required=True)
+    get_parser = settings_commands.add_parser("get", help="Sections, schémas et valeurs (JSON).")
+    get_parser.add_argument("--settings", type=Path)
+    set_parser = settings_commands.add_parser("set", help="Valide et enregistre des sections.")
+    set_parser.add_argument("--settings", type=Path, required=True)
+    set_parser.add_argument("--input", type=Path, required=True, help="Sections à enregistrer.")
     return parser
 
 
-def _list_modules() -> None:
-    catalog = [
+def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
+    if arguments.command == "list-modules":
+        _write_json(_module_catalog())
+    elif arguments.command == "run":
+        module = get_module(arguments.module_id)
+        settings = load_run_settings(arguments.settings, module)
+        run_module(module, read_input_file(arguments.input), settings, emit)
+    elif arguments.settings_command == "set":
+        save_settings(arguments.settings, read_input_file(arguments.input), discover_modules())
+        _write_json({"sections": describe_settings(arguments.settings, discover_modules())})
+    else:
+        _write_json({"sections": describe_settings(arguments.settings, discover_modules())})
+
+
+def _module_catalog() -> list[dict[str, Any]]:
+    return [
         {
             "manifest": module.manifest.model_dump(),
             "inputs_schema": module.inputs_model.model_json_schema(),
         }
         for module in discover_modules().values()
     ]
-    sys.stdout.write(json.dumps(catalog, ensure_ascii=False) + "\n")
+
+
+def _write_json(payload: object) -> None:
+    sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
     sys.stdout.flush()
-
-
-def _run(module_id: str, input_path: Path, emit: Emit) -> None:
-    module = get_module(module_id)
-    raw_inputs = read_input_file(input_path)
-    run_module(module, raw_inputs, emit)
 
 
 def _force_utf8_output() -> None:

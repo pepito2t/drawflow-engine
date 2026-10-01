@@ -3,12 +3,13 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
-from pydantic.fields import FieldInfo
 
-from engine.core.contract import ModuleResult
+from engine.core.contract import ModuleResult, RunContext
 from engine.core.errors import InputFileError, InvalidInputError
 from engine.core.events import Emit, ResultEvent
 from engine.core.registry import AnyModule
+from engine.core.settings import RunSettings
+from engine.core.validation import describe_validation_error
 
 
 def read_input_file(path: Path) -> dict[str, Any]:
@@ -27,9 +28,12 @@ def read_input_file(path: Path) -> dict[str, Any]:
     return content
 
 
-def run_module(module: AnyModule, raw_inputs: dict[str, Any], emit: Emit) -> ModuleResult:
+def run_module(
+    module: AnyModule, raw_inputs: dict[str, Any], settings: RunSettings, emit: Emit
+) -> ModuleResult:
     inputs = _validate_inputs(module, raw_inputs)
-    result = module.run(inputs, emit)
+    context = RunContext(emit=emit, general=settings.general, module_settings=settings.module)
+    result = module.run(inputs, context)
     emit(ResultEvent(summary=result.summary, outputs=[str(path) for path in result.outputs]))
     return result
 
@@ -39,21 +43,6 @@ def _validate_inputs(module: AnyModule, raw_inputs: dict[str, Any]) -> Any:
         return module.inputs_model.model_validate(raw_inputs)
     except ValidationError as error:
         raise InvalidInputError(
-            "Champs invalides : " + _describe(module, error),
+            "Champs invalides : " + describe_validation_error(module.inputs_model, error),
             hint="Corrigez les champs indiqués puis relancez.",
         ) from error
-
-
-def _describe(module: AnyModule, error: ValidationError) -> str:
-    return "; ".join(
-        f"{_field_label(module, issue['loc'])} ({issue['msg']})" for issue in error.errors()
-    )
-
-
-def _field_label(module: AnyModule, location: tuple[int | str, ...]) -> str:
-    if not location:
-        return "formulaire"
-    field: FieldInfo | None = module.inputs_model.model_fields.get(str(location[0]))
-    if field is None or field.title is None:
-        return ".".join(str(part) for part in location)
-    return field.title

@@ -1,7 +1,7 @@
 import pytest
 
-from engine.core.contract import UI_KIND_SCHEMA_KEY
 from engine.core.errors import UnknownModuleError
+from engine.core.fields import UI_KIND_SCHEMA_KEY
 from engine.core.registry import discover_modules, get_module
 
 
