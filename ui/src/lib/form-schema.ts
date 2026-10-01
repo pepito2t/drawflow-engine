@@ -8,6 +8,7 @@ export const UI_KINDS = [
   "output_folder",
   "template",
   "text",
+  "number",
   "bool",
   "enum",
 ] as const;
@@ -111,16 +112,21 @@ function resolveOptions(schema: InputsSchema, property: PropertySchema): string[
 }
 
 function defaultValueFor(kind: UiKind, declared: unknown, options: string[]): FormValue {
+  const value = toFormValue(kind, declared);
+  return kind === "enum" && value === "" ? (options[0] ?? "") : value;
+}
+
+export function toFormValue(kind: UiKind, raw: unknown): FormValue {
   if (kind === "bool") {
-    return typeof declared === "boolean" ? declared : false;
+    return raw === true;
   }
   if (isMultipleKind(kind)) {
-    return Array.isArray(declared) ? declared.map(String) : [];
+    return Array.isArray(raw) ? raw.map(String) : [];
   }
-  if (typeof declared === "string") {
-    return declared;
+  if (typeof raw === "string" || typeof raw === "number") {
+    return String(raw);
   }
-  return kind === "enum" ? (options[0] ?? "") : "";
+  return "";
 }
 
 function isEmpty(value: FormValue | undefined): boolean {

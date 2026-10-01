@@ -1,4 +1,5 @@
 mod error;
+mod paths;
 mod sidecar;
 
 use sidecar::RunningEngine;
@@ -10,6 +11,8 @@ pub fn run() {
         .manage(RunningEngine::default())
         .invoke_handler(tauri::generate_handler![
             sidecar::list_modules,
+            sidecar::get_settings,
+            sidecar::save_settings,
             sidecar::run_module,
             sidecar::cancel_run
         ])

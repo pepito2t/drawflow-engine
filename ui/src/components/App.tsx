@@ -1,34 +1,25 @@
-import { Suspense, use, useCallback, useState } from "react";
+import { Suspense, use, useState } from "react";
+import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
 import { listModules } from "../lib/tauri/engine";
 import { AppShell } from "./AppShell";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
-import { ModuleTabs, tabPanelId } from "./ModuleTabs";
+import { ModuleTabs, SETTINGS_PANEL_ID, tabPanelId, type Selection } from "./ModuleTabs";
+import { SettingsView } from "./SettingsView";
 import { ModuleWorkspace } from "./ModuleWorkspace";
 import { Loader } from "./Spinner";
-
-interface CatalogAttempt {
-  id: number;
-  promise: Promise<CatalogModule[]>;
-}
 
 function loadCatalog(): Promise<CatalogModule[]> {
   return listModules().then(parseCatalog);
 }
 
 export function App() {
-  const [attempt, setAttempt] = useState<CatalogAttempt>(() => ({ id: 0, promise: loadCatalog() }));
-  const retry = useCallback(() => {
-    setAttempt((current) => ({ id: current.id + 1, promise: loadCatalog() }));
-  }, []);
+  const { id, promise, retry } = useRetryablePromise(loadCatalog);
 
   return (
-    <ErrorBoundary
-      key={attempt.id}
-      fallback={(error) => <CatalogFailure error={error} onRetry={retry} />}
-    >
+    <ErrorBoundary key={id} fallback={(error) => <CatalogFailure error={error} onRetry={retry} />}>
       <Suspense
         fallback={
           <AppShell engine={{ state: "loading" }}>
@@ -36,7 +27,7 @@ export function App() {
           </AppShell>
         }
       >
-        <CatalogView catalogPromise={attempt.promise} />
+        <CatalogView catalogPromise={promise} />
       </Suspense>
     </ErrorBoundary>
   );
@@ -60,12 +51,17 @@ function CatalogFailure({ error, onRetry }: { error: unknown; onRetry: () => voi
 
 function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule[]> }) {
   const modules = use(catalogPromise);
-  const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
+  const firstModuleId = modules[0]?.manifest.id;
+  const [selection, setSelection] = useState<Selection | null>(
+    firstModuleId ? { kind: "module", id: firstModuleId } : { kind: "settings" },
+  );
+  const isModuleSelected = (moduleId: string) =>
+    selection?.kind === "module" && selection.id === moduleId;
 
   return (
     <AppShell engine={{ state: "ready", moduleCount: modules.length }}>
       <div className="layout">
-        <ModuleTabs modules={modules} selectedId={selectedId} onSelect={setSelectedId} />
+        <ModuleTabs modules={modules} selection={selection} onSelect={setSelection} />
         <main className="workspace">
           {modules.length === 0 && <p className="muted">Aucune fonctionnalité disponible.</p>}
           {modules.map((module) => (
@@ -73,11 +69,16 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
               key={module.manifest.id}
               role="tabpanel"
               id={tabPanelId(module.manifest.id)}
-              hidden={selectedId !== module.manifest.id}
+              hidden={!isModuleSelected(module.manifest.id)}
             >
               <ModuleWorkspace module={module} />
             </div>
           ))}
+          {selection?.kind === "settings" && (
+            <div role="tabpanel" id={SETTINGS_PANEL_ID}>
+              <SettingsView />
+            </div>
+          )}
         </main>
       </div>
     </AppShell>

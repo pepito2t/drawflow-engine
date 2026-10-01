@@ -31,14 +31,14 @@ export function parseCatalog(rawJson: string): CatalogModule[] {
   }
   return parsed.data.map(({ manifest, inputs_schema }) => ({
     manifest,
-    fields: describeFields(parseInputsSchema(manifest.id, inputs_schema)),
+    fields: parseFormFields(`module « ${manifest.id} »`, inputs_schema),
   }));
 }
 
-function parseInputsSchema(moduleId: string, rawSchema: unknown) {
+export function parseFormFields(owner: string, rawSchema: unknown): FieldDescriptor[] {
   const parsed = inputsSchemaSchema.safeParse(rawSchema);
   if (!parsed.success) {
-    throw new CatalogError(`Le formulaire du module « ${moduleId} » est invalide.`);
+    throw new CatalogError(`Le formulaire du ${owner} est invalide.`);
   }
-  return parsed.data;
+  return describeFields(parsed.data);
 }
