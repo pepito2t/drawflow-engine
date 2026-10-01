@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { CatalogError } from "./catalog";
-import { parseSettings, toSettingsPayload, valuesBySection } from "./settings";
+import {
+  parseSettings,
+  readNotificationThreshold,
+  toSettingsPayload,
+  valuesBySection,
+} from "./settings";
 
 const response = {
   sections: [
@@ -44,5 +49,23 @@ describe("toSettingsPayload", () => {
     const values = valuesBySection(sections);
 
     expect(toSettingsPayload(sections, values)).toEqual({ general: { batch_size: "8" } });
+  });
+});
+
+describe("readNotificationThreshold", () => {
+  it("reads the general threshold", () => {
+    const withThreshold = structuredClone(response);
+    const general = withThreshold.sections[0];
+    if (!general) throw new Error("fixture");
+    Object.assign(general.schema.properties, {
+      notification_threshold_seconds: { title: "Notifier après", "x-ui": "number" },
+    });
+    Object.assign(general.values, { notification_threshold_seconds: 30 });
+
+    expect(readNotificationThreshold(JSON.stringify(withThreshold))).toBe(30);
+  });
+
+  it("falls back to the default when absent", () => {
+    expect(readNotificationThreshold(JSON.stringify(response))).toBe(10);
   });
 });

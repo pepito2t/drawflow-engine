@@ -6,6 +6,8 @@ from engine.core.fields import ui_field
 
 DEFAULT_BATCH_SIZE = 4
 MAX_BATCH_SIZE = 32
+DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10
+MAX_NOTIFICATION_THRESHOLD_SECONDS = 3600
 
 
 class SettingsSection(BaseModel):
@@ -35,4 +37,15 @@ class GeneralSettings(SettingsSection):
         default=DEFAULT_BATCH_SIZE,
         ge=1,
         le=MAX_BATCH_SIZE,
+    )
+    notification_threshold_seconds: int = ui_field(
+        "number",
+        label="Notifier après (secondes)",
+        default=DEFAULT_NOTIFICATION_THRESHOLD_SECONDS,
+        description=(
+            "Une notification système signale la fin des traitements plus longs que cette durée, "
+            "ou de tout traitement terminé pendant que l'application est en arrière-plan."
+        ),
+        ge=0,
+        le=MAX_NOTIFICATION_THRESHOLD_SECONDS,
     )
