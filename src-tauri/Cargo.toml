@@ -1,0 +1,26 @@
+[package]
+name = "drawflow"
+version = "0.1.0"
+description = "Automatisation des tâches du dessinateur en façade"
+edition = "2021"
+rust-version = "1.85"
+
+[lib]
+name = "drawflow_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+tauri-plugin-dialog = "2.8"
+tauri-plugin-shell = "2.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3.27"
+thiserror = "2"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
