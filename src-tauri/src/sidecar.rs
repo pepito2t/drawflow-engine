@@ -1,26 +1,25 @@
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::{Mutex, MutexGuard};
 
 use serde::Serialize;
-use tauri::{ipc::Channel, AppHandle, State};
+use tauri::{ipc::Channel, AppHandle, Manager, State};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use tempfile::NamedTempFile;
 
 use crate::error::BridgeError;
 use crate::paths::settings_file;
+use crate::runs::{Killable, RunId, RunRegistry};
 
 const SIDECAR_NAME: &str = "engine";
 const INPUT_FILE_PREFIX: &str = "drawflow-input-";
 const INPUT_FILE_SUFFIX: &str = ".json";
 
-#[derive(Default)]
-pub struct RunningEngine(Mutex<Option<CommandChild>>);
+pub type EngineRuns = RunRegistry<CommandChild>;
 
-impl RunningEngine {
-    fn lock(&self) -> Result<MutexGuard<'_, Option<CommandChild>>, BridgeError> {
-        self.0.lock().map_err(|_| BridgeError::StatePoisoned)
+impl Killable for CommandChild {
+    fn kill_process(self) -> Result<(), BridgeError> {
+        Ok(self.kill()?)
     }
 }
 
@@ -65,42 +64,41 @@ pub async fn save_settings(
 }
 
 #[tauri::command]
-pub async fn run_module(
+pub fn run_module(
     app: AppHandle,
-    engine: State<'_, RunningEngine>,
+    runs: State<'_, EngineRuns>,
     module_id: String,
     inputs: serde_json::Value,
     on_event: Channel<EngineMessage>,
-) -> Result<(), BridgeError> {
+) -> Result<RunId, BridgeError> {
     let input_file = write_input_file(&inputs)?;
     let input_path = path_argument(input_file.path().to_path_buf());
     let settings_path = path_argument(settings_file(&app)?);
-    let mut receiver = {
-        let mut running = engine.lock()?;
-        if running.is_some() {
-            return Err(BridgeError::RunInProgress);
-        }
-        let (receiver, child) = app
+    let (run_id, mut receiver) = runs.start(&module_id, || {
+        Ok(app
             .shell()
             .sidecar(SIDECAR_NAME)?
             .args(run_arguments(&module_id, input_path, settings_path))
-            .spawn()?;
-        *running = Some(child);
-        receiver
-    };
+            .spawn()?)
+    })?;
 
-    let relay_result = relay_events(&mut receiver, &on_event).await;
-    engine.lock()?.take();
-    drop(input_file);
-    relay_result
+    let task_run_id = run_id.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(error) = relay_events(&mut receiver, &on_event).await {
+            eprintln!("Relais des événements interrompu ({task_run_id}) : {error}");
+        }
+        let runs = app.state::<EngineRuns>();
+        if let Err(error) = runs.finish(&task_run_id) {
+            eprintln!("Fin de traitement non enregistrée ({task_run_id}) : {error}");
+        }
+        drop(input_file);
+    });
+    Ok(run_id)
 }
 
 #[tauri::command]
-pub fn cancel_run(engine: State<'_, RunningEngine>) -> Result<(), BridgeError> {
-    if let Some(child) = engine.lock()?.take() {
-        child.kill()?;
-    }
-    Ok(())
+pub fn cancel_run(runs: State<'_, EngineRuns>, run_id: RunId) -> Result<(), BridgeError> {
+    runs.cancel(&run_id)
 }
 
 async fn query_engine(

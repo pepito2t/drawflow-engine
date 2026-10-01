@@ -19,15 +19,15 @@ export function runModule(
   moduleId: string,
   inputs: FormValues,
   onMessage: (message: EngineMessage) => void,
-): Promise<void> {
+): Promise<string> {
   const channel = new Channel<unknown>((raw) => {
     onMessage(engineMessageSchema.parse(raw));
   });
-  return invoke<undefined>("run_module", { moduleId, inputs, onEvent: channel });
+  return invoke<string>("run_module", { moduleId, inputs, onEvent: channel });
 }
 
-export function cancelRun(): Promise<void> {
-  return invoke<undefined>("cancel_run");
+export function cancelRun(runId: string): Promise<void> {
+  return invoke<undefined>("cancel_run", { runId });
 }
 
 export function describeBridgeError(error: unknown): string {
