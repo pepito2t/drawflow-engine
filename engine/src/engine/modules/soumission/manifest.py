@@ -8,6 +8,7 @@ MANIFEST = ModuleManifest(
     description="Rassemble les soumissions XLSX (ou PDF avec XLSX joint) en un tableau normalisé.",
     version="0.1.0",
     order=TAB_ORDER,
+    icon="table",
     instructions=[
         "Ajoutez des soumissions XLSX ou PDF, et/ou les dossiers qui les contiennent.",
         "Plusieurs dossiers sont possibles.",

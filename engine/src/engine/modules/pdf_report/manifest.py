@@ -8,6 +8,7 @@ MANIFEST = ModuleManifest(
     description="Relève le cartouche et les références des plans PDF et génère un rapport Word.",
     version="0.1.0",
     order=TAB_ORDER,
+    icon="report",
     instructions=[
         "Ajoutez des plans PDF et/ou des dossiers de plans (Parcourir ou glisser-déposer).",
         "Indiquez le nom du projet et, si besoin, un modèle Word à balises.",

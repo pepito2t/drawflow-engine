@@ -3,6 +3,7 @@ import { useRunsStore } from "../hooks/runs-context";
 import type { CatalogModule } from "../lib/catalog";
 import { entryFor } from "../lib/runs-store";
 import type { RunStatus } from "../lib/run-state";
+import { ModuleIconView } from "./ModuleIconView";
 import { Spinner } from "./Spinner";
 
 interface ModuleTabsProps {
@@ -40,7 +41,10 @@ export function ModuleTabs({ modules, selectedId, onSelect, footer }: ModuleTabs
                 onSelect(manifest.id);
               }}
             >
-              <span>{manifest.name}</span>
+              <span className="side-tab-label">
+                <ModuleIconView name={manifest.icon} />
+                {manifest.name}
+              </span>
               <TabRunBadge status={entry.run.status} unseen={entry.unseenOutcome && !isSelected} />
             </button>
           );

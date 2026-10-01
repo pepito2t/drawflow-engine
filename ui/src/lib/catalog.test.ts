@@ -30,4 +30,10 @@ describe("parseCatalog", () => {
 
     expect(() => parseCatalog(JSON.stringify([broken]))).toThrow(/hello/);
   });
+
+  it("falls back to the generic icon for unknown icons", () => {
+    const entry = { ...helloEntry, manifest: { ...helloEntry.manifest, icon: "rocket" } };
+
+    expect(parseCatalog(JSON.stringify([entry]))[0]?.manifest.icon).toBe("module");
+  });
 });

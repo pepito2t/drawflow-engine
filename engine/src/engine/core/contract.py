@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -8,6 +9,8 @@ from engine.core.events import Emit
 from engine.core.settings_models import GeneralSettings, ModuleSettings
 
 MODULE_ID_PATTERN = r"^[a-z][a-z0-9-]*$"
+
+ModuleIcon = Literal["module", "list", "report", "table", "check"]
 
 
 class ModuleManifest(BaseModel):
@@ -21,6 +24,7 @@ class ModuleManifest(BaseModel):
     instructions: list[str] = Field(
         min_length=1, description="Mode d'emploi, une étape par entrée."
     )
+    icon: ModuleIcon = Field(default="module", description="Icône de l'onglet.")
 
 
 class ModuleInputs(BaseModel):
