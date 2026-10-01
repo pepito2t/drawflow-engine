@@ -29,3 +29,11 @@ class InvalidInputError(EngineError):
 
 class OutputWriteError(EngineError):
     pass
+
+
+class SettingsFileError(EngineError):
+    pass
+
+
+class InvalidSettingsError(EngineError):
+    pass

@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from engine.core.contract import ModuleInputs, ui_field
+from engine.core.contract import ModuleInputs
+from engine.core.fields import ui_field
 
 
 class HelloInputs(ModuleInputs):

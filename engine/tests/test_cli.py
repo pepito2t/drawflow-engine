@@ -85,3 +85,41 @@ def test_missing_input_file_names_the_file(tmp_path: Path) -> None:
     assert completed.returncode == EXIT_BUSINESS_ERROR
     [event] = ndjson_events(completed.stdout)
     assert event["file"] == str(missing)
+
+
+def test_settings_set_then_get(tmp_path: Path) -> None:
+    settings_file = tmp_path / "settings.json"
+    values = write_inputs(tmp_path, {"general": {"batch_size": 6}})
+
+    saved = run_cli("settings", "set", "--settings", str(settings_file), "--input", str(values))
+    fetched = run_cli("settings", "get", "--settings", str(settings_file))
+
+    assert saved.returncode == EXIT_SUCCESS, saved.stdout
+    general = json.loads(fetched.stdout)["sections"][0]
+    assert general["values"]["batch_size"] == 6
+
+
+def test_settings_set_rejects_invalid_values(tmp_path: Path) -> None:
+    values = write_inputs(tmp_path, {"general": {"batch_size": 0}})
+
+    completed = run_cli(
+        "settings", "set", "--settings", str(tmp_path / "s.json"), "--input", str(values)
+    )
+
+    assert completed.returncode == EXIT_BUSINESS_ERROR
+    [event] = ndjson_events(completed.stdout)
+    assert "Fichiers traités en parallèle" in event["message"]
+
+
+def test_run_reports_invalid_stored_settings(tmp_path: Path) -> None:
+    settings_file = tmp_path / "settings.json"
+    settings_file.write_text(json.dumps({"general": {"batch_size": 0}}), encoding="utf-8")
+    input_file = write_inputs(tmp_path, {"name": "Zoé", "output_folder": str(tmp_path)})
+
+    completed = run_cli(
+        "run", "hello", "--input", str(input_file), "--settings", str(settings_file)
+    )
+
+    assert completed.returncode == EXIT_BUSINESS_ERROR
+    [event] = ndjson_events(completed.stdout)
+    assert event["hint"] == "Ouvrez Paramètres pour corriger les valeurs indiquées."

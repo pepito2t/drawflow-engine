@@ -1,25 +1,12 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic_core import PydanticUndefined
 
 from engine.core.events import Emit
+from engine.core.settings_models import GeneralSettings, ModuleSettings
 
-UiKind = Literal[
-    "file",
-    "files",
-    "folder",
-    "folders",
-    "output_folder",
-    "template",
-    "text",
-    "bool",
-    "enum",
-]
-UI_KIND_SCHEMA_KEY = "x-ui"
 MODULE_ID_PATTERN = r"^[a-z][a-z0-9-]*$"
 
 
@@ -48,25 +35,20 @@ class ModuleResult(BaseModel):
 
 
 @dataclass(frozen=True)
+class RunContext:
+    emit: Emit
+    general: GeneralSettings
+    module_settings: ModuleSettings | None = None
+
+    def settings_as[SettingsT: ModuleSettings](self, model: type[SettingsT]) -> SettingsT:
+        if not isinstance(self.module_settings, model):
+            raise TypeError(f"Le module attend des paramètres {model.__name__}.")
+        return self.module_settings
+
+
+@dataclass(frozen=True)
 class EngineModule[InputsT: ModuleInputs]:
     manifest: ModuleManifest
     inputs_model: type[InputsT]
-    run: Callable[[InputsT, Emit], ModuleResult]
-
-
-def ui_field(
-    kind: UiKind,
-    *,
-    label: str,
-    default: Any = PydanticUndefined,
-    description: str | None = None,
-    **constraints: Any,
-) -> Any:
-    """Declares a form field; `kind` drives the widget the UI generates."""
-    return Field(
-        default,
-        title=label,
-        description=description,
-        json_schema_extra={UI_KIND_SCHEMA_KEY: kind},
-        **constraints,
-    )
+    run: Callable[[InputsT, RunContext], ModuleResult]
+    settings_model: type[ModuleSettings] | None = None
