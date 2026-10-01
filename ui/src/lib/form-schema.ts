@@ -11,10 +11,16 @@ export const UI_KINDS = [
   "number",
   "bool",
   "enum",
+  "mapping",
 ] as const;
 
 export type UiKind = (typeof UI_KINDS)[number];
-export type FormValue = string | string[] | boolean;
+export interface MappingRow {
+  key: string;
+  value: string;
+}
+
+export type FormValue = string | string[] | boolean | MappingRow[];
 export type FormValues = Record<string, FormValue>;
 
 const MULTIPLE_PATH_KINDS: ReadonlySet<UiKind> = new Set(["files", "folders"]);
@@ -35,7 +41,11 @@ const propertySchema = z.object({
   default: z.unknown().optional(),
   enum: z.array(z.string()).optional(),
   $ref: z.string().optional(),
+  "x-ui-key-label": z.string().optional(),
+  "x-ui-value-label": z.string().optional(),
 });
+
+const mappingRowsSchema = z.array(z.object({ key: z.string(), value: z.string() }));
 
 export const inputsSchemaSchema = z.object({
   properties: z.record(z.string(), propertySchema),
@@ -54,6 +64,7 @@ export interface FieldDescriptor {
   required: boolean;
   options: string[];
   defaultValue: FormValue;
+  mappingLabels: { key: string; value: string } | null;
 }
 
 export function isPathKind(kind: UiKind): boolean {
@@ -80,6 +91,7 @@ export function describeFields(schema: InputsSchema): FieldDescriptor[] {
       required: required.has(name),
       options,
       defaultValue: defaultValueFor(property["x-ui"], property.default, options),
+      mappingLabels: mappingLabelsFor(property),
     };
   });
 }
@@ -99,8 +111,33 @@ export function mergeDroppedPaths(kind: UiKind, current: FormValue, dropped: str
   if (!isMultipleKind(kind)) {
     return dropped[0] ?? current;
   }
-  const existing = Array.isArray(current) ? current : [];
-  return [...new Set([...existing, ...dropped])];
+  return [...new Set([...toPathList(current), ...dropped])];
+}
+
+export function toPathList(value: FormValue): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  return typeof value === "string" && value !== "" ? [value] : [];
+}
+
+export function toTextValue(value: FormValue): string {
+  return typeof value === "string" ? value : "";
+}
+
+export function toMappingRows(value: FormValue): MappingRow[] {
+  const parsed = mappingRowsSchema.safeParse(value);
+  return parsed.success ? parsed.data : [];
+}
+
+function mappingLabelsFor(property: PropertySchema): FieldDescriptor["mappingLabels"] {
+  if (property["x-ui"] !== "mapping") {
+    return null;
+  }
+  return {
+    key: property["x-ui-key-label"] ?? "Clé",
+    value: property["x-ui-value-label"] ?? "Valeur",
+  };
 }
 
 function resolveOptions(schema: InputsSchema, property: PropertySchema): string[] {
@@ -119,6 +156,10 @@ function defaultValueFor(kind: UiKind, declared: unknown, options: string[]): Fo
 export function toFormValue(kind: UiKind, raw: unknown): FormValue {
   if (kind === "bool") {
     return raw === true;
+  }
+  if (kind === "mapping") {
+    const parsed = mappingRowsSchema.safeParse(raw);
+    return parsed.success ? parsed.data : [];
   }
   if (isMultipleKind(kind)) {
     return Array.isArray(raw) ? raw.map(String) : [];

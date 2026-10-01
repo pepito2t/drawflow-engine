@@ -4,6 +4,7 @@ import {
   initialValues,
   mergeDroppedPaths,
   toEngineInputs,
+  toMappingRows,
   UI_KINDS,
   type InputsSchema,
 } from "./form-schema";
@@ -53,6 +54,38 @@ describe("describeFields", () => {
     const [field] = describeFields({ properties: { label: { "x-ui": "text", default: "Lot A" } } });
 
     expect(field?.defaultValue).toBe("Lot A");
+  });
+});
+
+describe("mapping fields", () => {
+  const mappingSchema: InputsSchema = {
+    properties: {
+      columns: {
+        title: "Colonnes",
+        "x-ui": "mapping",
+        "x-ui-key-label": "Colonne",
+        "x-ui-value-label": "Attribut",
+        default: [{ key: "Référence", value: "REF" }],
+      },
+    },
+  };
+
+  it("exposes labels and default rows", () => {
+    const [field] = describeFields(mappingSchema);
+
+    expect(field?.mappingLabels).toEqual({ key: "Colonne", value: "Attribut" });
+    expect(field?.defaultValue).toEqual([{ key: "Référence", value: "REF" }]);
+  });
+
+  it("converts malformed values to an empty list", () => {
+    expect(toMappingRows(["a"])).toEqual([]);
+  });
+
+  it("is sent to the engine as key/value objects", () => {
+    const fields = describeFields(mappingSchema);
+    const rows = [{ key: "Long.", value: "LONGUEUR" }];
+
+    expect(toEngineInputs(fields, { columns: rows })).toEqual({ columns: rows });
   });
 });
 

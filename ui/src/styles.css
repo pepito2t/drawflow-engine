@@ -548,6 +548,28 @@ small {
   align-items: flex-start;
 }
 
+.mapping-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mapping-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 32px;
+  gap: 6px;
+  align-items: center;
+}
+
+.mapping-header {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.mapping-add {
+  align-self: flex-start;
+}
+
 /* Run */
 
 .run-panel {
