@@ -1,5 +1,6 @@
 import { Suspense, use, useState } from "react";
 import { RunsProvider, useRunsStore } from "../hooks/runs-context";
+import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { NotificationProvider } from "../hooks/notification-center";
 import { useRunEvents } from "../hooks/use-run-events";
@@ -131,7 +132,10 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   );
 
   return (
-    <AppShell engine={{ state: "ready", moduleCount: modules.length }}>
+    <AppShell
+      engine={{ state: "ready", moduleCount: modules.length }}
+      canInstallUpdate={runningModuleIds(state).length === 0}
+    >
       <div className="layout">
         <ModuleTabs
           modules={modules}

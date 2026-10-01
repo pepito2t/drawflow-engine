@@ -1,5 +1,6 @@
 import { Suspense, use } from "react";
 import { getAppVersion } from "../lib/tauri/app";
+import { UpdateIndicator } from "./UpdateIndicator";
 
 export type EngineStatus =
   { state: "loading" } | { state: "ready"; moduleCount: number } | { state: "failed" };
@@ -11,16 +12,19 @@ const appVersionPromise: Promise<string> = getAppVersion().catch((error: unknown
   return UNKNOWN_VERSION;
 });
 
-export function StatusBar({ engine }: { engine: EngineStatus }) {
+interface StatusBarProps {
+  engine: EngineStatus;
+  canInstallUpdate: boolean;
+}
+
+export function StatusBar({ engine, canInstallUpdate }: StatusBarProps) {
   return (
     <footer className="status-bar">
       <div className="status-group">
         <EngineIndicator engine={engine} />
       </div>
       <div className="status-group">
-        <span className="status-item muted" title="Les mises à jour automatiques arrivent en M4.">
-          Mises à jour : non configurées
-        </span>
+        <UpdateIndicator canInstall={canInstallUpdate} />
         <span className="status-item">
           Drawflow v
           <Suspense fallback="…">
