@@ -1,9 +1,9 @@
 import re
-import unicodedata
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
 from engine.core.fields import KeyValue
+from engine.core.text import fold
 from engine.modules.pdf_report.reader import TextLine
 from engine.modules.pdf_report.settings import REGEX_PREFIX
 
@@ -50,9 +50,9 @@ def _by_regex(pattern: str, lines: Sequence[TextLine]) -> str:
 
 
 def _by_label(label: str, lines: Sequence[TextLine]) -> str:
-    wanted = _normalize(label)
+    wanted = fold(label)
     for index, line in enumerate(lines):
-        position = _normalize(line.text).find(wanted)
+        position = fold(line.text).find(wanted)
         if position < 0:
             continue
         after = line.text[position + len(label) :].strip(VALUE_SEPARATORS)
@@ -70,10 +70,3 @@ def _next_line_below(lines: Sequence[TextLine], index: int) -> str:
         if line.top > label_line.top and line.x1 >= label_line.x0 and line.x0 <= label_line.x1
     ]
     return below[0].text.strip() if below else ""
-
-
-def _normalize(text: str) -> str:
-    """Accent- and case-insensitive comparison; keeps one character per input character."""
-    decomposed = unicodedata.normalize("NFD", text)
-    stripped = "".join(char for char in decomposed if not unicodedata.combining(char))
-    return stripped.casefold() if len(stripped) == len(text) else text.casefold()
