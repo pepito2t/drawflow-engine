@@ -3,6 +3,7 @@ import re
 from pydantic import field_validator
 
 from engine.core.fields import KeyValue, mapping_field, ui_field
+from engine.core.naming import FileNameTemplate, file_name_template_field
 from engine.core.settings_models import ModuleSettings
 
 PERCENT_MAX = 100
@@ -17,6 +18,7 @@ DEFAULT_FIELDS = [
     KeyValue(key="auteur", value="Dessiné par"),
 ]
 DEFAULT_REFERENCE_PATTERN = r"\b[A-Z]{1,4}-\d{2,6}[A-Z]?\b"
+DEFAULT_FILE_NAME_TEMPLATE = "{projet}_rapport_{date}"
 
 
 def _zone_field(label: str, default: float) -> float:
@@ -46,6 +48,8 @@ class PdfReportSettings(ModuleSettings):
         default=DEFAULT_REFERENCE_PATTERN,
         description="Expression régulière des références relevées sur tout le plan.",
     )
+
+    file_name_template: FileNameTemplate = file_name_template_field(DEFAULT_FILE_NAME_TEMPLATE)
 
     @field_validator("fields")
     @classmethod
