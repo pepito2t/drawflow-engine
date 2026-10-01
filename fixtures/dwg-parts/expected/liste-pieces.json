@@ -1,0 +1,64 @@
+{
+  "rows": [
+    [
+      "Bloc",
+      "Référence",
+      "Désignation",
+      "Longueur",
+      "Matière",
+      "Finition",
+      "Quantité",
+      "Plans"
+    ],
+    [
+      "ASSEMBLAGE",
+      null,
+      null,
+      null,
+      null,
+      null,
+      2,
+      "Nord.dxf, Sud.dxf"
+    ],
+    [
+      "EQUERRE",
+      "EQ-40",
+      "Équerre 40",
+      null,
+      "ALU",
+      null,
+      4,
+      "Nord.dxf, Sud.dxf"
+    ],
+    [
+      "FENETRE",
+      "F-80",
+      null,
+      null,
+      null,
+      null,
+      2,
+      "Nord.dxf, Sud.dxf"
+    ],
+    [
+      "PANNEAU",
+      "P-900",
+      "Panneau composite",
+      "900",
+      "ALU",
+      "RAL 7016",
+      2,
+      "Nord.dxf, Sud.dxf"
+    ],
+    [
+      "PANNEAU",
+      "P-1200",
+      "Panneau composite",
+      "1200",
+      "ALU",
+      "RAL 7016",
+      4,
+      "Nord.dxf, Sud.dxf"
+    ]
+  ]
+}

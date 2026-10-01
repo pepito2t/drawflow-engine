@@ -61,7 +61,7 @@ def test_unknown_module_emits_error_event(tmp_path: Path) -> None:
             "type": "error",
             "message": "La fonctionnalité « nope » n'existe pas.",
             "file": None,
-            "hint": "Fonctionnalités disponibles : hello.",
+            "hint": "Fonctionnalités disponibles : dwg-parts, hello.",
         }
     ]
 
