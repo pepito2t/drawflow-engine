@@ -1,3 +1,4 @@
+import { STATUS_LABELS } from "../lib/run-labels";
 import type { LogEntry, RunState } from "../lib/run-state";
 import { ErrorPanel } from "./ErrorPanel";
 import { Spinner } from "./Spinner";
@@ -7,14 +8,6 @@ interface RunPanelProps {
   onStart: () => void;
   onCancel: () => void;
 }
-
-const STATUS_LABELS: Record<RunState["status"], string> = {
-  idle: "Prêt",
-  running: "En cours",
-  succeeded: "Terminé",
-  failed: "Échec",
-  cancelled: "Annulé",
-};
 
 export function RunPanel({ state, onStart, onCancel }: RunPanelProps) {
   const isRunning = state.status === "running";
