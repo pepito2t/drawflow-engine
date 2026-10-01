@@ -13,6 +13,7 @@ DEFAULT_COLUMNS = [
 ]
 DEFAULT_FILE_NAME_TEMPLATE = "{projet}_liste-pieces_{date}"
 BLOCK_PATTERN_SEPARATOR = ";"
+MAX_HEADER_ROW = 1000
 
 
 class DwgPartsSettings(ModuleSettings):
@@ -45,6 +46,20 @@ class DwgPartsSettings(ModuleSettings):
         label="Regrouper les pièces identiques",
         default=True,
         description="Les pièces dont toutes les colonnes sont égales forment une seule ligne.",
+    )
+    template_sheet: str = ui_field(
+        "text",
+        label="Feuille du modèle Excel",
+        default="",
+        description="Laisser vide pour utiliser la feuille active du modèle.",
+    )
+    header_row: int = ui_field(
+        "number",
+        label="Ligne d'en-tête",
+        default=1,
+        description="Les pièces sont écrites à partir de la ligne suivante.",
+        ge=1,
+        le=MAX_HEADER_ROW,
     )
     file_name_template: FileNameTemplate = file_name_template_field(DEFAULT_FILE_NAME_TEMPLATE)
 
