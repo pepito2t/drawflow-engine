@@ -7,7 +7,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
 
 ## Structure
 ```
-app/
+<racine du repo>/
   ui/                     # React + TS + Vite — affichage uniquement
   src-tauri/              # Tauri 2 — pont sidecar, dialogues, updater
   engine/                 # Moteur Python (uv), packagé en sidecar PyInstaller
@@ -26,12 +26,12 @@ app/
 ```
 
 ## Commandes
-> À compléter avec les commandes réelles après le scaffolding.
-- Moteur : `uv run pytest` · `uv run ruff check . && uv run ruff format --check .` · `uv run mypy --strict src`
-- UI : `pnpm lint` · `pnpm typecheck` · `pnpm test`
-- Rust : `cargo fmt --check` · `cargo clippy -- -D warnings`
-- Dev complet : `pnpm tauri dev`
-- Sidecar : `uv run pyinstaller ...` (nommage `engine-<target-triple>[.exe]` exigé par Tauri)
+- Installation : `pnpm install` · `(cd engine && uv sync)`
+- Moteur (dans `engine/`) : `uv run pytest` · `uv run ruff check . && uv run ruff format --check .` · `uv run mypy --strict src`
+- UI : `pnpm --filter ui lint` · `pnpm --filter ui typecheck` · `pnpm --filter ui test`
+- Rust (dans `src-tauri/`) : `cargo fmt --check` · `cargo clippy --all-targets -- -D warnings` · `cargo test`
+- Sidecar : `pnpm sidecar:build` (PyInstaller → `src-tauri/binaries/engine-<target-triple>[.exe]`) · smoke test : `uv run --project engine python scripts/smoke-sidecar.py src-tauri/binaries/engine-*`
+- Dev complet : `pnpm dev` (build du sidecar puis `tauri dev`)
 
 Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 
