@@ -41,3 +41,4 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/engine/modules"]
 addopts = ["--import-mode=importlib", "-ra"]
+markers = ["oda: requires ODA File Converter (skipped when absent)"]
