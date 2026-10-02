@@ -6,12 +6,16 @@ import sys
 import tempfile
 from pathlib import Path
 
+import anyio
 from engine.modules.dwg_parts.tests.plans import build_facade_plan
 from engine.modules.pdf_report.tests.plans import build_report_plan
 from engine.modules.soumission.tests.workbooks import submission_bytes
 from engine.testing.pdf import PdfSpec, TextItem, write_pdf
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
 EXPECTED_MODULE_IDS = ["dwg-parts", "pdf-report", "soumission"]
+EXPECTED_MCP_TOOLS = ["list_features", "list_presets", "list_templates"]
 PARALLEL_BATCH_SIZE = 2
 
 
@@ -46,7 +50,24 @@ def main(binary: Path) -> None:
         events = smoke_parts_list(binary, Path(workdir))
         events += smoke_report(binary, Path(workdir))
         events += smoke_soumission(binary, Path(workdir))
+        anyio.run(smoke_mcp, binary, settings_file)
     sys.stdout.write(f"Smoke OK: {len(events)} events\n")
+
+
+async def smoke_mcp(binary: Path, settings_file: Path) -> None:
+    """Handshakes with the frozen MCP server, as the assistant does."""
+    parameters = StdioServerParameters(
+        command=str(binary), args=["mcp", "--settings", str(settings_file)]
+    )
+    async with (
+        stdio_client(parameters) as (read, write),
+        ClientSession(read, write) as session,
+    ):
+        await session.initialize()
+        tools = sorted(tool.name for tool in (await session.list_tools()).tools)
+        features = await session.call_tool("list_features", {})
+    if tools != EXPECTED_MCP_TOOLS or features.isError:
+        raise SystemExit(f"Unexpected MCP server answer: {tools} {features}")
 
 
 def smoke_parts_list(binary: Path, workdir: Path) -> list[dict[str, object]]:

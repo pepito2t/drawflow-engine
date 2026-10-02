@@ -6,6 +6,8 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "docxtpl>=0.20.2,<0.21",
     "ezdxf>=1.4.4,<2",
+    "httpx>=0.28,<1",
+    "mcp>=1,<2",
     "openpyxl>=3.1.5,<4",
     "pdfplumber>=0.11.10,<0.12",
     "pydantic>=2.13,<3",
