@@ -24,17 +24,27 @@ class VersionSource:
 
 
 SOURCES = [
-    VersionSource(ROOT / "ui" / "package.json", re.compile(r'(?m)^(  "version": ")([^"]+)(")')),
+    VersionSource(
+        ROOT / "ui" / "package.json", re.compile(r'(?m)^(  "version": ")([^"]+)(")')
+    ),
     VersionSource(
         ROOT / "src-tauri" / "tauri.conf.json",
         re.compile(r'(?m)^(  "version": ")([^"]+)(")'),
     ),
-    VersionSource(ROOT / "src-tauri" / "Cargo.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')),
+    VersionSource(
+        ROOT / "src-tauri" / "Cargo.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')
+    ),
     VersionSource(
         ROOT / "src-tauri" / "Cargo.lock",
         re.compile(r'(?m)(^name = "drawflow"\nversion = ")([^"]+)(")'),
     ),
-    VersionSource(ROOT / "engine" / "pyproject.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')),
+    VersionSource(
+        ROOT / "engine" / "pyproject.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')
+    ),
+    VersionSource(
+        ROOT / "streamdeck" / "package.json",
+        re.compile(r'(?m)^(  "version": ")([^"]+)(")'),
+    ),
     VersionSource(
         ROOT / "engine" / "uv.lock",
         re.compile(r'(?m)(^name = "engine"\nversion = ")([^"]+)(")'),
@@ -42,12 +52,24 @@ SOURCES = [
 ]
 
 
+# Stream Deck manifests require a purely numeric four-part version (no pre-release suffix).
+STREAMDECK_MANIFEST = ROOT / "streamdeck" / "ch.drawflow.sdPlugin" / "manifest.json"
+MANIFEST_VERSION = re.compile(r'(?m)^(  "Version": ")([^"]+)(")')
+PRERELEASE_SEPARATOR = "-"
+
+
+def manifest_version(version: str) -> str:
+    return f"{version.split(PRERELEASE_SEPARATOR)[0]}.0"
+
+
 def read_versions() -> dict[Path, str]:
     versions: dict[Path, str] = {}
     for source in SOURCES:
         match = source.pattern.search(source.path.read_text(encoding="utf-8"))
         if match is None:
-            raise SystemExit(f"Version introuvable dans {source.path.relative_to(ROOT)}")
+            raise SystemExit(
+                f"Version introuvable dans {source.path.relative_to(ROOT)}"
+            )
         versions[source.path] = match.group(2)
     return versions
 
@@ -61,6 +83,11 @@ def check(tag: str | None) -> None:
         )
         raise SystemExit(f"Versions incohérentes :\n{details}")
     version = distinct.pop()
+    manifest = MANIFEST_VERSION.search(STREAMDECK_MANIFEST.read_text(encoding="utf-8"))
+    if manifest is None or manifest.group(2) != manifest_version(version):
+        raise SystemExit(
+            f"Version du plugin Stream Deck incohérente (attendu {manifest_version(version)})"
+        )
     if tag is not None and tag != f"{TAG_PREFIX}{version}":
         raise SystemExit(f"Le tag {tag} ne correspond pas à la version {version}")
     sys.stdout.write(f"Version {version} cohérente\n")
@@ -75,8 +102,17 @@ def bump(version: str) -> None:
             lambda match: f"{match.group(1)}{version}{match.group(3)}", content, count=1
         )
         source.path.write_text(updated, encoding="utf-8")
-    json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
-    sys.stdout.write(f"Version {version} appliquée ; commit puis tag {TAG_PREFIX}{version}\n")
+    content = STREAMDECK_MANIFEST.read_text(encoding="utf-8")
+    replacement = manifest_version(version)
+    content = MANIFEST_VERSION.sub(
+        lambda match: f"{match.group(1)}{replacement}{match.group(3)}", content, count=1
+    )
+    STREAMDECK_MANIFEST.write_text(content, encoding="utf-8")
+    for path in (ROOT / "src-tauri" / "tauri.conf.json", STREAMDECK_MANIFEST):
+        json.loads(path.read_text(encoding="utf-8"))
+    sys.stdout.write(
+        f"Version {version} appliquée ; commit puis tag {TAG_PREFIX}{version}\n"
+    )
 
 
 def main() -> None:

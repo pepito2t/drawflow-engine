@@ -90,3 +90,17 @@ jobs:
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
           args: --bundles nsis --config updater-config.json
+
+      - name: Build Stream Deck plugin
+        working-directory: streamdeck
+        run: |
+          pnpm build
+          pnpm validate
+          pnpm pack
+
+      - name: Attach Stream Deck plugin to the release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN || secrets.GITHUB_TOKEN }}
+        run: >
+          gh release upload "${GITHUB_REF_NAME}" streamdeck/dist/ch.drawflow.streamDeckPlugin
+          --repo "${RELEASES_OWNER}/${RELEASES_REPO}" --clobber
