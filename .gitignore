@@ -31,3 +31,8 @@ Thumbs.db
 .env.*
 *.key
 samples/
+
+# Stream Deck plugin build output
+streamdeck/ch.drawflow.sdPlugin/bin/
+streamdeck/ch.drawflow.sdPlugin/logs/
+streamdeck/dist/

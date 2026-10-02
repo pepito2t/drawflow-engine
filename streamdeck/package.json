@@ -1,0 +1,38 @@
+{
+  "name": "streamdeck",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "validate": "streamdeck validate ch.drawflow.sdPlugin",
+    "pack": "streamdeck pack ch.drawflow.sdPlugin --output dist --force"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "3.0.1",
+    "@elgato/utils": "0.6.0",
+    "ws": "8.22.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@elgato/cli": "1.10.1",
+    "@eslint/js": "10.0.1",
+    "@rollup/plugin-commonjs": "29.0.3",
+    "@rollup/plugin-node-resolve": "16.0.3",
+    "@rollup/plugin-typescript": "12.3.0",
+    "@types/node": "^22.20.4",
+    "@types/ws": "8.18.2",
+    "eslint": "10.11.0",
+    "globals": "17.13.0",
+    "prettier": "3.9.9",
+    "rollup": "4.63.6",
+    "tslib": "^2.8.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.0.3"
+  }
+}
