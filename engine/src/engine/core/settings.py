@@ -7,11 +7,19 @@ from pydantic import ValidationError
 
 from engine.core.errors import InvalidSettingsError, ModuleContractError, SettingsFileError
 from engine.core.registry import AnyModule
-from engine.core.settings_models import GeneralSettings, ModuleSettings, SettingsSection
+from engine.core.settings_models import (
+    AssistantSettings,
+    GeneralSettings,
+    ModuleSettings,
+    SettingsSection,
+)
 from engine.core.validation import describe_validation_error
 
 GENERAL_SECTION_ID = "general"
 GENERAL_SECTION_TITLE = "Général"
+ASSISTANT_SECTION_ID = "assistant"
+ASSISTANT_SECTION_TITLE = "Assistant"
+APP_SECTION_IDS = {GENERAL_SECTION_ID, ASSISTANT_SECTION_ID}
 MODULES_KEY = "modules"
 FIX_SETTINGS_HINT = "Ouvrez Paramètres pour corriger les valeurs indiquées."
 RESET_SETTINGS_HINT = (
@@ -37,10 +45,11 @@ class RunSettings:
 def section_specs(modules: dict[str, AnyModule]) -> list[SectionSpec]:
     specs = [SectionSpec(GENERAL_SECTION_ID, GENERAL_SECTION_TITLE, GeneralSettings)]
     for module_id, module in modules.items():
-        if module_id == GENERAL_SECTION_ID:
-            raise ModuleContractError(f"L'identifiant « {GENERAL_SECTION_ID} » est réservé.")
+        if module_id in APP_SECTION_IDS:
+            raise ModuleContractError(f"L'identifiant « {module_id} » est réservé.")
         if module.settings_model is not None:
             specs.append(SectionSpec(module_id, module.manifest.name, module.settings_model))
+    specs.append(SectionSpec(ASSISTANT_SECTION_ID, ASSISTANT_SECTION_TITLE, AssistantSettings))
     return specs
 
 
@@ -80,6 +89,11 @@ def load_run_settings(path: Path | None, module: AnyModule) -> RunSettings:
     manifest = module.manifest
     module_settings = load_section(module.settings_model, manifest.id, manifest.name, document)
     return RunSettings(general=general, module=module_settings)
+
+
+def load_assistant_settings(path: Path | None) -> AssistantSettings:
+    document = read_document(path)
+    return load_section(AssistantSettings, ASSISTANT_SECTION_ID, ASSISTANT_SECTION_TITLE, document)
 
 
 def describe_settings(path: Path | None, modules: dict[str, AnyModule]) -> list[dict[str, Any]]:
@@ -123,15 +137,15 @@ def _describe_section(spec: SectionSpec, document: Document) -> dict[str, Any]:
 
 
 def _raw_section(document: Document, section_id: str) -> Any:
-    if section_id == GENERAL_SECTION_ID:
-        return document.get(GENERAL_SECTION_ID, {})
+    if section_id in APP_SECTION_IDS:
+        return document.get(section_id, {})
     modules = document.get(MODULES_KEY, {})
     return modules.get(section_id, {}) if isinstance(modules, dict) else {}
 
 
 def _store_section(document: Document, section_id: str, values: Document) -> None:
-    if section_id == GENERAL_SECTION_ID:
-        document[GENERAL_SECTION_ID] = values
+    if section_id in APP_SECTION_IDS:
+        document[section_id] = values
         return
     modules = document.get(MODULES_KEY)
     if not isinstance(modules, dict):

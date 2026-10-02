@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from engine.assistant.events import make_assistant_emitter
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ErrorEvent, make_stream_emitter
 from engine.core.registry import discover_modules, get_module
@@ -26,6 +27,10 @@ EXIT_BUSINESS_ERROR = 1
 EXIT_INTERNAL_ERROR = 2
 INTERNAL_ERROR_MESSAGE = "Erreur interne inattendue."
 INTERNAL_ERROR_HINT = "Réessayez ; si le problème persiste, transmettez le journal au support."
+ASSISTANT_ACTIONS = {
+    "chat": "Un tour de conversation (flux NDJSON).",
+    "models": "Modèles disponibles sur le serveur local (JSON).",
+}
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -74,6 +79,11 @@ def _build_parser() -> argparse.ArgumentParser:
     mcp_parser = commands.add_parser("mcp", help="Serveur MCP de l'assistant (stdio).")
     mcp_parser.add_argument("--settings", type=Path, required=True)
 
+    assistant_parser = commands.add_parser("assistant", help="Assistant local (modèle + MCP).")
+    assistant_commands = assistant_parser.add_subparsers(dest="assistant_command", required=True)
+    for action, help_text in ASSISTANT_ACTIONS.items():
+        _add_request_parser(assistant_commands, action, help_text)
+
     templates_parser = commands.add_parser("templates", help="Bibliothèque de modèles de sortie.")
     templates_commands = templates_parser.add_subparsers(dest="templates_command", required=True)
     for action, help_text in TEMPLATE_ACTIONS.items():
@@ -96,6 +106,8 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
         _run(arguments, emit)
     elif arguments.command == "mcp":
         _serve_mcp(arguments.settings)
+    elif arguments.command == "assistant":
+        _assistant(arguments)
     elif arguments.command == "presets":
         _write_json(
             handle_presets(arguments.presets_command, arguments.settings, _request(arguments))
@@ -126,11 +138,20 @@ def _run(arguments: argparse.Namespace, emit: Emit) -> None:
     run_module(module, read_input_file(arguments.input), settings, emit, default_template)
 
 
+# The MCP SDK costs ~200 ms to import: only the commands that need it pay for it.
 def _serve_mcp(settings: Path) -> None:
-    # The MCP SDK costs ~200 ms to import: only the commands that need it pay for it.
     from engine.assistant.mcp_server import serve
 
     serve(settings)
+
+
+def _assistant(arguments: argparse.Namespace) -> None:
+    from engine.assistant import service
+
+    if arguments.assistant_command == "models":
+        _write_json(service.list_models(arguments.settings))
+    else:
+        service.chat(arguments.settings, _request(arguments), make_assistant_emitter())
 
 
 def _request(arguments: argparse.Namespace) -> dict[str, Any]:

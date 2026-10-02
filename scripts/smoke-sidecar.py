@@ -1,6 +1,7 @@
 """Runs the frozen sidecar end to end: catalog, settings, then every module."""
 
 import json
+import socket
 import subprocess
 import sys
 import tempfile
@@ -51,6 +52,7 @@ def main(binary: Path) -> None:
         events += smoke_report(binary, Path(workdir))
         events += smoke_soumission(binary, Path(workdir))
         anyio.run(smoke_mcp, binary, settings_file)
+        smoke_assistant(binary, Path(workdir))
     sys.stdout.write(f"Smoke OK: {len(events)} events\n")
 
 
@@ -68,6 +70,27 @@ async def smoke_mcp(binary: Path, settings_file: Path) -> None:
         features = await session.call_tool("list_features", {})
     if tools != EXPECTED_MCP_TOOLS or features.isError:
         raise SystemExit(f"Unexpected MCP server answer: {tools} {features}")
+
+
+def smoke_assistant(binary: Path, workdir: Path) -> None:
+    """The model client is bundled: an absent model yields a readable error event."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        closed_port = probe.getsockname()[1]
+    settings_file = workdir / "assistant-settings.json"
+    url = f"http://127.0.0.1:{closed_port}/v1"
+    settings_file.write_text(json.dumps({"assistant": {"model_server_url": url}}))
+    completed = subprocess.run(
+        [str(binary), "assistant", "models", "--settings", str(settings_file)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    if completed.returncode != 1 or "ne répond pas" not in completed.stdout:
+        raise SystemExit(
+            f"Unexpected assistant answer:\n{completed.stdout}{completed.stderr}"
+        )
 
 
 def smoke_parts_list(binary: Path, workdir: Path) -> list[dict[str, object]]:

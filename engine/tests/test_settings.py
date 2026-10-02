@@ -17,6 +17,7 @@ from engine.core.registry import AnyModule
 from engine.core.settings import (
     describe_settings,
     export_section,
+    load_assistant_settings,
     load_run_settings,
     read_document,
     read_section_import,
@@ -139,12 +140,12 @@ def test_invalid_stored_section_fails_the_run_with_a_readable_error(
     assert caught.value.hint is not None
 
 
-def test_describe_lists_general_then_module_sections(
+def test_describe_lists_general_then_module_sections_then_assistant(
     settings_file: Path, modules: dict[str, AnyModule]
 ) -> None:
     sections = describe_settings(settings_file, modules)
 
-    assert [section["id"] for section in sections] == ["general", "sample"]
+    assert [section["id"] for section in sections] == ["general", "sample", "assistant"]
     general: dict[str, Any] = sections[0]
     assert general["values"]["batch_size"] == DEFAULT_BATCH_SIZE
     assert general["schema"]["properties"]["batch_size"]["x-ui"] == "number"
@@ -163,9 +164,32 @@ def test_describe_falls_back_to_defaults_and_reports_invalid_section(
     assert "Préfixe" in sample["error"]
 
 
-def test_general_is_a_reserved_module_id() -> None:
+@pytest.mark.parametrize("reserved", ["general", "assistant"])
+def test_app_section_ids_are_reserved_module_ids(reserved: str) -> None:
     with pytest.raises(ModuleContractError):
-        section_specs({"general": make_module("general", SampleSettings)})
+        section_specs({reserved: make_module(reserved, SampleSettings)})
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["http://localhost:11434/v1/", "http://127.0.0.1:1234/v1", "http://[::1]:8080/v1"],
+)
+def test_assistant_accepts_model_servers_on_this_computer(
+    settings_file: Path, modules: dict[str, AnyModule], url: str
+) -> None:
+    save_settings(settings_file, {"assistant": {"model_server_url": url}}, modules)
+
+    assert load_assistant_settings(settings_file).model_server_url == url.rstrip("/")
+
+
+@pytest.mark.parametrize(
+    "url", ["https://api.openai.com/v1", "http://192.168.1.20:11434/v1", "ftp://localhost/v1", ""]
+)
+def test_assistant_refuses_model_servers_outside_this_computer(
+    settings_file: Path, modules: dict[str, AnyModule], url: str
+) -> None:
+    with pytest.raises(InvalidSettingsError, match="ce poste"):
+        save_settings(settings_file, {"assistant": {"model_server_url": url}}, modules)
 
 
 def test_exported_section_can_be_read_back(
