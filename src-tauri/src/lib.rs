@@ -1,5 +1,6 @@
 mod access;
 mod error;
+mod outputs;
 mod paths;
 mod runs;
 mod sidecar;
@@ -15,12 +16,14 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::init())
         .setup(updates::register_updater)
         .manage(EngineRuns::default())
         .manage(AccessLock::default())
         .invoke_handler(tauri::generate_handler![
             access::lock_status,
             updates::updater_configured,
+            outputs::open_output,
             access::unlock,
             access::change_access_code,
             sidecar::list_modules,

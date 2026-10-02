@@ -9,6 +9,7 @@ import { useNotificationCenter } from "./notification-center";
 interface Observed {
   status: RunStatus;
   startedAt: number;
+  progress: number | null;
 }
 
 const OUTCOMES: Partial<Record<RunStatus, RunOutcome>> = {
@@ -30,9 +31,18 @@ export function useRunEvents(state: RunsState, modules: CatalogModule[]): void {
       const moduleName =
         modules.find((module) => module.manifest.id === moduleId)?.manifest.name ?? moduleId;
       if (status === "running" && previous?.status !== "running") {
-        observed.current.set(moduleId, { status, startedAt: now });
+        observed.current.set(moduleId, { status, startedAt: now, progress: null });
         publish({ type: "runStarted", moduleId, moduleName });
         continue;
+      }
+      const progress = entry.run.progress;
+      if (status === "running" && progress && progress.current !== previous?.progress) {
+        publish({
+          type: "runProgress",
+          moduleId,
+          current: progress.current,
+          total: progress.total,
+        });
       }
       const outcome = OUTCOMES[status];
       if (previous?.status === "running" && outcome) {
@@ -44,9 +54,14 @@ export function useRunEvents(state: RunsState, modules: CatalogModule[]): void {
           outcome,
           message,
           durationMs: now - previous.startedAt,
+          outputs: entry.run.outputs,
         });
       }
-      observed.current.set(moduleId, { status, startedAt: previous?.startedAt ?? now });
+      observed.current.set(moduleId, {
+        status,
+        startedAt: previous?.startedAt ?? now,
+        progress: entry.run.progress?.current ?? null,
+      });
     }
   }, [state, modules, publish]);
 }

@@ -2,6 +2,8 @@ export type RunOutcome = "succeeded" | "failed" | "cancelled";
 
 export type AppEvent =
   | { type: "runStarted"; moduleId: string; moduleName: string }
+  | { type: "runProgress"; moduleId: string; current: number; total: number }
+  | { type: "presetRunRequested"; presetId: string; moduleId: string }
   | {
       type: "runFinished";
       moduleId: string;
@@ -9,6 +11,7 @@ export type AppEvent =
       outcome: RunOutcome;
       message: string;
       durationMs: number;
+      outputs: string[];
     }
   | { type: "updateAvailable"; version: string }
   | { type: "updateDeferred" }

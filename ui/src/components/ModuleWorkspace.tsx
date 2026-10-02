@@ -1,4 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNotificationCenter } from "../hooks/notification-center";
+import { usePresets } from "../hooks/presets-context";
 import { useFieldDrop } from "../hooks/use-field-drop";
 import { useModuleRun } from "../hooks/use-module-run";
 import type { CatalogModule } from "../lib/catalog";
@@ -23,6 +25,24 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
     setValues((current) => ({ ...current, [name]: value }));
   }, []);
   useFieldDrop(manifest.id, fields, setValues, isRunning);
+
+  const { subscribe } = useNotificationCenter();
+  const { presets } = usePresets();
+  useEffect(
+    () =>
+      subscribe((event) => {
+        if (event.type !== "presetRunRequested" || event.moduleId !== manifest.id) {
+          return;
+        }
+        const preset = presets.find((candidate) => candidate.id === event.presetId);
+        if (preset) {
+          const presetValues = presetFormValues(preset, fields);
+          setValues(presetValues);
+          start(toEngineInputs(fields, presetValues));
+        }
+      }),
+    [subscribe, presets, fields, manifest.id, start],
+  );
 
   return (
     <section className="module-workspace">

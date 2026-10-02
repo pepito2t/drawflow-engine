@@ -26,6 +26,10 @@ pub enum BridgeError {
     AccessFileCorrupted,
     #[error("Impossible d'enregistrer le code d'accès.")]
     AccessHashing,
+    #[error("Le fichier produit est introuvable : {0}")]
+    OutputMissing(String),
+    #[error("Impossible d'ouvrir le fichier : {0}")]
+    Opener(#[from] tauri_plugin_opener::Error),
 }
 
 impl Serialize for BridgeError {
