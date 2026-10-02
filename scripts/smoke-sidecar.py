@@ -1,4 +1,4 @@
-"""Runs the frozen sidecar end to end: list-modules then `run hello`."""
+"""Runs the frozen sidecar end to end: catalog, settings, then every module."""
 
 import json
 import subprocess
@@ -11,7 +11,7 @@ from engine.modules.pdf_report.tests.plans import build_report_plan
 from engine.modules.soumission.tests.workbooks import submission_bytes
 from engine.testing.pdf import PdfSpec, TextItem, write_pdf
 
-EXPECTED_MODULE_ID = "hello"
+EXPECTED_MODULE_IDS = ["dwg-parts", "pdf-report", "soumission"]
 PARALLEL_BATCH_SIZE = 2
 
 
@@ -33,8 +33,8 @@ def run_binary(binary: Path, *arguments: str) -> str:
 def main(binary: Path) -> None:
     catalog = json.loads(run_binary(binary, "list-modules"))
     module_ids = [entry["manifest"]["id"] for entry in catalog]
-    if EXPECTED_MODULE_ID not in module_ids:
-        raise SystemExit(f"Module {EXPECTED_MODULE_ID!r} not discovered: {module_ids}")
+    if module_ids != EXPECTED_MODULE_IDS:
+        raise SystemExit(f"Unexpected modules: {module_ids}")
 
     with tempfile.TemporaryDirectory() as workdir:
         settings_file = Path(workdir) / "Réglages" / "settings.json"
@@ -43,19 +43,7 @@ def main(binary: Path) -> None:
         )
         if sections["sections"][0]["id"] != "general":
             raise SystemExit(f"Unexpected settings sections: {sections}")
-        output_folder = Path(workdir) / "Sortie é"
-        input_file = Path(workdir) / "entrées.json"
-        input_file.write_text(
-            json.dumps({"name": "Zoé", "output_folder": str(output_folder)}),
-            encoding="utf-8",
-        )
-        stdout = run_binary(
-            binary, "run", EXPECTED_MODULE_ID, "--input", str(input_file)
-        )
-        events = [json.loads(line) for line in stdout.splitlines()]
-        if events[-1]["type"] != "result":
-            raise SystemExit(f"Last event is not a result: {events[-1]}")
-        events += smoke_parts_list(binary, Path(workdir))
+        events = smoke_parts_list(binary, Path(workdir))
         events += smoke_report(binary, Path(workdir))
         events += smoke_soumission(binary, Path(workdir))
     sys.stdout.write(f"Smoke OK: {len(events)} events\n")
