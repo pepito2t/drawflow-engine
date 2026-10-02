@@ -16,6 +16,9 @@ export async function saveSettings(values: Record<string, FormValues>): Promise<
 }
 
 export type EngineRequestName =
+  | "presets.list"
+  | "presets.save"
+  | "presets.remove"
   | "templates.list"
   | "templates.import"
   | "templates.remove"

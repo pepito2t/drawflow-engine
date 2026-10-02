@@ -85,6 +85,12 @@ pub enum EngineRequest {
     TemplatesRemove,
     #[serde(rename = "templates.set-default")]
     TemplatesSetDefault,
+    #[serde(rename = "presets.list")]
+    PresetsList,
+    #[serde(rename = "presets.save")]
+    PresetsSave,
+    #[serde(rename = "presets.remove")]
+    PresetsRemove,
     #[serde(rename = "settings.export")]
     SettingsExport,
     #[serde(rename = "settings.read-import")]
@@ -98,6 +104,9 @@ impl EngineRequest {
             Self::TemplatesImport => ("templates", "import"),
             Self::TemplatesRemove => ("templates", "remove"),
             Self::TemplatesSetDefault => ("templates", "set-default"),
+            Self::PresetsList => ("presets", "list"),
+            Self::PresetsSave => ("presets", "save"),
+            Self::PresetsRemove => ("presets", "remove"),
             Self::SettingsExport => ("settings", "export"),
             Self::SettingsReadImport => ("settings", "read-import"),
         }

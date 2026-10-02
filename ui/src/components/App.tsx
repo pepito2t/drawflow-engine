@@ -4,6 +4,7 @@ import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { CommandProvider } from "../hooks/command-registry";
 import { NotificationProvider } from "../hooks/notification-center";
+import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
 import { useRunEvents } from "../hooks/use-run-events";
 import { useSystemNotifications } from "../hooks/use-system-notifications";
@@ -64,6 +65,7 @@ function LockGate({ statusPromise }: { statusPromise: Promise<LockStatus> }) {
 
 function CatalogApp() {
   const { id, promise, retry } = useRetryablePromise(loadCatalog);
+  const [presetsPromise] = useState(loadPresets);
 
   return (
     <ErrorBoundary key={id} fallback={(error) => <CatalogFailure error={error} onRetry={retry} />}>
@@ -77,7 +79,9 @@ function CatalogApp() {
         <RunsProvider>
           <NotificationProvider>
             <CommandProvider>
-              <CatalogView catalogPromise={promise} />
+              <PresetsProvider presetsPromise={presetsPromise}>
+                <CatalogView catalogPromise={promise} />
+              </PresetsProvider>
             </CommandProvider>
           </NotificationProvider>
         </RunsProvider>

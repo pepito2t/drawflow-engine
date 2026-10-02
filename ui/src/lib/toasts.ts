@@ -73,6 +73,8 @@ export function toastFor(event: AppEvent): ToastSpec | null {
       return plain("success", "Paramètres enregistrés");
     case "accessCodeChanged":
       return plain("success", "Code d'accès modifié");
+    case "presetSaved":
+      return { ...plain("success", "Préréglage enregistré"), body: event.name };
     case "templateImported":
       return { ...plain("success", "Modèle importé"), body: event.name };
     case "settingsExported":

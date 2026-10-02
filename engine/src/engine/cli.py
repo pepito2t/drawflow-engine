@@ -13,8 +13,10 @@ from engine.core.runner import read_input_file, run_module
 from engine.core.settings import describe_settings, load_run_settings, save_settings
 from engine.core.templates import TemplateLibrary
 from engine.requests import (
+    PRESET_ACTIONS,
     SETTINGS_FILE_ACTIONS,
     TEMPLATE_ACTIONS,
+    handle_presets,
     handle_settings_file,
     handle_templates,
 )
@@ -64,6 +66,11 @@ def _build_parser() -> argparse.ArgumentParser:
     for action, help_text in SETTINGS_FILE_ACTIONS.items():
         _add_request_parser(settings_commands, action, help_text)
 
+    presets_parser = commands.add_parser("presets", help="Préréglages des fonctionnalités.")
+    presets_commands = presets_parser.add_subparsers(dest="presets_command", required=True)
+    for action, help_text in PRESET_ACTIONS.items():
+        _add_request_parser(presets_commands, action, help_text)
+
     templates_parser = commands.add_parser("templates", help="Bibliothèque de modèles de sortie.")
     templates_commands = templates_parser.add_subparsers(dest="templates_command", required=True)
     for action, help_text in TEMPLATE_ACTIONS.items():
@@ -84,6 +91,10 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
         _write_json(_module_catalog())
     elif arguments.command == "run":
         _run(arguments, emit)
+    elif arguments.command == "presets":
+        _write_json(
+            handle_presets(arguments.presets_command, arguments.settings, _request(arguments))
+        )
     elif arguments.command == "templates":
         _write_json(
             handle_templates(arguments.templates_command, arguments.settings, _request(arguments))

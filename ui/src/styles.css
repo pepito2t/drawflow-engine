@@ -646,6 +646,23 @@ small {
   align-items: flex-start;
 }
 
+.preset-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.preset-bar select,
+.preset-bar input {
+  width: auto;
+  min-width: 220px;
+}
+
+.preset-bar .error-panel {
+  flex-basis: 100%;
+}
+
 .template-row {
   display: grid;
   grid-template-columns: 48px 1fr 32px;

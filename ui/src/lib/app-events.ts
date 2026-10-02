@@ -13,6 +13,7 @@ export type AppEvent =
   | { type: "updateAvailable"; version: string }
   | { type: "updateDeferred" }
   | { type: "settingsSaved" }
+  | { type: "presetSaved"; name: string }
   | { type: "templateImported"; name: string }
   | { type: "settingsExported"; target: string }
   | { type: "accessCodeChanged" };

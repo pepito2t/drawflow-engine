@@ -6,7 +6,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from engine.core.errors import InvalidInputError
-from engine.core.registry import discover_modules
+from engine.core.presets import PresetStore
+from engine.core.registry import discover_modules, get_module
 from engine.core.settings import export_section, read_section_import
 from engine.core.templates import TemplateLibrary, TemplateUser
 
@@ -15,6 +16,11 @@ TEMPLATE_ACTIONS = {
     "import": "Importe un modèle .xlsx ou .docx.",
     "remove": "Supprime un modèle importé.",
     "set-default": "Définit le modèle par défaut d'une fonctionnalité.",
+}
+PRESET_ACTIONS = {
+    "list": "Liste les préréglages (JSON).",
+    "save": "Crée ou met à jour un préréglage.",
+    "remove": "Supprime un préréglage.",
 }
 SETTINGS_FILE_ACTIONS = {
     "export": "Exporte une catégorie de paramètres en JSON.",
@@ -39,6 +45,13 @@ class DefaultTemplateRequest(_Request):
     template: str | None
 
 
+class SavePresetRequest(_Request):
+    id: str | None = None
+    name: str
+    module: str
+    inputs: dict[str, Any]
+
+
 class ExportRequest(_Request):
     section: str
     target: Path
@@ -58,6 +71,16 @@ def handle_templates(action: str, settings: Path, raw: dict[str, Any]) -> dict[s
             raise InvalidInputError(f"« {request.module} » n'utilise pas de modèle.")
         library.set_default(user, request.template)
     return library.describe(users)
+
+
+def handle_presets(action: str, settings: Path, raw: dict[str, Any]) -> dict[str, Any]:
+    store = PresetStore(settings)
+    if action == "save":
+        request = _parse(SavePresetRequest, raw)
+        store.save(get_module(request.module), request.name, request.inputs, request.id)
+    elif action == "remove":
+        store.remove(_parse(TemplateIdRequest, raw).id)
+    return {"presets": [preset.model_dump(mode="json") for preset in store.presets()]}
 
 
 def handle_settings_file(action: str, settings: Path, raw: dict[str, Any]) -> dict[str, Any]:
