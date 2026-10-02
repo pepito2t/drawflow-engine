@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, State};
 
 use crate::error::BridgeError;
+use crate::integrations::protocol::ServerMessage;
+use crate::integrations::IntegrationState;
 
 const ACCESS_FILE_NAME: &str = "access-code.json";
 const DEFAULT_ACCESS_CODE: &str = "0000";
@@ -107,6 +109,8 @@ pub fn unlock(
     if verify_code(&access_file(&app)?, &code)? {
         state.attempts.reset();
         state.unlocked = true;
+        app.state::<IntegrationState>()
+            .broadcast(&ServerMessage::Locked { locked: false });
         return Ok(());
     }
     state.attempts.record_failure(now);

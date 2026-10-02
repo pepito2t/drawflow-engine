@@ -80,6 +80,25 @@ export function useAppCommands({ modules, selectModule, openSettings }: AppComma
   }, []);
   useCommand(COMMANDS.openLastResult, openLastResult);
 
+  const appState = useCallback(
+    () => ({
+      modules: modules.map(({ manifest }) => ({
+        id: manifest.id,
+        name: manifest.name,
+        icon: manifest.icon,
+      })),
+      presets: presets.map(({ id, name, module }) => ({ id, name, module })),
+      runs: Object.entries(state).map(([moduleId, entry]) => ({
+        moduleId,
+        status: entry.run.status,
+        current: entry.run.progress?.current ?? null,
+        total: entry.run.progress?.total ?? null,
+      })),
+    }),
+    [modules, presets, state],
+  );
+  useCommand(COMMANDS.appState, appState);
+
   const settings = useCallback(async () => {
     openSettings();
     await bringToFront();

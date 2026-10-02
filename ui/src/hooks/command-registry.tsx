@@ -6,7 +6,7 @@ import {
   type CommandResult,
 } from "../lib/commands";
 
-type AnyHandler = (args: unknown) => void | Promise<void>;
+type AnyHandler = (args: unknown) => unknown;
 
 interface CommandRegistry {
   register: <Id extends CommandId>(id: Id, handler: CommandHandler<Id>) => () => void;
@@ -38,8 +38,8 @@ export function CommandProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: `Commande indisponible pour le moment : ${parsed.id}` };
     }
     try {
-      await handler(parsed.args);
-      return { ok: true };
+      const data: unknown = await handler(parsed.args);
+      return data === undefined ? { ok: true } : { ok: true, data };
     } catch (error: unknown) {
       return { ok: false, error: error instanceof Error ? error.message : String(error) };
     }

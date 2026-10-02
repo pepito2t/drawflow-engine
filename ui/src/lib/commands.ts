@@ -8,13 +8,12 @@ export const COMMAND_ARGUMENTS = {
   "result.open-last": z.object({}),
   "settings.open": z.object({}),
   "update.install": z.object({}),
+  "app.state": z.object({}),
 } as const;
 
 export type CommandId = keyof typeof COMMAND_ARGUMENTS;
 export type CommandArguments<Id extends CommandId> = z.infer<(typeof COMMAND_ARGUMENTS)[Id]>;
-export type CommandHandler<Id extends CommandId> = (
-  args: CommandArguments<Id>,
-) => void | Promise<void>;
+export type CommandHandler<Id extends CommandId> = (args: CommandArguments<Id>) => unknown;
 
 export const COMMANDS = {
   openTab: "tab.open",
@@ -23,9 +22,10 @@ export const COMMANDS = {
   openLastResult: "result.open-last",
   openSettings: "settings.open",
   installUpdate: "update.install",
+  appState: "app.state",
 } as const satisfies Record<string, CommandId>;
 
-export type CommandResult = { ok: true } | { ok: false; error: string };
+export type CommandResult = { ok: true; data?: unknown } | { ok: false; error: string };
 
 export function isCommandId(value: string): value is CommandId {
   return value in COMMAND_ARGUMENTS;

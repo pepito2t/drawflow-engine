@@ -15,6 +15,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { ErrorPanel } from "./ErrorPanel";
 import { AccessCodeForm } from "./AccessCodeForm";
+import { IntegrationsPanel } from "./IntegrationsPanel";
 import { SectionTransfer } from "./SectionTransfer";
 import { TemplatesPanel } from "./TemplatesPanel";
 import { CloseIcon } from "./icons";
@@ -24,8 +25,10 @@ import { Loader, Spinner } from "./Spinner";
 const ACCESS_CODE_TAB_ID = "access-code";
 const GENERAL_SECTION_ID = "general";
 const TEMPLATES_TAB_ID = "templates";
+const INTEGRATIONS_TAB_ID = "integrations";
 const STATIC_TABS = [
   { id: TEMPLATES_TAB_ID, title: "Modèles" },
+  { id: INTEGRATIONS_TAB_ID, title: "Intégrations" },
   { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
 ];
 
@@ -177,6 +180,7 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
         </nav>
         <div className="settings-panel">
           {activeId === TEMPLATES_TAB_ID && <TemplatesPanel />}
+          {activeId === INTEGRATIONS_TAB_ID && <IntegrationsPanel />}
           {activeId === ACCESS_CODE_TAB_ID && <AccessCodeForm />}
           {sections.map((section) => (
             <div key={section.id} role="tabpanel" hidden={section.id !== activeSection?.id}>
