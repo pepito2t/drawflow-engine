@@ -1,0 +1,113 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "ch.drawflow",
+  "Name": "Drawflow",
+  "Version": "0.1.0.0",
+  "Author": "Drawflow",
+  "Description": "Pilotez Drawflow : préréglages, onglets, annulation, dernier résultat et suivi des traitements.",
+  "Category": "Drawflow",
+  "CategoryIcon": "imgs/category",
+  "Icon": "imgs/plugin",
+  "URL": "https://github.com/pepito2t/drawflow-engine",
+  "CodePath": "bin/plugin.js",
+  "SDKVersion": 3,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "Nodejs": {
+    "Version": "20",
+    "Debug": "enabled"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "13"
+    }
+  ],
+  "Actions": [
+    {
+      "UUID": "ch.drawflow.preset",
+      "Name": "Lancer un préréglage",
+      "Tooltip": "Lance un préréglage Drawflow et affiche sa progression.",
+      "Icon": "imgs/preset",
+      "PropertyInspectorPath": "ui/preset.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/preset",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "ch.drawflow.open-tab",
+      "Name": "Ouvrir un onglet",
+      "Tooltip": "Met Drawflow au premier plan sur une fonctionnalité.",
+      "Icon": "imgs/tab",
+      "PropertyInspectorPath": "ui/open-tab.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/tab",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "ch.drawflow.cancel-all",
+      "Name": "Annuler les traitements",
+      "Tooltip": "Annule tous les traitements en cours.",
+      "Icon": "imgs/cancel",
+      "PropertyInspectorPath": "ui/connection.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/cancel",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "ch.drawflow.open-last",
+      "Name": "Ouvrir le dernier résultat",
+      "Tooltip": "Ouvre le dernier fichier produit par Drawflow.",
+      "Icon": "imgs/result",
+      "PropertyInspectorPath": "ui/connection.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/result",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "ch.drawflow.runs-counter",
+      "Name": "Traitements en cours",
+      "Tooltip": "Affiche le nombre de traitements en cours.",
+      "Icon": "imgs/runs",
+      "PropertyInspectorPath": "ui/connection.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/runs",
+          "ShowTitle": false
+        }
+      ]
+    }
+  ]
+}

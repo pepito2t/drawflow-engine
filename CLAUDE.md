@@ -22,6 +22,8 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
         tests/
   templates/              # modèles DOCX/XLSX
   fixtures/               # fichiers réels anonymisés + sorties attendues
+  streamdeck/             # plugin Stream Deck (SDK Node.js Elgato) — client de l'API locale
+  docs/api-locale.md      # protocole de l'API locale WebSocket
   .github/workflows/      # ci.yml, release.yml
 ```
 
@@ -32,6 +34,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
 - Rust (dans `src-tauri/`) : `cargo fmt --check` · `cargo clippy --all-targets -- -D warnings` · `cargo test`
 - Sidecar : `pnpm sidecar:build` (PyInstaller → `src-tauri/binaries/engine-<target-triple>[.exe]`) · smoke test : `uv run --project engine python scripts/smoke-sidecar.py src-tauri/binaries/engine-*`
 - Dev complet : `pnpm dev` (build du sidecar puis `tauri dev`)
+- Plugin Stream Deck (dans `streamdeck/`) : `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm build` · `pnpm validate` · `pnpm pack` (→ `dist/ch.drawflow.streamDeckPlugin`)
 
 Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 
