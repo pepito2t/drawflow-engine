@@ -886,7 +886,7 @@ dependencies = [
 
 [[package]]
 name = "drawflow"
-version = "0.1.0"
+version = "0.1.0-rc.1"
 dependencies = [
  "argon2",
  "password-hash",
