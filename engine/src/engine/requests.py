@@ -1,0 +1,84 @@
+"""File-based requests (templates, settings import/export) sent by the desktop bridge."""
+
+from pathlib import Path
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+from engine.core.errors import InvalidInputError
+from engine.core.registry import discover_modules
+from engine.core.settings import export_section, read_section_import
+from engine.core.templates import TemplateLibrary, TemplateUser
+
+TEMPLATE_ACTIONS = {
+    "list": "Liste les modèles importés et les modèles par défaut (JSON).",
+    "import": "Importe un modèle .xlsx ou .docx.",
+    "remove": "Supprime un modèle importé.",
+    "set-default": "Définit le modèle par défaut d'une fonctionnalité.",
+}
+SETTINGS_FILE_ACTIONS = {
+    "export": "Exporte une catégorie de paramètres en JSON.",
+    "read-import": "Valide un export de paramètres sans l'enregistrer.",
+}
+
+
+class _Request(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+
+class SourceRequest(_Request):
+    source: Path
+
+
+class TemplateIdRequest(_Request):
+    id: str
+
+
+class DefaultTemplateRequest(_Request):
+    module: str
+    template: str | None
+
+
+class ExportRequest(_Request):
+    section: str
+    target: Path
+
+
+def handle_templates(action: str, settings: Path, raw: dict[str, Any]) -> dict[str, Any]:
+    library = TemplateLibrary(settings)
+    users = template_users()
+    if action == "import":
+        library.import_file(_parse(SourceRequest, raw).source)
+    elif action == "remove":
+        library.remove(_parse(TemplateIdRequest, raw).id)
+    elif action == "set-default":
+        request = _parse(DefaultTemplateRequest, raw)
+        user = next((user for user in users if user.id == request.module), None)
+        if user is None:
+            raise InvalidInputError(f"« {request.module} » n'utilise pas de modèle.")
+        library.set_default(user, request.template)
+    return library.describe(users)
+
+
+def handle_settings_file(action: str, settings: Path, raw: dict[str, Any]) -> dict[str, Any]:
+    modules = discover_modules()
+    if action == "export":
+        request = _parse(ExportRequest, raw)
+        export_section(settings, request.section, modules, request.target)
+        return {"exported": str(request.target)}
+    return read_section_import(_parse(SourceRequest, raw).source, modules)
+
+
+def template_users() -> list[TemplateUser]:
+    return [
+        TemplateUser(module.manifest.id, module.manifest.name, module.manifest.template_kind)
+        for module in discover_modules().values()
+        if module.manifest.template_kind is not None
+    ]
+
+
+def _parse[RequestT: _Request](model: type[RequestT], raw: dict[str, Any]) -> RequestT:
+    try:
+        return model.model_validate(raw)
+    except ValidationError as error:
+        raise InvalidInputError("Requête invalide.", hint=str(error)) from error

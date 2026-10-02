@@ -152,3 +152,54 @@ def _write_atomically(path: Path, document: Document) -> None:
             file=path,
             hint="Vérifiez que le dossier de configuration est accessible en écriture.",
         ) from error
+
+
+EXPORT_FORMAT = "drawflow-settings"
+EXPORT_VERSION = 1
+
+
+def export_section(
+    path: Path | None, section_id: str, modules: dict[str, AnyModule], target: Path
+) -> None:
+    spec = _spec(section_id, modules)
+    values = load_section(spec.model, spec.id, spec.title, read_document(path))
+    payload = {
+        "format": EXPORT_FORMAT,
+        "version": EXPORT_VERSION,
+        "section": spec.id,
+        "title": spec.title,
+        "values": values.model_dump(mode="json"),
+    }
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as error:
+        raise SettingsFileError("Impossible d'exporter les paramètres.", file=target) from error
+
+
+def read_section_import(source: Path, modules: dict[str, AnyModule]) -> dict[str, Any]:
+    """Validates an exported file without saving it, so the user can review it first."""
+    payload = read_document(source)
+    if payload.get("format") != EXPORT_FORMAT:
+        raise InvalidSettingsError(
+            "Ce fichier n'est pas un export de paramètres Drawflow.", file=source
+        )
+    spec = _spec(str(payload.get("section", "")), modules)
+    try:
+        values = spec.model.model_validate(payload.get("values", {}))
+    except ValidationError as error:
+        raise InvalidSettingsError(
+            f"Paramètres « {spec.title} » invalides : "
+            f"{describe_validation_error(spec.model, error)}",
+            file=source,
+        ) from error
+    return {"section": spec.id, "title": spec.title, "values": values.model_dump(mode="json")}
+
+
+def _spec(section_id: str, modules: dict[str, AnyModule]) -> SectionSpec:
+    for spec in section_specs(modules):
+        if spec.id == section_id:
+            return spec
+    raise InvalidSettingsError(
+        f"La catégorie de paramètres « {section_id} » n'existe pas dans cette version."
+    )

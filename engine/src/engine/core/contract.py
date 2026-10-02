@@ -11,6 +11,7 @@ from engine.core.settings_models import GeneralSettings, ModuleSettings
 MODULE_ID_PATTERN = r"^[a-z][a-z0-9-]*$"
 
 ModuleIcon = Literal["module", "list", "report", "table", "check"]
+TemplateKind = Literal["xlsx", "docx"]
 
 
 class ModuleManifest(BaseModel):
@@ -25,6 +26,9 @@ class ModuleManifest(BaseModel):
         min_length=1, description="Mode d'emploi, une étape par entrée."
     )
     icon: ModuleIcon = Field(default="module", description="Icône de l'onglet.")
+    template_kind: TemplateKind | None = Field(
+        default=None, description="Type de modèle de sortie accepté (champ « template »)."
+    )
 
 
 class ModuleInputs(BaseModel):

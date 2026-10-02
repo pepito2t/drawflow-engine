@@ -9,6 +9,7 @@ MANIFEST = ModuleManifest(
     version="0.1.0",
     order=TAB_ORDER,
     icon="list",
+    template_kind="xlsx",
     instructions=[
         "Ajoutez des plans DWG/DXF et/ou des dossiers de plans (Parcourir ou glisser-déposer).",
         "Indiquez le nom du projet : il sert à nommer le fichier exporté.",
