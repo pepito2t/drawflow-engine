@@ -10,7 +10,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "validate": "streamdeck validate ch.drawflow.sdPlugin",
-    "pack": "streamdeck pack ch.drawflow.sdPlugin --output dist --force"
+    "package": "streamdeck pack ch.drawflow.sdPlugin --output dist --force"
   },
   "dependencies": {
     "@elgato/streamdeck": "3.0.1",

@@ -35,7 +35,9 @@
       "Tooltip": "Lance un préréglage Drawflow et affiche sa progression.",
       "Icon": "imgs/preset",
       "PropertyInspectorPath": "ui/preset.html",
-      "Controllers": ["Keypad"],
+      "Controllers": [
+        "Keypad"
+      ],
       "States": [
         {
           "Image": "imgs/preset",
@@ -49,7 +51,9 @@
       "Tooltip": "Met Drawflow au premier plan sur une fonctionnalité.",
       "Icon": "imgs/tab",
       "PropertyInspectorPath": "ui/open-tab.html",
-      "Controllers": ["Keypad"],
+      "Controllers": [
+        "Keypad"
+      ],
       "States": [
         {
           "Image": "imgs/tab",
@@ -63,7 +67,9 @@
       "Tooltip": "Annule tous les traitements en cours.",
       "Icon": "imgs/cancel",
       "PropertyInspectorPath": "ui/connection.html",
-      "Controllers": ["Keypad"],
+      "Controllers": [
+        "Keypad"
+      ],
       "States": [
         {
           "Image": "imgs/cancel",
@@ -77,7 +83,9 @@
       "Tooltip": "Ouvre le dernier fichier produit par Drawflow.",
       "Icon": "imgs/result",
       "PropertyInspectorPath": "ui/connection.html",
-      "Controllers": ["Keypad"],
+      "Controllers": [
+        "Keypad"
+      ],
       "States": [
         {
           "Image": "imgs/result",
@@ -91,7 +99,9 @@
       "Tooltip": "Affiche le nombre de traitements en cours.",
       "Icon": "imgs/runs",
       "PropertyInspectorPath": "ui/connection.html",
-      "Controllers": ["Keypad"],
+      "Controllers": [
+        "Keypad"
+      ],
       "States": [
         {
           "Image": "imgs/runs",

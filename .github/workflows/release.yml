@@ -96,7 +96,7 @@ jobs:
         run: |
           pnpm build
           pnpm validate
-          pnpm pack
+          pnpm run package
 
       - name: Attach Stream Deck plugin to the release
         env:
