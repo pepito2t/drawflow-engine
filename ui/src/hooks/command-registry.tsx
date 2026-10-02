@@ -1,33 +1,48 @@
 import { createContext, use, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
-import type { CommandHandler, CommandId } from "../lib/commands";
+import {
+  parseCommandArguments,
+  type CommandHandler,
+  type CommandId,
+  type CommandResult,
+} from "../lib/commands";
+
+type AnyHandler = (args: unknown) => void | Promise<void>;
 
 interface CommandRegistry {
-  register: (id: CommandId, handler: CommandHandler) => () => void;
-  execute: (id: CommandId) => boolean;
+  register: <Id extends CommandId>(id: Id, handler: CommandHandler<Id>) => () => void;
+  execute: (id: string, args?: unknown) => Promise<CommandResult>;
 }
 
 const CommandContext = createContext<CommandRegistry | null>(null);
 
 export function CommandProvider({ children }: { children: ReactNode }) {
-  const handlers = useRef(new Map<CommandId, CommandHandler>());
+  const handlers = useRef(new Map<CommandId, AnyHandler>());
 
-  const register = useCallback((id: CommandId, handler: CommandHandler) => {
-    handlers.current.set(id, handler);
+  const register = useCallback(<Id extends CommandId>(id: Id, handler: CommandHandler<Id>) => {
+    const stored = handler as AnyHandler;
+    handlers.current.set(id, stored);
     return () => {
-      if (handlers.current.get(id) === handler) {
+      if (handlers.current.get(id) === stored) {
         handlers.current.delete(id);
       }
     };
   }, []);
 
-  const execute = useCallback((id: CommandId) => {
-    const handler = handlers.current.get(id);
-    if (!handler) {
-      console.warn(`Commande indisponible : ${id}`);
-      return false;
+  const execute = useCallback(async (id: string, args?: unknown): Promise<CommandResult> => {
+    const parsed = parseCommandArguments(id, args);
+    if (!parsed.ok) {
+      return parsed;
     }
-    handler();
-    return true;
+    const handler = handlers.current.get(parsed.id);
+    if (!handler) {
+      return { ok: false, error: `Commande indisponible pour le moment : ${parsed.id}` };
+    }
+    try {
+      await handler(parsed.args);
+      return { ok: true };
+    } catch (error: unknown) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
   }, []);
 
   const registry = useMemo(() => ({ register, execute }), [register, execute]);
@@ -42,7 +57,7 @@ export function useCommands(): CommandRegistry {
   return registry;
 }
 
-export function useCommand(id: CommandId, handler: CommandHandler): void {
+export function useCommand<Id extends CommandId>(id: Id, handler: CommandHandler<Id>): void {
   const { register } = useCommands();
   useEffect(() => register(id, handler), [register, id, handler]);
 }

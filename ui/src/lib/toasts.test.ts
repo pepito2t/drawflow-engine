@@ -25,6 +25,7 @@ const finished = (outcome: "succeeded" | "failed" | "cancelled"): AppEvent => ({
   outcome,
   message: "12 pièces",
   durationMs: 3000,
+  outputs: [],
 });
 
 describe("toastsReducer", () => {

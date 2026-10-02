@@ -49,6 +49,8 @@ export function toastsReducer(state: ToastsState, action: ToastsAction): ToastsS
 export function toastFor(event: AppEvent): ToastSpec | null {
   switch (event.type) {
     case "runStarted":
+    case "runProgress":
+    case "presetRunRequested":
       return null;
     case "runFinished":
       return runToast(event);

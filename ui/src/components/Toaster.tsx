@@ -58,7 +58,15 @@ function ToastItem({ toast, onDismiss, onOpenModule }: ToastItemProps) {
               className={action.primary ? "primary" : undefined}
               onClick={() => {
                 if (action.command) {
-                  execute(action.command);
+                  execute(action.command)
+                    .then((result) => {
+                      if (!result.ok) {
+                        console.error(result.error);
+                      }
+                    })
+                    .catch((error: unknown) => {
+                      console.error(error);
+                    });
                 }
                 onDismiss(toast.id);
               }}

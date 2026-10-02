@@ -1,4 +1,4 @@
-import { Suspense, use, useState } from "react";
+import { Suspense, use, useCallback, useState } from "react";
 import { RunsProvider, useRunsStore } from "../hooks/runs-context";
 import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
@@ -6,6 +6,7 @@ import { CommandProvider } from "../hooks/command-registry";
 import { NotificationProvider } from "../hooks/notification-center";
 import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
+import { useAppCommands } from "../hooks/use-app-commands";
 import { useRunEvents } from "../hooks/use-run-events";
 import { useSystemNotifications } from "../hooks/use-system-notifications";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
@@ -114,14 +115,23 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   useRunEvents(state, modules);
   useSystemNotifications();
 
-  const select = (moduleId: string) => {
-    for (const visited of [selectedId, moduleId]) {
-      if (visited !== null) {
-        dispatch({ type: "acknowledge", moduleId: visited });
-      }
-    }
-    setSelectedId(moduleId);
-  };
+  const select = useCallback(
+    (moduleId: string) => {
+      setSelectedId((previous) => {
+        for (const visited of [previous, moduleId]) {
+          if (visited !== null) {
+            dispatch({ type: "acknowledge", moduleId: visited });
+          }
+        }
+        return moduleId;
+      });
+    },
+    [dispatch],
+  );
+  const openSettings = useCallback(() => {
+    setIsSettingsOpen(true);
+  }, []);
+  useAppCommands({ modules, selectModule: select, openSettings });
 
   const sidebarActions = (
     <>
