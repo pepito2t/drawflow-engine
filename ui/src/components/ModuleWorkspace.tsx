@@ -3,8 +3,10 @@ import { useFieldDrop } from "../hooks/use-field-drop";
 import { useModuleRun } from "../hooks/use-module-run";
 import type { CatalogModule } from "../lib/catalog";
 import { initialValues, toEngineInputs, type FormValue } from "../lib/form-schema";
+import { presetFormValues } from "../lib/presets";
 import { ModuleForm } from "./ModuleForm";
 import { ModuleInstructions } from "./ModuleInstructions";
+import { PresetBar } from "./PresetBar";
 import { RunPanel } from "./RunPanel";
 
 interface ModuleWorkspaceProps {
@@ -29,6 +31,14 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
         <p>{manifest.description}</p>
       </header>
       <ModuleInstructions steps={manifest.instructions} />
+      <PresetBar
+        moduleId={manifest.id}
+        disabled={isRunning}
+        currentInputs={() => toEngineInputs(fields, values)}
+        onLoad={(preset) => {
+          setValues(presetFormValues(preset, fields));
+        }}
+      />
       <ModuleForm
         moduleId={manifest.id}
         fields={fields}
