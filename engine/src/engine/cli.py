@@ -71,6 +71,9 @@ def _build_parser() -> argparse.ArgumentParser:
     for action, help_text in PRESET_ACTIONS.items():
         _add_request_parser(presets_commands, action, help_text)
 
+    mcp_parser = commands.add_parser("mcp", help="Serveur MCP de l'assistant (stdio).")
+    mcp_parser.add_argument("--settings", type=Path, required=True)
+
     templates_parser = commands.add_parser("templates", help="Bibliothèque de modèles de sortie.")
     templates_commands = templates_parser.add_subparsers(dest="templates_command", required=True)
     for action, help_text in TEMPLATE_ACTIONS.items():
@@ -91,6 +94,8 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
         _write_json(_module_catalog())
     elif arguments.command == "run":
         _run(arguments, emit)
+    elif arguments.command == "mcp":
+        _serve_mcp(arguments.settings)
     elif arguments.command == "presets":
         _write_json(
             handle_presets(arguments.presets_command, arguments.settings, _request(arguments))
@@ -119,6 +124,13 @@ def _run(arguments: argparse.Namespace, emit: Emit) -> None:
     if arguments.settings is not None and module.manifest.template_kind is not None:
         default_template = TemplateLibrary(arguments.settings).default_for(module.manifest.id)
     run_module(module, read_input_file(arguments.input), settings, emit, default_template)
+
+
+def _serve_mcp(settings: Path) -> None:
+    # The MCP SDK costs ~200 ms to import: only the commands that need it pay for it.
+    from engine.assistant.mcp_server import serve
+
+    serve(settings)
 
 
 def _request(arguments: argparse.Namespace) -> dict[str, Any]:
