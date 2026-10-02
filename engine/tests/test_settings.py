@@ -4,7 +4,13 @@ from typing import Any
 
 import pytest
 
-from engine.core.contract import EngineModule, ModuleManifest, ModuleResult, RunContext
+from engine.core.contract import (
+    EngineModule,
+    ModuleInputs,
+    ModuleManifest,
+    ModuleResult,
+    RunContext,
+)
 from engine.core.errors import InvalidSettingsError, ModuleContractError, SettingsFileError
 from engine.core.fields import ui_field
 from engine.core.registry import AnyModule
@@ -16,14 +22,17 @@ from engine.core.settings import (
     section_specs,
 )
 from engine.core.settings_models import DEFAULT_BATCH_SIZE, ModuleSettings
-from engine.modules.hello.schema import HelloInputs
 
 
 class SampleSettings(ModuleSettings):
     prefix: str = ui_field("text", label="Préfixe", default="LP", min_length=1)
 
 
-def _unused_run(inputs: HelloInputs, context: RunContext) -> ModuleResult:
+class SampleInputs(ModuleInputs):
+    pass
+
+
+def _unused_run(inputs: SampleInputs, context: RunContext) -> ModuleResult:
     return ModuleResult(summary="")
 
 
@@ -38,7 +47,7 @@ def make_module(
         order=0,
         instructions=["Lancer."],
     )
-    return EngineModule(manifest, HelloInputs, _unused_run, settings_model=settings)
+    return EngineModule(manifest, SampleInputs, _unused_run, settings_model=settings)
 
 
 @pytest.fixture

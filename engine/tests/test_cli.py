@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from engine.cli import EXIT_BUSINESS_ERROR, EXIT_SUCCESS
+from engine.modules.soumission.tests.workbooks import write_submission
 
 
 def run_cli(*arguments: str) -> subprocess.CompletedProcess[str]:
@@ -32,22 +33,29 @@ def test_list_modules_outputs_manifests_and_schemas() -> None:
 
     assert completed.returncode == EXIT_SUCCESS
     catalog = json.loads(completed.stdout)
-    hello = next(entry for entry in catalog if entry["manifest"]["id"] == "hello")
-    assert "properties" in hello["inputs_schema"]
+    assert [entry["manifest"]["id"] for entry in catalog] == [
+        "dwg-parts",
+        "pdf-report",
+        "soumission",
+    ]
+    assert all("properties" in entry["inputs_schema"] for entry in catalog)
 
 
-def test_run_hello_streams_events_and_writes_output(tmp_path: Path) -> None:
+def test_run_streams_events_and_writes_output(tmp_path: Path) -> None:
+    source = write_submission(tmp_path / "offre é.xlsx")
     output_folder = tmp_path / "Sortie avec espaces é"
-    input_file = write_inputs(tmp_path, {"name": "Zoé", "output_folder": str(output_folder)})
+    input_file = write_inputs(
+        tmp_path, {"files": [str(source)], "output_folder": str(output_folder)}
+    )
 
-    completed = run_cli("run", "hello", "--input", str(input_file))
+    completed = run_cli("run", "soumission", "--input", str(input_file))
 
     assert completed.returncode == EXIT_SUCCESS, completed.stderr
     events = ndjson_events(completed.stdout)
-    assert events[0]["type"] == "progress"
+    assert events[0]["type"] == "log"
+    assert any(event["type"] == "progress" for event in events)
     assert events[-1]["type"] == "result"
-    output = Path(events[-1]["outputs"][0])
-    assert output.read_text(encoding="utf-8") == "Bonjour Zoé !"
+    assert Path(events[-1]["outputs"][0]).parent == output_folder
 
 
 def test_unknown_module_emits_error_event(tmp_path: Path) -> None:
@@ -61,26 +69,27 @@ def test_unknown_module_emits_error_event(tmp_path: Path) -> None:
             "type": "error",
             "message": "La fonctionnalité « nope » n'existe pas.",
             "file": None,
-            "hint": "Fonctionnalités disponibles : dwg-parts, hello, pdf-report, soumission.",
+            "hint": "Fonctionnalités disponibles : dwg-parts, pdf-report, soumission.",
         }
     ]
 
 
 def test_invalid_inputs_name_the_field_label(tmp_path: Path) -> None:
-    input_file = write_inputs(tmp_path, {"name": "", "output_folder": str(tmp_path)})
+    inputs = {"files": ["a.xlsx"], "recursive": "peut-être", "output_folder": str(tmp_path)}
+    input_file = write_inputs(tmp_path, inputs)
 
-    completed = run_cli("run", "hello", "--input", str(input_file))
+    completed = run_cli("run", "soumission", "--input", str(input_file))
 
     assert completed.returncode == EXIT_BUSINESS_ERROR
     [event] = ndjson_events(completed.stdout)
     assert event["type"] == "error"
-    assert "Nom" in event["message"]
+    assert "Inclure les sous-dossiers" in event["message"]
 
 
 def test_missing_input_file_names_the_file(tmp_path: Path) -> None:
     missing = tmp_path / "absent.json"
 
-    completed = run_cli("run", "hello", "--input", str(missing))
+    completed = run_cli("run", "soumission", "--input", str(missing))
 
     assert completed.returncode == EXIT_BUSINESS_ERROR
     [event] = ndjson_events(completed.stdout)
@@ -114,10 +123,11 @@ def test_settings_set_rejects_invalid_values(tmp_path: Path) -> None:
 def test_run_reports_invalid_stored_settings(tmp_path: Path) -> None:
     settings_file = tmp_path / "settings.json"
     settings_file.write_text(json.dumps({"general": {"batch_size": 0}}), encoding="utf-8")
-    input_file = write_inputs(tmp_path, {"name": "Zoé", "output_folder": str(tmp_path)})
+    source = write_submission(tmp_path / "offre.xlsx")
+    input_file = write_inputs(tmp_path, {"files": [str(source)], "output_folder": str(tmp_path)})
 
     completed = run_cli(
-        "run", "hello", "--input", str(input_file), "--settings", str(settings_file)
+        "run", "soumission", "--input", str(input_file), "--settings", str(settings_file)
     )
 
     assert completed.returncode == EXIT_BUSINESS_ERROR
