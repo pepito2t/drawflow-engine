@@ -26,6 +26,7 @@ pub fn run() {
             sidecar::list_modules,
             sidecar::get_settings,
             sidecar::save_settings,
+            sidecar::engine_request,
             sidecar::run_module,
             sidecar::cancel_run
         ])

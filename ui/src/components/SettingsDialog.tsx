@@ -15,11 +15,19 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { ErrorPanel } from "./ErrorPanel";
 import { AccessCodeForm } from "./AccessCodeForm";
+import { SectionTransfer } from "./SectionTransfer";
+import { TemplatesPanel } from "./TemplatesPanel";
 import { CloseIcon } from "./icons";
 import { ModuleForm } from "./ModuleForm";
 import { Loader, Spinner } from "./Spinner";
 
 const ACCESS_CODE_TAB_ID = "access-code";
+const GENERAL_SECTION_ID = "general";
+const TEMPLATES_TAB_ID = "templates";
+const STATIC_TABS = [
+  { id: TEMPLATES_TAB_ID, title: "Modèles" },
+  { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
+];
 
 type SaveState =
   { status: "idle" | "saving" | "saved" } | { status: "failed"; error: ReadableError };
@@ -123,8 +131,8 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
       });
   };
 
-  const isAccessTab = activeId === ACCESS_CODE_TAB_ID;
-  const activeSection = isAccessTab
+  const isStaticTab = STATIC_TABS.some((tab) => tab.id === activeId);
+  const activeSection = isStaticTab
     ? undefined
     : (sections.find((section) => section.id === activeId) ?? sections[0]);
 
@@ -152,20 +160,24 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
               {section.error && <span className="status-dot failed" />}
             </button>
           ))}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={isAccessTab}
-            className={isAccessTab ? "side-tab selected" : "side-tab"}
-            onClick={() => {
-              setActiveId(ACCESS_CODE_TAB_ID);
-            }}
-          >
-            <span>Code d'accès</span>
-          </button>
+          {STATIC_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeId === tab.id}
+              className={activeId === tab.id ? "side-tab selected" : "side-tab"}
+              onClick={() => {
+                setActiveId(tab.id);
+              }}
+            >
+              <span>{tab.title}</span>
+            </button>
+          ))}
         </nav>
         <div className="settings-panel">
-          {isAccessTab && <AccessCodeForm />}
+          {activeId === TEMPLATES_TAB_ID && <TemplatesPanel />}
+          {activeId === ACCESS_CODE_TAB_ID && <AccessCodeForm />}
           {sections.map((section) => (
             <div key={section.id} role="tabpanel" hidden={section.id !== activeSection?.id}>
               <SettingsSectionForm
@@ -178,7 +190,7 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
           ))}
         </div>
       </div>
-      <footer className="dialog-footer" hidden={isAccessTab}>
+      <footer className="dialog-footer" hidden={isStaticTab}>
         {saveState.status === "failed" && (
           <ErrorPanel
             title="Paramètres non enregistrés"
@@ -224,6 +236,15 @@ function SettingsSectionForm({ section, values, disabled, setValues }: SettingsS
   return (
     <section className="settings-section">
       <h3>{section.title}</h3>
+      {section.id !== GENERAL_SECTION_ID && (
+        <SectionTransfer
+          section={section}
+          disabled={disabled}
+          onImported={(imported) => {
+            setSectionValues(imported);
+          }}
+        />
+      )}
       {section.error && (
         <ErrorPanel title="Valeurs enregistrées invalides" message={section.error} />
       )}

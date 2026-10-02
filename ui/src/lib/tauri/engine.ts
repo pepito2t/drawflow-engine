@@ -15,6 +15,21 @@ export async function saveSettings(values: Record<string, FormValues>): Promise<
   return unwrapEngineOutput(await invoke("save_settings", { values }));
 }
 
+export type EngineRequestName =
+  | "templates.list"
+  | "templates.import"
+  | "templates.remove"
+  | "templates.set-default"
+  | "settings.export"
+  | "settings.read-import";
+
+export async function engineRequest(
+  request: EngineRequestName,
+  payload: Record<string, unknown> = {},
+): Promise<string> {
+  return unwrapEngineOutput(await invoke("engine_request", { request, payload }));
+}
+
 export function runModule(
   moduleId: string,
   inputs: FormValues,
