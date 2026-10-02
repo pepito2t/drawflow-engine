@@ -24,23 +24,17 @@ class VersionSource:
 
 
 SOURCES = [
-    VersionSource(
-        ROOT / "ui" / "package.json", re.compile(r'(?m)^(  "version": ")([^"]+)(")')
-    ),
+    VersionSource(ROOT / "ui" / "package.json", re.compile(r'(?m)^(  "version": ")([^"]+)(")')),
     VersionSource(
         ROOT / "src-tauri" / "tauri.conf.json",
         re.compile(r'(?m)^(  "version": ")([^"]+)(")'),
     ),
-    VersionSource(
-        ROOT / "src-tauri" / "Cargo.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')
-    ),
+    VersionSource(ROOT / "src-tauri" / "Cargo.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')),
     VersionSource(
         ROOT / "src-tauri" / "Cargo.lock",
         re.compile(r'(?m)(^name = "drawflow"\nversion = ")([^"]+)(")'),
     ),
-    VersionSource(
-        ROOT / "engine" / "pyproject.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')
-    ),
+    VersionSource(ROOT / "engine" / "pyproject.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')),
     VersionSource(
         ROOT / "engine" / "uv.lock",
         re.compile(r'(?m)(^name = "engine"\nversion = ")([^"]+)(")'),
@@ -53,9 +47,7 @@ def read_versions() -> dict[Path, str]:
     for source in SOURCES:
         match = source.pattern.search(source.path.read_text(encoding="utf-8"))
         if match is None:
-            raise SystemExit(
-                f"Version introuvable dans {source.path.relative_to(ROOT)}"
-            )
+            raise SystemExit(f"Version introuvable dans {source.path.relative_to(ROOT)}")
         versions[source.path] = match.group(2)
     return versions
 
@@ -84,9 +76,7 @@ def bump(version: str) -> None:
         )
         source.path.write_text(updated, encoding="utf-8")
     json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
-    sys.stdout.write(
-        f"Version {version} appliquée ; commit puis tag {TAG_PREFIX}{version}\n"
-    )
+    sys.stdout.write(f"Version {version} appliquée ; commit puis tag {TAG_PREFIX}{version}\n")
 
 
 def main() -> None:
