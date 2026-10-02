@@ -7,6 +7,7 @@ import { NotificationProvider } from "../hooks/notification-center";
 import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
 import { useAppCommands } from "../hooks/use-app-commands";
+import { useIntegrationBridge } from "../hooks/use-integration-bridge";
 import { useRunEvents } from "../hooks/use-run-events";
 import { useSystemNotifications } from "../hooks/use-system-notifications";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
@@ -132,6 +133,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
     setIsSettingsOpen(true);
   }, []);
   useAppCommands({ modules, selectModule: select, openSettings });
+  useIntegrationBridge();
 
   const sidebarActions = (
     <>

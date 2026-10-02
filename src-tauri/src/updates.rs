@@ -9,6 +9,7 @@ pub fn register_updater(app: &mut App) -> Result<(), Box<dyn std::error::Error>>
         app.handle()
             .plugin(tauri_plugin_updater::Builder::new().build())?;
     }
+    crate::integrations::start_at_launch(app.handle())?;
     Ok(())
 }
 

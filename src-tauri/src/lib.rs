@@ -1,5 +1,6 @@
 mod access;
 mod error;
+mod integrations;
 mod outputs;
 mod paths;
 mod runs;
@@ -7,6 +8,7 @@ mod sidecar;
 mod updates;
 
 use access::AccessLock;
+use integrations::IntegrationState;
 use sidecar::EngineRuns;
 use tauri::{Manager, RunEvent};
 
@@ -20,10 +22,15 @@ pub fn run() {
         .setup(updates::register_updater)
         .manage(EngineRuns::default())
         .manage(AccessLock::default())
+        .manage(IntegrationState::default())
         .invoke_handler(tauri::generate_handler![
             access::lock_status,
             updates::updater_configured,
             outputs::open_output,
+            integrations::integration_status,
+            integrations::integration_update,
+            integrations::integration_reply,
+            integrations::integration_publish,
             access::unlock,
             access::change_access_code,
             sidecar::list_modules,
