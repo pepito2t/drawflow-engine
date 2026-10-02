@@ -16,8 +16,10 @@ from engine.core.fields import ui_field
 from engine.core.registry import AnyModule
 from engine.core.settings import (
     describe_settings,
+    export_section,
     load_run_settings,
     read_document,
+    read_section_import,
     save_settings,
     section_specs,
 )
@@ -164,3 +166,52 @@ def test_describe_falls_back_to_defaults_and_reports_invalid_section(
 def test_general_is_a_reserved_module_id() -> None:
     with pytest.raises(ModuleContractError):
         section_specs({"general": make_module("general", SampleSettings)})
+
+
+def test_exported_section_can_be_read_back(
+    settings_file: Path, modules: dict[str, AnyModule], tmp_path: Path
+) -> None:
+    save_settings(settings_file, {"sample": {"prefix": "NORME-B"}}, modules)
+    target = tmp_path / "Exports é" / "sample.json"
+
+    export_section(settings_file, "sample", modules, target)
+    imported = read_section_import(target, modules)
+
+    assert imported == {"section": "sample", "title": "Exemple", "values": {"prefix": "NORME-B"}}
+
+
+def test_import_rejects_foreign_files(tmp_path: Path, modules: dict[str, AnyModule]) -> None:
+    source = tmp_path / "autre.json"
+    source.write_text(json.dumps({"hello": 1}), encoding="utf-8")
+
+    with pytest.raises(InvalidSettingsError):
+        read_section_import(source, modules)
+
+
+def test_import_validates_values(tmp_path: Path, modules: dict[str, AnyModule]) -> None:
+    source = tmp_path / "invalide.json"
+    payload = {
+        "format": "drawflow-settings",
+        "version": 1,
+        "section": "sample",
+        "values": {"prefix": ""},
+    }
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(InvalidSettingsError) as caught:
+        read_section_import(source, modules)
+
+    assert "Préfixe" in caught.value.message
+
+
+def test_import_of_unknown_section_is_explained(
+    tmp_path: Path, modules: dict[str, AnyModule]
+) -> None:
+    source = tmp_path / "inconnu.json"
+    payload = {"format": "drawflow-settings", "version": 1, "section": "radar", "values": {}}
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(InvalidSettingsError) as caught:
+        read_section_import(source, modules)
+
+    assert "radar" in caught.value.message

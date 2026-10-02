@@ -13,6 +13,8 @@ export type AppEvent =
   | { type: "updateAvailable"; version: string }
   | { type: "updateDeferred" }
   | { type: "settingsSaved" }
+  | { type: "templateImported"; name: string }
+  | { type: "settingsExported"; target: string }
   | { type: "accessCodeChanged" };
 
 export type AppEventListener = (event: AppEvent) => void;

@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
+from engine.core.templates import TemplateLibrary, TemplateUser
 from engine.modules.dwg_parts.tests.plans import build_facade_plan
 
 GOLDEN_RELATIVE_PATH = Path("fixtures") / "dwg-parts" / "expected" / "liste-pieces.json"
@@ -98,3 +99,25 @@ def test_inputs_require_a_plan_or_a_folder(tmp_path: Path) -> None:
 
     error = json.loads(completed.stdout.splitlines()[-1])
     assert "au moins un plan" in error["message"]
+
+
+def test_default_template_is_used_when_none_is_chosen(tmp_path: Path, plans: Path) -> None:
+    template = tmp_path / "Modèle maison.xlsx"
+    workbook = Workbook()
+    workbook.save(template)
+    settings_file = write_json(tmp_path / "settings.json", {})
+    library = TemplateLibrary(settings_file)
+    imported = library.import_file(template)
+    library.set_default(TemplateUser("dwg-parts", "Liste de pièces", "xlsx"), imported.id)
+    inputs = write_json(
+        tmp_path / "inputs.json",
+        {"folders": [str(plans)], "output_folder": str(tmp_path / "Sortie")},
+    )
+
+    completed = run_engine(
+        "run", "dwg-parts", "--input", str(inputs), "--settings", str(settings_file)
+    )
+
+    events = [json.loads(line) for line in completed.stdout.splitlines()]
+    assert {"type": "log", "message": "Modèle par défaut : Modèle maison.xlsx"} in events
+    assert events[-1]["type"] == "result"

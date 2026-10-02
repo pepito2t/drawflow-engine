@@ -9,6 +9,7 @@ MANIFEST = ModuleManifest(
     version="0.1.0",
     order=TAB_ORDER,
     icon="report",
+    template_kind="docx",
     instructions=[
         "Ajoutez des plans PDF et/ou des dossiers de plans (Parcourir ou glisser-déposer).",
         "Indiquez le nom du projet et, si besoin, un modèle Word à balises.",

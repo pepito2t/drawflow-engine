@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::path::PathBuf;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{ipc::Channel, AppHandle, Manager, State};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
@@ -70,6 +70,52 @@ pub async fn save_settings(
     let input_file = write_input_file(&values)?;
     let input = path_argument(input_file.path().to_path_buf());
     let output = query_engine(&app, settings_arguments("set", settings, Some(input))).await;
+    drop(input_file);
+    output
+}
+
+/// Allow-listed file-based engine requests (templates, settings import/export).
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+pub enum EngineRequest {
+    #[serde(rename = "templates.list")]
+    TemplatesList,
+    #[serde(rename = "templates.import")]
+    TemplatesImport,
+    #[serde(rename = "templates.remove")]
+    TemplatesRemove,
+    #[serde(rename = "templates.set-default")]
+    TemplatesSetDefault,
+    #[serde(rename = "settings.export")]
+    SettingsExport,
+    #[serde(rename = "settings.read-import")]
+    SettingsReadImport,
+}
+
+impl EngineRequest {
+    fn command(self) -> (&'static str, &'static str) {
+        match self {
+            Self::TemplatesList => ("templates", "list"),
+            Self::TemplatesImport => ("templates", "import"),
+            Self::TemplatesRemove => ("templates", "remove"),
+            Self::TemplatesSetDefault => ("templates", "set-default"),
+            Self::SettingsExport => ("settings", "export"),
+            Self::SettingsReadImport => ("settings", "read-import"),
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn engine_request(
+    app: AppHandle,
+    lock: State<'_, AccessLock>,
+    request: EngineRequest,
+    payload: serde_json::Value,
+) -> Result<EngineOutput, BridgeError> {
+    lock.ensure_unlocked()?;
+    let settings = path_argument(settings_file(&app)?);
+    let input_file = write_input_file(&payload)?;
+    let input = path_argument(input_file.path().to_path_buf());
+    let output = query_engine(&app, request_arguments(request, settings, input)).await;
     drop(input_file);
     output
 }
@@ -152,6 +198,18 @@ fn settings_arguments(action: &str, settings: String, input: Option<String>) -> 
         arguments.extend(["--input".to_owned(), input]);
     }
     arguments
+}
+
+fn request_arguments(request: EngineRequest, settings: String, input: String) -> Vec<String> {
+    let (group, action) = request.command();
+    vec![
+        group.to_owned(),
+        action.to_owned(),
+        "--settings".to_owned(),
+        settings,
+        "--input".to_owned(),
+        input,
+    ]
 }
 
 fn path_argument(path: PathBuf) -> String {
@@ -277,6 +335,23 @@ mod tests {
                 "v.json"
             ]
         );
+    }
+
+    #[test]
+    fn requests_are_allow_listed_by_name() {
+        let request: EngineRequest = serde_json::from_str("\"templates.import\"").unwrap();
+        assert_eq!(
+            request_arguments(request, "s.json".to_owned(), "r.json".to_owned()),
+            [
+                "templates",
+                "import",
+                "--settings",
+                "s.json",
+                "--input",
+                "r.json"
+            ]
+        );
+        assert!(serde_json::from_str::<EngineRequest>("\"run\"").is_err());
     }
 
     #[test]
