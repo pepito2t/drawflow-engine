@@ -7,6 +7,7 @@ export const COMMAND_ARGUMENTS = {
   "runs.cancel-all": z.object({}),
   "result.open-last": z.object({}),
   "settings.open": z.object({}),
+  "assistant.toggle": z.object({}),
   "update.install": z.object({}),
   "app.state": z.object({}),
 } as const;
@@ -21,6 +22,7 @@ export const COMMANDS = {
   cancelAllRuns: "runs.cancel-all",
   openLastResult: "result.open-last",
   openSettings: "settings.open",
+  toggleAssistant: "assistant.toggle",
   installUpdate: "update.install",
   appState: "app.state",
 } as const satisfies Record<string, CommandId>;

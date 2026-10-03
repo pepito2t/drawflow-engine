@@ -24,7 +24,8 @@ export type EngineRequestName =
   | "templates.remove"
   | "templates.set-default"
   | "settings.export"
-  | "settings.read-import";
+  | "settings.read-import"
+  | "assistant.models";
 
 export async function engineRequest(
   request: EngineRequestName,

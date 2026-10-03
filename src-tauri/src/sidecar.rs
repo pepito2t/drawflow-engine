@@ -12,7 +12,7 @@ use crate::error::BridgeError;
 use crate::paths::settings_file;
 use crate::runs::{Killable, RunId, RunRegistry};
 
-const SIDECAR_NAME: &str = "engine";
+pub(crate) const SIDECAR_NAME: &str = "engine";
 const INPUT_FILE_PREFIX: &str = "drawflow-input-";
 const INPUT_FILE_SUFFIX: &str = ".json";
 
@@ -95,6 +95,8 @@ pub enum EngineRequest {
     SettingsExport,
     #[serde(rename = "settings.read-import")]
     SettingsReadImport,
+    #[serde(rename = "assistant.models")]
+    AssistantModels,
 }
 
 impl EngineRequest {
@@ -109,6 +111,7 @@ impl EngineRequest {
             Self::PresetsRemove => ("presets", "remove"),
             Self::SettingsExport => ("settings", "export"),
             Self::SettingsReadImport => ("settings", "read-import"),
+            Self::AssistantModels => ("assistant", "models"),
         }
     }
 }
@@ -221,11 +224,11 @@ fn request_arguments(request: EngineRequest, settings: String, input: String) ->
     ]
 }
 
-fn path_argument(path: PathBuf) -> String {
+pub(crate) fn path_argument(path: PathBuf) -> String {
     path.to_string_lossy().into_owned()
 }
 
-async fn relay_events(
+pub(crate) async fn relay_events(
     receiver: &mut tauri::async_runtime::Receiver<CommandEvent>,
     channel: &Channel<EngineMessage>,
 ) -> Result<(), BridgeError> {
@@ -261,7 +264,7 @@ fn decode_line(bytes: &[u8]) -> String {
         .to_owned()
 }
 
-fn write_input_file(inputs: &serde_json::Value) -> Result<NamedTempFile, BridgeError> {
+pub(crate) fn write_input_file(inputs: &serde_json::Value) -> Result<NamedTempFile, BridgeError> {
     let mut file = tempfile::Builder::new()
         .prefix(INPUT_FILE_PREFIX)
         .suffix(INPUT_FILE_SUFFIX)
