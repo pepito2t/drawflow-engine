@@ -13,10 +13,16 @@ interface AppCommandTargets {
   modules: CatalogModule[];
   selectModule: (moduleId: string) => void;
   openSettings: () => void;
+  toggleAssistant: () => void;
 }
 
 /** Registers the app-level commands shared by the UI, the Stream Deck and future integrations. */
-export function useAppCommands({ modules, selectModule, openSettings }: AppCommandTargets): void {
+export function useAppCommands({
+  modules,
+  selectModule,
+  openSettings,
+  toggleAssistant,
+}: AppCommandTargets): void {
   const { state, dispatch } = useRunsStore();
   const { presets } = usePresets();
   const { publish, subscribe } = useNotificationCenter();
@@ -104,4 +110,10 @@ export function useAppCommands({ modules, selectModule, openSettings }: AppComma
     await bringToFront();
   }, [openSettings]);
   useCommand(COMMANDS.openSettings, settings);
+
+  const assistant = useCallback(async () => {
+    toggleAssistant();
+    await bringToFront();
+  }, [toggleAssistant]);
+  useCommand(COMMANDS.toggleAssistant, assistant);
 }

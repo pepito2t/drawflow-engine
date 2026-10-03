@@ -22,7 +22,7 @@ const resultEventSchema = z.object({
   outputs: z.array(z.string()),
 });
 
-const errorEventSchema = z.object({
+export const errorEventSchema = z.object({
   type: z.literal("error"),
   message: z.string(),
   file: z.string().nullable(),
