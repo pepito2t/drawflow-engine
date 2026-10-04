@@ -9,6 +9,7 @@ import { UpdateProvider } from "../hooks/update-center";
 import { useAppCommands } from "../hooks/use-app-commands";
 import { useIntegrationBridge } from "../hooks/use-integration-bridge";
 import { useRunEvents } from "../hooks/use-run-events";
+import { useSetupCheck } from "../hooks/use-setup-check";
 import { useSystemNotifications } from "../hooks/use-system-notifications";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
@@ -27,6 +28,9 @@ import { RunsIndicator } from "./RunsIndicator";
 import { Toaster } from "./Toaster";
 import { UpdateIndicator } from "./UpdateIndicator";
 import { Loader } from "./Spinner";
+
+const DEFAULT_SETTINGS_TAB = "";
+const ASSISTANT_SETTINGS_TAB = "assistant";
 
 function loadCatalog(): Promise<CatalogModule[]> {
   return listModules().then(parseCatalog);
@@ -112,11 +116,12 @@ function CatalogFailure({ error, onRetry }: { error: unknown; onRetry: () => voi
 function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule[]> }) {
   const modules = use(catalogPromise);
   const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<string | null>(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const { state, dispatch } = useRunsStore();
   useRunEvents(state, modules);
   useSystemNotifications();
+  useSetupCheck();
 
   const select = useCallback(
     (moduleId: string) => {
@@ -131,8 +136,8 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
     },
     [dispatch],
   );
-  const openSettings = useCallback(() => {
-    setIsSettingsOpen(true);
+  const openSettings = useCallback((tab?: string) => {
+    setSettingsTab(tab ?? DEFAULT_SETTINGS_TAB);
   }, []);
   const toggleAssistant = useCallback(() => {
     setIsAssistantOpen((open) => !open);
@@ -148,7 +153,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
         aria-label="Paramètres"
         title="Paramètres"
         onClick={() => {
-          setIsSettingsOpen(true);
+          openSettings();
         }}
       >
         <GearIcon />
@@ -198,14 +203,18 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
             onClose={() => {
               setIsAssistantOpen(false);
             }}
-            onOpenSettings={openSettings}
+            onOpenSettings={() => {
+              openSettings(ASSISTANT_SETTINGS_TAB);
+            }}
           />
         </div>
         <Toaster onOpenModule={select} />
-        {isSettingsOpen && (
+        {settingsTab !== null && (
           <SettingsDialog
+            key={settingsTab}
+            initialTab={settingsTab === DEFAULT_SETTINGS_TAB ? undefined : settingsTab}
             onClose={() => {
-              setIsSettingsOpen(false);
+              setSettingsTab(null);
             }}
           />
         )}

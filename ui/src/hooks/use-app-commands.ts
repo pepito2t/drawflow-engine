@@ -4,6 +4,7 @@ import { COMMANDS } from "../lib/commands";
 import { entryFor, runningModuleIds } from "../lib/runs-store";
 import { cancelRun } from "../lib/tauri/engine";
 import { bringToFront, openOutput } from "../lib/tauri/window";
+import { SETUP_TAB_ID } from "../lib/setup";
 import { useCommand } from "./command-registry";
 import { useNotificationCenter } from "./notification-center";
 import { usePresets } from "./presets-context";
@@ -12,7 +13,7 @@ import { useRunsStore } from "./runs-context";
 interface AppCommandTargets {
   modules: CatalogModule[];
   selectModule: (moduleId: string) => void;
-  openSettings: () => void;
+  openSettings: (tab?: string) => void;
   toggleAssistant: () => void;
 }
 
@@ -116,4 +117,10 @@ export function useAppCommands({
     await bringToFront();
   }, [toggleAssistant]);
   useCommand(COMMANDS.toggleAssistant, assistant);
+
+  const setup = useCallback(async () => {
+    openSettings(SETUP_TAB_ID);
+    await bringToFront();
+  }, [openSettings]);
+  useCommand(COMMANDS.openSetup, setup);
 }

@@ -25,7 +25,8 @@ export type EngineRequestName =
   | "templates.set-default"
   | "settings.export"
   | "settings.read-import"
-  | "assistant.models";
+  | "assistant.models"
+  | "setup.scan";
 
 export async function engineRequest(
   request: EngineRequestName,
