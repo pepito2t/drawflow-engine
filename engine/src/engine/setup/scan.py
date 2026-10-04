@@ -1,0 +1,176 @@
+"""Turns what is found on the computer into a checklist with the actions that fix each item."""
+
+from dataclasses import dataclass
+from pathlib import Path
+
+from engine.core.settings_models import AssistantSettings
+from engine.setup.locations import (
+    find_oda,
+    ollama_installed,
+    stream_deck_installed,
+    stream_deck_plugin_installed,
+)
+from engine.setup.machine import Machine
+from engine.setup.report import (
+    ActionId,
+    PackageManager,
+    SetupAction,
+    SetupItem,
+    SetupReport,
+    SystemInfo,
+)
+
+ACTION_LABELS: dict[ActionId, str] = {
+    "oda.install": "Installer",
+    "oda.use-detected": "Utiliser",
+    "oda.open-page": "Page de téléchargement",
+    "ollama.install": "Installer",
+    "ollama.start": "Démarrer",
+    "ollama.open-page": "Page de téléchargement",
+    "model.pull": "Télécharger",
+    "streamdeck.install-plugin": "Installer le plugin",
+    "streamdeck.open-page": "Page de téléchargement",
+}
+# Homebrew has no ODA File Converter package: on macOS the download page is the only way.
+INSTALLABLE_WITH: dict[ActionId, set[PackageManager]] = {
+    "oda.install": {"winget"},
+    "ollama.install": {"winget", "brew"},
+}
+
+
+@dataclass(frozen=True)
+class ModelServerState:
+    reachable: bool
+    is_ollama: bool
+    available: list[str]
+
+
+def build_report(
+    machine: Machine,
+    oda_configured: Path | None,
+    assistant: AssistantSettings,
+    server: ModelServerState,
+) -> SetupReport:
+    system = SystemInfo(os=machine.os, arch=machine.arch, package_manager=_manager(machine))
+    items = [
+        _oda_item(machine, system, oda_configured),
+        _model_server_item(machine, system, assistant, server),
+        _model_item(assistant, server),
+        _stream_deck_item(machine),
+    ]
+    return SetupReport(system=system, items=items)
+
+
+def _oda_item(machine: Machine, system: SystemInfo, configured: Path | None) -> SetupItem:
+    label = "ODA File Converter"
+    if configured is not None and machine.is_file(configured):
+        return SetupItem(id="oda", label=label, status="ok", detail=str(configured))
+    detected = find_oda(machine)
+    if detected is not None:
+        return SetupItem(
+            id="oda",
+            label=label,
+            status="missing",
+            detail=f"Installé mais pas configuré : {detected}",
+            actions=_actions("oda.use-detected"),
+        )
+    return SetupItem(
+        id="oda",
+        label=label,
+        status="missing",
+        detail="Nécessaire pour lire les fichiers DWG.",
+        actions=_install_actions(system, "oda.install", "oda.open-page"),
+    )
+
+
+def _model_server_item(
+    machine: Machine, system: SystemInfo, assistant: AssistantSettings, server: ModelServerState
+) -> SetupItem:
+    label = "Serveur du modèle local"
+    if server.reachable:
+        name = "Ollama" if server.is_ollama else "Serveur compatible OpenAI"
+        return SetupItem(
+            id="model-server",
+            label=label,
+            status="ok",
+            detail=f"{name} — {assistant.model_server_url}",
+        )
+    if ollama_installed(machine):
+        return SetupItem(
+            id="model-server",
+            label=label,
+            status="missing",
+            detail="Ollama est installé mais ne répond pas.",
+            actions=_actions("ollama.start"),
+        )
+    return SetupItem(
+        id="model-server",
+        label=label,
+        status="missing",
+        detail="Ollama fait tourner l'assistant sur ce poste, sans connexion externe.",
+        actions=_install_actions(system, "ollama.install", "ollama.open-page"),
+    )
+
+
+def _model_item(assistant: AssistantSettings, server: ModelServerState) -> SetupItem:
+    label = f"Modèle {assistant.model}"
+    if not server.reachable:
+        return SetupItem(
+            id="model", label=label, status="missing", detail="Démarrez d'abord le serveur."
+        )
+    if assistant.model in server.available:
+        return SetupItem(id="model", label=label, status="ok", detail="Disponible.")
+    if server.is_ollama:
+        return SetupItem(
+            id="model",
+            label=label,
+            status="missing",
+            detail="Pas encore téléchargé (plusieurs Go).",
+            actions=_actions("model.pull"),
+        )
+    return SetupItem(
+        id="model",
+        label=label,
+        status="missing",
+        detail="Introuvable sur le serveur : chargez-le dans LM Studio ou changez de modèle.",
+    )
+
+
+def _stream_deck_item(machine: Machine) -> SetupItem:
+    label = "Plugin Stream Deck"
+    if not stream_deck_installed(machine):
+        return SetupItem(
+            id="stream-deck",
+            label=label,
+            status="optional",
+            detail="Facultatif : logiciel Stream Deck non installé.",
+            actions=_actions("streamdeck.open-page"),
+        )
+    if stream_deck_plugin_installed(machine):
+        return SetupItem(id="stream-deck", label=label, status="ok", detail="Installé.")
+    return SetupItem(
+        id="stream-deck",
+        label=label,
+        status="optional",
+        detail="Pilotez Drawflow depuis les touches du Stream Deck.",
+        actions=_actions("streamdeck.install-plugin"),
+    )
+
+
+def _manager(machine: Machine) -> PackageManager | None:
+    if machine.os == "windows" and machine.which("winget") is not None:
+        return "winget"
+    if machine.os == "macos" and machine.which("brew") is not None:
+        return "brew"
+    return None
+
+
+def _install_actions(system: SystemInfo, install: ActionId, page: ActionId) -> list[SetupAction]:
+    managers = INSTALLABLE_WITH.get(install, set())
+    if system.package_manager is not None and system.package_manager in managers:
+        return _actions(install, page)
+    return _actions(page)
+
+
+def _actions(*ids: ActionId) -> list[SetupAction]:
+    return [SetupAction(id=action, label=ACTION_LABELS[action]) for action in ids]

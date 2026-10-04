@@ -41,11 +41,16 @@ class _PendingCall:
 
 class ModelClient:
     def __init__(
-        self, base_url: str, model: str, transport: httpx.AsyncBaseTransport | None = None
+        self,
+        base_url: str,
+        model: str,
+        transport: httpx.AsyncBaseTransport | None = None,
+        timeout: httpx.Timeout = REQUEST_TIMEOUT,
     ) -> None:
         self.base_url = base_url
         self.model = model
         self._transport = transport
+        self._timeout = timeout
 
     async def list_models(self) -> list[str]:
         async with self._http() as http:
@@ -74,7 +79,7 @@ class ModelClient:
 
     def _http(self) -> httpx.AsyncClient:
         return httpx.AsyncClient(
-            base_url=self.base_url, timeout=REQUEST_TIMEOUT, transport=self._transport
+            base_url=self.base_url, timeout=self._timeout, transport=self._transport
         )
 
     async def _send(self, http: httpx.AsyncClient, request: httpx.Request) -> httpx.Response:

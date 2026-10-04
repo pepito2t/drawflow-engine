@@ -84,6 +84,10 @@ def _build_parser() -> argparse.ArgumentParser:
     for action, help_text in ASSISTANT_ACTIONS.items():
         _add_request_parser(assistant_commands, action, help_text)
 
+    setup_parser = commands.add_parser("setup", help="Prérequis de l'installation.")
+    setup_commands = setup_parser.add_subparsers(dest="setup_command", required=True)
+    _add_request_parser(setup_commands, "scan", "État des prérequis et actions proposées (JSON).")
+
     templates_parser = commands.add_parser("templates", help="Bibliothèque de modèles de sortie.")
     templates_commands = templates_parser.add_subparsers(dest="templates_command", required=True)
     for action, help_text in TEMPLATE_ACTIONS.items():
@@ -108,6 +112,8 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
         _serve_mcp(arguments.settings)
     elif arguments.command == "assistant":
         _assistant(arguments)
+    elif arguments.command == "setup":
+        _setup(arguments)
     elif arguments.command == "presets":
         _write_json(
             handle_presets(arguments.presets_command, arguments.settings, _request(arguments))
@@ -152,6 +158,12 @@ def _assistant(arguments: argparse.Namespace) -> None:
         _write_json(service.list_models(arguments.settings))
     else:
         service.chat(arguments.settings, _request(arguments), make_assistant_emitter())
+
+
+def _setup(arguments: argparse.Namespace) -> None:
+    from engine.setup import service
+
+    _write_json(service.scan(arguments.settings))
 
 
 def _request(arguments: argparse.Namespace) -> dict[str, Any]:
