@@ -14,11 +14,19 @@ Stack : Tauri 2 · React + TypeScript · moteur Python (sidecar PyInstaller).
 
 | Document | Pour qui | Contenu |
 |---|---|---|
-| [Guide utilisateur](docs/guide-utilisateur.md) | Utilisateur | Installation, fonctionnalités, paramètres, assistant, Stream Deck, dépannage |
-| [Architecture](docs/architecture.md) | Développeur | Moteur, contrat de module, assistant et MCP, installation du poste, UI, Rust, CI/CD |
+| [Guide utilisateur](docs/guide.md) | Utilisateur | Installer, utiliser chaque fonctionnalité, assistant, Stream Deck, dépannage |
+| [Architecture](docs/architecture.md) | Développeur | Vue d'ensemble, flux principaux, décisions et leurs raisons, CI/CD |
 | [API locale](docs/api-locale.md) | Intégrations | Protocole WebSocket (Stream Deck, outils tiers) |
 | [Historique des versions](CHANGELOG.md) | Tous | Contenu de chaque version |
 | [CLAUDE.md](CLAUDE.md) | Développeur | Règles de développement et commandes |
+
+Règles de la documentation :
+
+1. Un fichier par public, et une information à un seul endroit ; ailleurs, un lien.
+2. Pas de valeurs que le code connaît déjà (réglages par défaut, listes de champs, versions) : on renvoie à l'application ou au code.
+3. Le pourquoi plutôt que le quoi : chaque choix structurant va dans « Décisions » de l'architecture (une ligne, la raison, la PR).
+4. Taille maximum : README ~80 lignes, guide et architecture ~300 lignes chacun. Au-delà, on coupe ; on ne crée un nouveau fichier que pour un nouveau public ou un contrat externe.
+5. Mise à jour dans la PR qui change le comportement : `CHANGELOG.md` toujours, les autres documents s'ils sont concernés.
 
 ## Démarrer en développement
 

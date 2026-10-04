@@ -25,7 +25,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
   templates/              # modèles DOCX/XLSX
   fixtures/               # fichiers réels anonymisés + sorties attendues
   streamdeck/             # plugin Stream Deck (SDK Node.js Elgato) — client de l'API locale
-  docs/                   # guide-utilisateur.md, architecture.md, api-locale.md
+  docs/                   # guide.md, architecture.md, api-locale.md
   CHANGELOG.md            # historique des versions
   .github/workflows/      # ci.yml, release.yml
 ```
@@ -97,7 +97,6 @@ Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 - Une issue = une branche = une PR (`feat/<n°>-<slug>`, `fix/…`, `chore/…`).
 - Commits conventionnels : `feat(dwg-parts): …`, `fix(ui): …`, `chore(ci): …`.
 - PR : `Closes #<n°>`, résumé court, comment tester.
-- Documentation à jour dans la même PR : `CHANGELOG.md` (section « Non publié ») et, selon le changement, `docs/guide-utilisateur.md`, `docs/architecture.md` ou `docs/api-locale.md`.
 - Ne jamais pousser sur `main` directement. Ne jamais forcer un push.
 - Releases : tag `vX.Y.Z` (semver) → workflow `release.yml`.
 
