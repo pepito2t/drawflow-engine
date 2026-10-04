@@ -14,6 +14,8 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
     src/engine/
       cli.py              # list-modules, run
       core/               # contrat de module, événements, registry, config, erreurs
+      assistant/          # serveur MCP, client du modèle local, boucle de l'assistant
+      setup/              # analyse du poste et installations (winget, Ollama…)
       modules/<id>/       # une fonctionnalité = un dossier
         manifest.py       # id, nom, description, version
         schema.py         # entrées/sorties pydantic
@@ -23,7 +25,8 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
   templates/              # modèles DOCX/XLSX
   fixtures/               # fichiers réels anonymisés + sorties attendues
   streamdeck/             # plugin Stream Deck (SDK Node.js Elgato) — client de l'API locale
-  docs/api-locale.md      # protocole de l'API locale WebSocket
+  docs/                   # guide.md, architecture.md, api-locale.md
+  CHANGELOG.md            # historique des versions
   .github/workflows/      # ci.yml, release.yml
 ```
 
