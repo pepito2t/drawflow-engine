@@ -51,6 +51,7 @@ Réponse (même `id`) :
 | `runs.cancel-all` | — | Annule tous les traitements en cours |
 | `result.open-last` | — | Ouvre le dernier fichier produit |
 | `settings.open` | — | Ouvre les paramètres |
+| `assistant.toggle` | — | Ouvre ou ferme le panneau de l'assistant |
 | `update.install` | — | Installe la mise à jour disponible |
 
 ## Événements diffusés

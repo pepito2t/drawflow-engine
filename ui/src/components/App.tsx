@@ -17,7 +17,8 @@ import { listModules } from "../lib/tauri/engine";
 import { AppShell } from "./AppShell";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
-import { GearIcon } from "./icons";
+import { AssistantPanel } from "./AssistantPanel";
+import { ChatIcon, GearIcon } from "./icons";
 import { LockScreen } from "./LockScreen";
 import { ModuleTabs, tabPanelId } from "./ModuleTabs";
 import { SettingsDialog } from "./SettingsDialog";
@@ -112,6 +113,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const modules = use(catalogPromise);
   const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const { state, dispatch } = useRunsStore();
   useRunEvents(state, modules);
   useSystemNotifications();
@@ -132,7 +134,10 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const openSettings = useCallback(() => {
     setIsSettingsOpen(true);
   }, []);
-  useAppCommands({ modules, selectModule: select, openSettings });
+  const toggleAssistant = useCallback(() => {
+    setIsAssistantOpen((open) => !open);
+  }, []);
+  useAppCommands({ modules, selectModule: select, openSettings, toggleAssistant });
   useIntegrationBridge();
 
   const sidebarActions = (
@@ -149,6 +154,16 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
         <GearIcon />
       </button>
       <RunsIndicator modules={modules} onOpenModule={select} />
+      <button
+        type="button"
+        className={isAssistantOpen ? "icon-button active" : "icon-button"}
+        aria-label="Assistant"
+        aria-expanded={isAssistantOpen}
+        title="Assistant"
+        onClick={toggleAssistant}
+      >
+        <ChatIcon />
+      </button>
     </>
   );
 
@@ -158,7 +173,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
         engine={{ state: "ready", moduleCount: modules.length }}
         updates={<UpdateIndicator />}
       >
-        <div className="layout">
+        <div className={isAssistantOpen ? "layout with-assistant" : "layout"}>
           <ModuleTabs
             modules={modules}
             selectedId={selectedId}
@@ -178,6 +193,13 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
               </div>
             ))}
           </main>
+          <AssistantPanel
+            isOpen={isAssistantOpen}
+            onClose={() => {
+              setIsAssistantOpen(false);
+            }}
+            onOpenSettings={openSettings}
+          />
         </div>
         <Toaster onOpenModule={select} />
         {isSettingsOpen && (

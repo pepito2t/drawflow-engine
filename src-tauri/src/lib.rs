@@ -1,4 +1,5 @@
 mod access;
+mod assistant;
 mod error;
 mod integrations;
 mod outputs;
@@ -8,6 +9,7 @@ mod sidecar;
 mod updates;
 
 use access::AccessLock;
+use assistant::AssistantTurn;
 use integrations::IntegrationState;
 use sidecar::EngineRuns;
 use tauri::{Manager, RunEvent};
@@ -22,6 +24,7 @@ pub fn run() {
         .setup(updates::register_updater)
         .manage(EngineRuns::default())
         .manage(AccessLock::default())
+        .manage(AssistantTurn::default())
         .manage(IntegrationState::default())
         .invoke_handler(tauri::generate_handler![
             access::lock_status,
@@ -38,7 +41,9 @@ pub fn run() {
             sidecar::save_settings,
             sidecar::engine_request,
             sidecar::run_module,
-            sidecar::cancel_run
+            sidecar::cancel_run,
+            assistant::assistant_chat,
+            assistant::assistant_cancel
         ])
         .build(tauri::generate_context!());
     match app {
@@ -57,5 +62,8 @@ pub fn run() {
 fn stop_engine_processes(handle: &tauri::AppHandle) {
     for error in handle.state::<EngineRuns>().cancel_all() {
         eprintln!("Arrêt d'un traitement impossible : {error}");
+    }
+    if let Err(error) = handle.state::<AssistantTurn>().stop() {
+        eprintln!("Arrêt de l'assistant impossible : {error}");
     }
 }
