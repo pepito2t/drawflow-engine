@@ -1,29 +1,45 @@
 # drawflow-engine
 
-Application desktop Windows qui automatise les tâches d'un dessinateur en façade : listes de pièces (DWG → XLSX), rapports (PDF → DOCX) et soumissions (XLSX / PDF avec XLSX intégré).
+Application desktop Windows qui automatise les tâches d'un dessinateur en façade :
+
+- **Liste de pièces** : plans DWG/DXF → liste Excel des pièces et quantités.
+- **Rapport** : plans PDF → rapport Word (cartouche, références).
+- **Soumission** : soumissions XLSX ou PDF avec XLSX joint → tableau normalisé.
+
+S'y ajoutent un **assistant local** (modèle d'IA sur le poste, rien ne sort de la machine), un **écran Installation** qui installe les prérequis en un clic, des **préréglages**, et le pilotage par **Stream Deck**.
 
 Stack : Tauri 2 · React + TypeScript · moteur Python (sidecar PyInstaller).
 
-Les règles de développement sont dans [CLAUDE.md](CLAUDE.md).
+## Documentation
 
-## Code d'accès
+| Document | Pour qui | Contenu |
+|---|---|---|
+| [Guide utilisateur](docs/guide-utilisateur.md) | Utilisateur | Installation, fonctionnalités, paramètres, assistant, Stream Deck, dépannage |
+| [Architecture](docs/architecture.md) | Développeur | Moteur, contrat de module, assistant et MCP, installation du poste, UI, Rust, CI/CD |
+| [API locale](docs/api-locale.md) | Intégrations | Protocole WebSocket (Stream Deck, outils tiers) |
+| [Historique des versions](CHANGELOG.md) | Tous | Contenu de chaque version |
+| [CLAUDE.md](CLAUDE.md) | Développeur | Règles de développement et commandes |
 
-L'application installée demande un code au démarrage (pas en développement). Le code initial est `0000` ; il se change dans **Paramètres → Code d'accès**. Il est stocké uniquement haché (argon2id).
+## Démarrer en développement
 
-**Code oublié :** fermer l'application et supprimer `access-code.json` dans le dossier de configuration (`%APPDATA%\ch.drawflow.desktop\` sous Windows). Le code redevient `0000`.
+Prérequis : Node 22 + pnpm, Python 3.12 + uv, Rust stable.
+
+```bash
+pnpm install
+(cd engine && uv sync)
+pnpm dev            # construit le sidecar puis lance l'application
+```
+
+Tests et vérifications : voir la section « Commandes » de [CLAUDE.md](CLAUDE.md). En développement, le code d'accès et l'updater sont désactivés.
 
 ## Publier une version
 
-1. `python scripts/version.py bump X.Y.Z` (met à jour UI, Tauri, Rust et moteur), commit via PR.
+1. `python scripts/version.py bump X.Y.Z` (UI, Tauri, Rust, moteur, plugin Stream Deck), commit via PR.
 2. Une fois mergé : `git tag vX.Y.Z && git push origin vX.Y.Z`.
-3. Le workflow `Release` construit l'installeur Windows (NSIS) et publie la release avec `latest.json` signé.
+3. Le workflow `Release` construit l'installeur Windows (NSIS), publie la release avec `latest.json` signé et y joint le plugin `ch.drawflow.streamDeckPlugin`.
 
-Prérequis (une fois) : `pnpm tauri signer generate`, puis secrets `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, et variable `UPDATER_PUBKEY` (clé publique). L'app installée vérifie les mises à jour au démarrage (barre d'état) ; en développement, l'updater est désactivé. Pour publier les releases dans un repo public séparé : variables `RELEASES_OWNER` / `RELEASES_REPO` et secret `RELEASES_TOKEN` (token avec droit `contents:write` sur ce repo).
+Prérequis (une fois) :
+- `pnpm tauri signer generate`, puis les secrets `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, et la variable `UPDATER_PUBKEY` (clé publique).
+- Pour publier les releases dans un autre dépôt public : variables `RELEASES_OWNER` et `RELEASES_REPO`, secret `RELEASES_TOKEN` (droit `contents:write` sur ce dépôt).
 
-## Stream Deck
-
-1. Dans Drawflow : **Paramètres → Intégrations** → activer l'API locale, copier le jeton.
-2. Double-cliquer sur `ch.drawflow.streamDeckPlugin` (fourni avec chaque release) pour l'installer dans Stream Deck.
-3. Glisser une action « Drawflow » sur une touche, puis coller le jeton dans ses réglages (une seule fois : il est partagé par toutes les touches).
-
-Actions : lancer un préréglage (progression en direct, vert/rouge à la fin), ouvrir un onglet, annuler les traitements, ouvrir le dernier résultat, compteur de traitements. Tant que Drawflow est verrouillée, les touches affichent « Verrouillé » et n'exécutent rien. Protocole : [docs/api-locale.md](docs/api-locale.md).
+L'endpoint de mise à jour (`releases/latest/download/latest.json`) ignore les pré-releases.
