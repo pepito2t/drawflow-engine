@@ -22,6 +22,7 @@ dev = [
   "mypy>=2.4",
   "pyinstaller>=6.22",
   "pytest>=9.1",
+  "pytest-timeout>=2.4",
   "ruff>=0.16",
   "types-openpyxl>=3.1.5.20260827",
 ]
@@ -52,3 +53,5 @@ ignore_missing_imports = true
 testpaths = ["tests", "src/engine/modules"]
 addopts = ["--import-mode=importlib", "-ra"]
 markers = ["oda: requires ODA File Converter (skipped when absent)"]
+# A hung test fails with the stack of every thread instead of blocking CI.
+timeout = 120

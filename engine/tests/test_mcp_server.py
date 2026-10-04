@@ -1,13 +1,15 @@
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import anyio
 from mcp import ClientSession
 from mcp.client.stdio import stdio_client
-from mcp.types import CallToolResult, TextContent
+from mcp.shared.exceptions import McpError
+from mcp.types import CallToolResult, ErrorData, TextContent
 
 from engine.assistant.mcp_server import server_parameters
+from engine.assistant.toolbox import McpToolBox
 
 EXPECTED_TOOLS = {"list_features", "list_presets", "list_templates"}
 
@@ -55,3 +57,17 @@ def test_unreadable_store_becomes_readable_tool_error(tmp_path: Path) -> None:
     content = result.content[0]
     assert isinstance(content, TextContent)
     assert "préréglages est illisible" in content.text
+
+
+class _SilentSession:
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> CallToolResult:
+        raise McpError(ErrorData(code=408, message="Timed out"))
+
+
+def test_tool_that_never_answers_is_reported_to_the_model() -> None:
+    toolbox = McpToolBox(cast(ClientSession, _SilentSession()))
+
+    outcome = anyio.run(toolbox.call, "list_features", {})
+
+    assert not outcome.ok
+    assert "n'a pas répondu" in outcome.text

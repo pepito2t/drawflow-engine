@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from mcp import ClientSession
+from mcp.shared.exceptions import McpError
 from mcp.types import TextContent
 
 # Keeps one verbose tool answer from filling a small model's context.
@@ -43,7 +44,10 @@ class McpToolBox:
         ]
 
     async def call(self, name: str, arguments: dict[str, Any]) -> ToolOutcome:
-        result = await self._session.call_tool(name, arguments)
+        try:
+            result = await self._session.call_tool(name, arguments)
+        except McpError as error:
+            return ToolOutcome(ok=False, text=f"L'outil {name} n'a pas répondu : {error}")
         texts = [part.text for part in result.content if isinstance(part, TextContent)]
         if not texts and result.structuredContent is not None:
             texts = [json.dumps(result.structuredContent, ensure_ascii=False)]
