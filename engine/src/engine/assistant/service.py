@@ -1,6 +1,7 @@
 """Entry points of the `engine assistant` commands."""
 
 from collections.abc import Awaitable, Callable
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -8,16 +9,21 @@ import anyio
 import httpx
 from mcp import ClientSession
 from mcp.client.stdio import stdio_client
+from mcp.shared.exceptions import McpError
 from pydantic import ValidationError
 
 from engine.assistant.agent import run_turn
 from engine.assistant.conversation import ChatRequest
+from engine.assistant.errors import AssistantError
 from engine.assistant.events import EmitAssistant
 from engine.assistant.mcp_server import server_parameters
 from engine.assistant.model_client import ModelClient
 from engine.assistant.toolbox import McpToolBox
 from engine.core.errors import EngineError, InvalidInputError
 from engine.core.settings import load_assistant_settings
+
+# The frozen sidecar takes a few seconds to start; past this, the MCP server is stuck.
+MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
 
 
 def chat(
@@ -32,9 +38,15 @@ def chat(
     async def turn() -> None:
         async with (
             stdio_client(server_parameters(settings)) as (read, write),
-            ClientSession(read, write) as session,
+            ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT) as session,
         ):
-            await session.initialize()
+            try:
+                await session.initialize()
+            except McpError as error:
+                raise AssistantError(
+                    "Les outils Drawflow de l'assistant n'ont pas démarré.",
+                    hint="Réessayez ; si le problème persiste, redémarrez l'application.",
+                ) from error
             await run_turn(request, model, McpToolBox(session), emit)
 
     _run(turn)

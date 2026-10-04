@@ -5,6 +5,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+from datetime import timedelta
 from pathlib import Path
 
 import anyio
@@ -18,6 +19,7 @@ from mcp.client.stdio import stdio_client
 EXPECTED_MODULE_IDS = ["dwg-parts", "pdf-report", "soumission"]
 EXPECTED_MCP_TOOLS = ["list_features", "list_presets", "list_templates"]
 PARALLEL_BATCH_SIZE = 2
+MCP_REQUEST_TIMEOUT = timedelta(seconds=120)
 
 
 def run_binary(binary: Path, *arguments: str) -> str:
@@ -63,7 +65,7 @@ async def smoke_mcp(binary: Path, settings_file: Path) -> None:
     )
     async with (
         stdio_client(parameters) as (read, write),
-        ClientSession(read, write) as session,
+        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT) as session,
     ):
         await session.initialize()
         tools = sorted(tool.name for tool in (await session.list_tools()).tools)
