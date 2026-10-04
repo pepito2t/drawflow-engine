@@ -12,6 +12,7 @@ from mcp.types import ToolAnnotations
 
 from engine.assistant.tools import describe_features, describe_presets, describe_templates
 from engine.core.errors import EngineError
+from engine.core.registry import discover_modules
 
 SERVER_NAME = "drawflow"
 SERVER_INSTRUCTIONS = (
@@ -51,6 +52,9 @@ def build_server(settings: Path) -> FastMCP:
 
 
 def serve(settings: Path) -> None:
+    # On Windows, while the stdio loop blocks reading stdin, an import that probes the console
+    # (isatty) waits on the same pipe forever: every module is imported before the loop starts.
+    discover_modules()
     build_server(settings).run("stdio")
 
 

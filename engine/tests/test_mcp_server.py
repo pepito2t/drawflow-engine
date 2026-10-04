@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, cast
 
@@ -11,13 +12,14 @@ from mcp.types import CallToolResult, ErrorData, TextContent
 from engine.assistant.mcp_server import server_parameters
 from engine.assistant.toolbox import McpToolBox
 
+MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
 EXPECTED_TOOLS = {"list_features", "list_presets", "list_templates"}
 
 
 async def _call_tools(settings: Path, *names: str) -> tuple[set[str], list[CallToolResult]]:
     async with (
         stdio_client(server_parameters(settings)) as (read, write),
-        ClientSession(read, write) as session,
+        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT) as session,
     ):
         await session.initialize()
         tools = await session.list_tools()
