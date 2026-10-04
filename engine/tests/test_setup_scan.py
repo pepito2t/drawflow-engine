@@ -1,0 +1,158 @@
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import httpx
+import pytest
+
+from engine.core.settings_models import AssistantSettings
+from engine.setup import service
+from engine.setup.machine import OperatingSystem
+from engine.setup.scan import ModelServerState, build_report
+
+PROGRAM_FILES = Path("C:/Program Files")
+APPDATA = Path("C:/Users/dessin/AppData/Roaming")
+LOCALAPPDATA = Path("C:/Users/dessin/AppData/Local")
+ODA_2025 = PROGRAM_FILES / "ODA" / "ODAFileConverter 25.12.0" / "ODAFileConverter.exe"
+ODA_2026 = PROGRAM_FILES / "ODA" / "ODAFileConverter 26.4.0" / "ODAFileConverter.exe"
+SERVER_DOWN = ModelServerState(reachable=False, is_ollama=False, available=[])
+
+
+@dataclass
+class FakeMachine:
+    os: OperatingSystem = "windows"
+    arch: str = "amd64"
+    programs: set[str] = field(default_factory=set)
+    files: set[Path] = field(default_factory=set)
+    home: Path = Path("/Users/dessin")
+
+    def which(self, program: str) -> Path | None:
+        return Path(program) if program in self.programs else None
+
+    def is_file(self, path: Path) -> bool:
+        return path in self.files
+
+    def is_dir(self, path: Path) -> bool:
+        return any(path == file or path in file.parents for file in self.files)
+
+    def glob(self, folder: Path, pattern: str) -> list[Path]:
+        return sorted(file for file in self.files if folder in file.parents)
+
+    def folder(self, variable: str) -> Path | None:
+        folders = {"ProgramFiles": PROGRAM_FILES, "APPDATA": APPDATA}
+        return folders.get(variable, LOCALAPPDATA if variable == "LOCALAPPDATA" else None)
+
+
+def report(
+    machine: FakeMachine,
+    server: ModelServerState = SERVER_DOWN,
+    oda: Path | None = None,
+) -> dict[str, Any]:
+    built = build_report(machine, oda, AssistantSettings(), server)
+    return {item.id: item for item in built.items}
+
+
+def action_ids(item: Any) -> list[str]:
+    return [action.id for action in item.actions]
+
+
+def test_fresh_windows_with_winget_offers_direct_installs() -> None:
+    items = report(FakeMachine(programs={"winget"}))
+
+    assert action_ids(items["oda"]) == ["oda.install", "oda.open-page"]
+    assert action_ids(items["model-server"]) == ["ollama.install", "ollama.open-page"]
+    assert items["model"].status == "missing"
+    assert items["stream-deck"].status == "optional"
+
+
+def test_without_package_manager_only_the_download_pages_are_offered() -> None:
+    items = report(FakeMachine())
+
+    assert action_ids(items["oda"]) == ["oda.open-page"]
+    assert action_ids(items["model-server"]) == ["ollama.open-page"]
+
+
+def test_installed_but_unconfigured_oda_is_detected_with_the_latest_version() -> None:
+    items = report(FakeMachine(files={ODA_2025, ODA_2026}))
+
+    assert action_ids(items["oda"]) == ["oda.use-detected"]
+    assert items["oda"].detail.endswith(str(ODA_2026))
+
+
+def test_configured_oda_that_exists_is_ok() -> None:
+    items = report(FakeMachine(files={ODA_2026}), oda=ODA_2026)
+
+    assert items["oda"].status == "ok"
+
+
+def test_installed_ollama_that_does_not_answer_can_be_started() -> None:
+    machine = FakeMachine(files={LOCALAPPDATA / "Programs" / "Ollama" / "ollama.exe"})
+
+    assert action_ids(report(machine)["model-server"]) == ["ollama.start"]
+
+
+def test_missing_model_on_ollama_can_be_pulled() -> None:
+    server = ModelServerState(reachable=True, is_ollama=True, available=["llama3.1:8b"])
+
+    items = report(FakeMachine(), server)
+
+    assert items["model-server"].status == "ok"
+    assert action_ids(items["model"]) == ["model.pull"]
+
+
+def test_missing_model_on_another_server_cannot_be_pulled() -> None:
+    server = ModelServerState(reachable=True, is_ollama=False, available=[])
+
+    assert action_ids(report(FakeMachine(), server)["model"]) == []
+
+
+def test_stream_deck_plugin_install_is_offered_once_the_app_is_there() -> None:
+    stream_deck = PROGRAM_FILES / "Elgato" / "StreamDeck" / "StreamDeck.exe"
+    plugin = APPDATA / "Elgato" / "StreamDeck" / "Plugins" / "ch.drawflow.sdPlugin" / "x.json"
+
+    without_plugin = report(FakeMachine(files={stream_deck}))["stream-deck"]
+    with_plugin = report(FakeMachine(files={stream_deck, plugin}))["stream-deck"]
+
+    assert action_ids(without_plugin) == ["streamdeck.install-plugin"]
+    assert with_plugin.status == "ok"
+
+
+def test_macos_installs_ollama_with_homebrew_but_not_oda() -> None:
+    items = report(FakeMachine(os="macos", programs={"brew"}))
+
+    assert action_ids(items["oda"]) == ["oda.open-page"]
+    assert action_ids(items["model-server"]) == ["ollama.install", "ollama.open-page"]
+
+
+def _server(version_body: object) -> httpx.MockTransport:
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/models"):
+            return httpx.Response(200, json={"data": [{"id": "qwen2.5:7b"}]})
+        return httpx.Response(200, json=version_body)
+
+    return httpx.MockTransport(handle)
+
+
+@pytest.mark.parametrize(
+    ("version_body", "is_ollama"),
+    [({"version": "0.12.0"}, True), ({"error": "Unexpected endpoint"}, False)],
+)
+def test_scan_tells_ollama_from_other_servers(
+    tmp_path: Path, version_body: object, is_ollama: bool
+) -> None:
+    scanned = service.scan(tmp_path / "settings.json", FakeMachine(), _server(version_body))
+
+    server_item = next(item for item in scanned["items"] if item["id"] == "model-server")
+    assert server_item["status"] == "ok"
+    assert server_item["detail"].startswith("Ollama") is is_ollama
+
+
+def test_scan_reports_an_unreachable_server(tmp_path: Path) -> None:
+    def refuse(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused", request=request)
+
+    scanned = service.scan(tmp_path / "settings.json", FakeMachine(), httpx.MockTransport(refuse))
+
+    statuses = {item["id"]: item["status"] for item in scanned["items"]}
+    assert statuses["model-server"] == "missing"
+    assert scanned["system"] == {"os": "windows", "arch": "amd64", "package_manager": None}

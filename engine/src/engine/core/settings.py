@@ -91,6 +91,12 @@ def load_run_settings(path: Path | None, module: AnyModule) -> RunSettings:
     return RunSettings(general=general, module=module_settings)
 
 
+def load_general_settings(path: Path | None) -> GeneralSettings:
+    return load_section(
+        GeneralSettings, GENERAL_SECTION_ID, GENERAL_SECTION_TITLE, read_document(path)
+    )
+
+
 def load_assistant_settings(path: Path | None) -> AssistantSettings:
     document = read_document(path)
     return load_section(AssistantSettings, ASSISTANT_SECTION_ID, ASSISTANT_SECTION_TITLE, document)
