@@ -19,6 +19,7 @@ export type AppEvent =
   | { type: "presetSaved"; name: string }
   | { type: "templateImported"; name: string }
   | { type: "settingsExported"; target: string }
-  | { type: "accessCodeChanged" };
+  | { type: "accessCodeChanged" }
+  | { type: "setupNeeded"; missing: number };
 
 export type AppEventListener = (event: AppEvent) => void;

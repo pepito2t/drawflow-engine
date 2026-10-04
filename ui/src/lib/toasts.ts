@@ -81,6 +81,21 @@ export function toastFor(event: AppEvent): ToastSpec | null {
       return { ...plain("success", "Modèle importé"), body: event.name };
     case "settingsExported":
       return { ...plain("success", "Paramètres exportés"), body: event.target };
+    case "setupNeeded":
+      return {
+        tone: "info",
+        title: "Configurer Drawflow",
+        body:
+          event.missing > 1
+            ? `${String(event.missing)} éléments sont à installer ou à configurer.`
+            : "Un élément est à installer ou à configurer.",
+        moduleId: null,
+        durationMs: null,
+        actions: [
+          { label: "Configurer", command: COMMANDS.openSetup, primary: true },
+          { label: "Plus tard", command: null, primary: false },
+        ],
+      };
   }
 }
 

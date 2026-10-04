@@ -5,6 +5,7 @@ mod integrations;
 mod outputs;
 mod paths;
 mod runs;
+mod setup;
 mod sidecar;
 mod updates;
 
@@ -43,7 +44,9 @@ pub fn run() {
             sidecar::run_module,
             sidecar::cancel_run,
             assistant::assistant_chat,
-            assistant::assistant_cancel
+            assistant::assistant_cancel,
+            setup::run_setup_action,
+            setup::open_download_page
         ])
         .build(tauri::generate_context!());
     match app {

@@ -17,6 +17,8 @@ import { ErrorPanel } from "./ErrorPanel";
 import { AccessCodeForm } from "./AccessCodeForm";
 import { IntegrationsPanel } from "./IntegrationsPanel";
 import { SectionTransfer } from "./SectionTransfer";
+import { SETUP_TAB_ID } from "../lib/setup";
+import { SetupPanel } from "./SetupPanel";
 import { TemplatesPanel } from "./TemplatesPanel";
 import { CloseIcon } from "./icons";
 import { ModuleForm } from "./ModuleForm";
@@ -27,6 +29,7 @@ const GENERAL_SECTION_ID = "general";
 const TEMPLATES_TAB_ID = "templates";
 const INTEGRATIONS_TAB_ID = "integrations";
 const STATIC_TABS = [
+  { id: SETUP_TAB_ID, title: "Installation" },
   { id: TEMPLATES_TAB_ID, title: "Modèles" },
   { id: INTEGRATIONS_TAB_ID, title: "Intégrations" },
   { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
@@ -39,7 +42,12 @@ function loadSettings(): Promise<SettingsSection[]> {
   return getSettings().then(parseSettings);
 }
 
-export function SettingsDialog({ onClose }: { onClose: () => void }) {
+interface SettingsDialogProps {
+  initialTab?: string | undefined;
+  onClose: () => void;
+}
+
+export function SettingsDialog({ initialTab, onClose }: SettingsDialogProps) {
   const { id, promise, retry } = useRetryablePromise(loadSettings);
   return (
     <div
@@ -68,7 +76,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             <CloseIcon />
           </button>
         </header>
-        <SettingsContent attemptId={id} promise={promise} retry={retry} />
+        <SettingsContent attemptId={id} promise={promise} retry={retry} initialTab={initialTab} />
       </div>
     </div>
   );
@@ -78,9 +86,10 @@ interface SettingsContentProps {
   attemptId: number;
   promise: Promise<SettingsSection[]>;
   retry: () => void;
+  initialTab: string | undefined;
 }
 
-function SettingsContent({ attemptId, promise, retry }: SettingsContentProps) {
+function SettingsContent({ attemptId, promise, retry, initialTab }: SettingsContentProps) {
   return (
     <ErrorBoundary
       key={attemptId}
@@ -105,18 +114,23 @@ function SettingsContent({ attemptId, promise, retry }: SettingsContentProps) {
           </div>
         }
       >
-        <SettingsEditor sectionsPromise={promise} />
+        <SettingsEditor sectionsPromise={promise} initialTab={initialTab} />
       </Suspense>
     </ErrorBoundary>
   );
 }
 
-function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<SettingsSection[]> }) {
+interface SettingsEditorProps {
+  sectionsPromise: Promise<SettingsSection[]>;
+  initialTab: string | undefined;
+}
+
+function SettingsEditor({ sectionsPromise, initialTab }: SettingsEditorProps) {
   const [sections, setSections] = useState(use(sectionsPromise));
   const [values, setValues] = useState<SettingsValues>(() => valuesBySection(sections));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const { publish } = useNotificationCenter();
-  const [activeId, setActiveId] = useState(sections[0]?.id ?? null);
+  const [activeId, setActiveId] = useState(initialTab ?? sections[0]?.id ?? null);
   const isSaving = saveState.status === "saving";
 
   const save = () => {
@@ -179,6 +193,7 @@ function SettingsEditor({ sectionsPromise }: { sectionsPromise: Promise<Settings
           ))}
         </nav>
         <div className="settings-panel">
+          {activeId === SETUP_TAB_ID && <SetupPanel />}
           {activeId === TEMPLATES_TAB_ID && <TemplatesPanel />}
           {activeId === INTEGRATIONS_TAB_ID && <IntegrationsPanel />}
           {activeId === ACCESS_CODE_TAB_ID && <AccessCodeForm />}

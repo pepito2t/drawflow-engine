@@ -12,6 +12,8 @@ pub enum BridgeError {
     Tauri(#[from] tauri::Error),
     #[error("Cette fonctionnalité est déjà en cours d'exécution.")]
     RunInProgress,
+    #[error("Cette adresse n'est pas une page de téléchargement autorisée.")]
+    PageNotAllowed,
     #[error("L'assistant répond déjà à une question.")]
     AssistantBusy,
     #[error("État interne du moteur indisponible.")]

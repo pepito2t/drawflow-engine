@@ -52,6 +52,7 @@ Réponse (même `id`) :
 | `result.open-last` | — | Ouvre le dernier fichier produit |
 | `settings.open` | — | Ouvre les paramètres |
 | `assistant.toggle` | — | Ouvre ou ferme le panneau de l'assistant |
+| `setup.open` | — | Ouvre Paramètres → Installation |
 | `update.install` | — | Installe la mise à jour disponible |
 
 ## Événements diffusés

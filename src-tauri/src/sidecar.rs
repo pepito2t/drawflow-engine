@@ -97,6 +97,8 @@ pub enum EngineRequest {
     SettingsReadImport,
     #[serde(rename = "assistant.models")]
     AssistantModels,
+    #[serde(rename = "setup.scan")]
+    SetupScan,
 }
 
 impl EngineRequest {
@@ -112,6 +114,7 @@ impl EngineRequest {
             Self::SettingsExport => ("settings", "export"),
             Self::SettingsReadImport => ("settings", "read-import"),
             Self::AssistantModels => ("assistant", "models"),
+            Self::SetupScan => ("setup", "scan"),
         }
     }
 }
@@ -145,14 +148,29 @@ pub fn run_module(
     let input_file = write_input_file(&inputs)?;
     let input_path = path_argument(input_file.path().to_path_buf());
     let settings_path = path_argument(settings_file(&app)?);
-    let (run_id, mut receiver) = runs.start(&module_id, || {
-        Ok(app
-            .shell()
-            .sidecar(SIDECAR_NAME)?
-            .args(run_arguments(&module_id, input_path, settings_path))
-            .spawn()?)
-    })?;
+    let arguments = run_arguments(&module_id, input_path, settings_path);
+    start_streaming_run(
+        app,
+        &runs,
+        &module_id,
+        arguments,
+        on_event,
+        Some(input_file),
+    )
+}
 
+/// Spawns a long engine command tracked by the run registry, relaying its output to the UI.
+pub(crate) fn start_streaming_run(
+    app: AppHandle,
+    runs: &EngineRuns,
+    run_key: &str,
+    arguments: Vec<String>,
+    on_event: Channel<EngineMessage>,
+    input_file: Option<NamedTempFile>,
+) -> Result<RunId, BridgeError> {
+    let (run_id, mut receiver) = runs.start(run_key, || {
+        Ok(app.shell().sidecar(SIDECAR_NAME)?.args(arguments).spawn()?)
+    })?;
     let task_run_id = run_id.clone();
     tauri::async_runtime::spawn(async move {
         if let Err(error) = relay_events(&mut receiver, &on_event).await {
