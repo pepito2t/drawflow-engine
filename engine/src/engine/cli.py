@@ -87,6 +87,9 @@ def _build_parser() -> argparse.ArgumentParser:
     setup_parser = commands.add_parser("setup", help="Prérequis de l'installation.")
     setup_commands = setup_parser.add_subparsers(dest="setup_command", required=True)
     _add_request_parser(setup_commands, "scan", "État des prérequis et actions proposées (JSON).")
+    setup_run = setup_commands.add_parser("run", help="Exécute une action d'installation (NDJSON).")
+    setup_run.add_argument("action")
+    setup_run.add_argument("--settings", type=Path, required=True)
 
     templates_parser = commands.add_parser("templates", help="Bibliothèque de modèles de sortie.")
     templates_commands = templates_parser.add_subparsers(dest="templates_command", required=True)
@@ -113,7 +116,7 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
     elif arguments.command == "assistant":
         _assistant(arguments)
     elif arguments.command == "setup":
-        _setup(arguments)
+        _setup(arguments, emit)
     elif arguments.command == "presets":
         _write_json(
             handle_presets(arguments.presets_command, arguments.settings, _request(arguments))
@@ -160,10 +163,13 @@ def _assistant(arguments: argparse.Namespace) -> None:
         service.chat(arguments.settings, _request(arguments), make_assistant_emitter())
 
 
-def _setup(arguments: argparse.Namespace) -> None:
-    from engine.setup import service
+def _setup(arguments: argparse.Namespace, emit: Emit) -> None:
+    from engine.setup import actions, service
 
-    _write_json(service.scan(arguments.settings))
+    if arguments.setup_command == "run":
+        actions.run_action(arguments.action, actions.SetupContext(arguments.settings, emit))
+    else:
+        _write_json(service.scan(arguments.settings))
 
 
 def _request(arguments: argparse.Namespace) -> dict[str, Any]:

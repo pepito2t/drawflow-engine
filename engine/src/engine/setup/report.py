@@ -26,6 +26,7 @@ class _Frozen(BaseModel):
 class SetupAction(_Frozen):
     id: ActionId
     label: str
+    url: str | None = None
 
 
 class SetupItem(_Frozen):

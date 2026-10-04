@@ -31,6 +31,11 @@ ACTION_LABELS: dict[ActionId, str] = {
     "streamdeck.install-plugin": "Installer le plugin",
     "streamdeck.open-page": "Page de téléchargement",
 }
+DOWNLOAD_PAGES: dict[ActionId, str] = {
+    "oda.open-page": "https://www.opendesign.com/guestfiles/oda_file_converter",
+    "ollama.open-page": "https://ollama.com/download",
+    "streamdeck.open-page": "https://www.elgato.com/downloads",
+}
 # Homebrew has no ODA File Converter package: on macOS the download page is the only way.
 INSTALLABLE_WITH: dict[ActionId, set[PackageManager]] = {
     "oda.install": {"winget"},
@@ -173,4 +178,7 @@ def _install_actions(system: SystemInfo, install: ActionId, page: ActionId) -> l
 
 
 def _actions(*ids: ActionId) -> list[SetupAction]:
-    return [SetupAction(id=action, label=ACTION_LABELS[action]) for action in ids]
+    return [
+        SetupAction(id=action, label=ACTION_LABELS[action], url=DOWNLOAD_PAGES.get(action))
+        for action in ids
+    ]

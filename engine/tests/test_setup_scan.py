@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -7,40 +6,12 @@ import pytest
 
 from engine.core.settings_models import AssistantSettings
 from engine.setup import service
-from engine.setup.machine import OperatingSystem
 from engine.setup.scan import ModelServerState, build_report
+from engine.testing.fake_machine import APPDATA, LOCALAPPDATA, PROGRAM_FILES, FakeMachine
 
-PROGRAM_FILES = Path("C:/Program Files")
-APPDATA = Path("C:/Users/dessin/AppData/Roaming")
-LOCALAPPDATA = Path("C:/Users/dessin/AppData/Local")
 ODA_2025 = PROGRAM_FILES / "ODA" / "ODAFileConverter 25.12.0" / "ODAFileConverter.exe"
 ODA_2026 = PROGRAM_FILES / "ODA" / "ODAFileConverter 26.4.0" / "ODAFileConverter.exe"
 SERVER_DOWN = ModelServerState(reachable=False, is_ollama=False, available=[])
-
-
-@dataclass
-class FakeMachine:
-    os: OperatingSystem = "windows"
-    arch: str = "amd64"
-    programs: set[str] = field(default_factory=set)
-    files: set[Path] = field(default_factory=set)
-    home: Path = Path("/Users/dessin")
-
-    def which(self, program: str) -> Path | None:
-        return Path(program) if program in self.programs else None
-
-    def is_file(self, path: Path) -> bool:
-        return path in self.files
-
-    def is_dir(self, path: Path) -> bool:
-        return any(path == file or path in file.parents for file in self.files)
-
-    def glob(self, folder: Path, pattern: str) -> list[Path]:
-        return sorted(file for file in self.files if folder in file.parents)
-
-    def folder(self, variable: str) -> Path | None:
-        folders = {"ProgramFiles": PROGRAM_FILES, "APPDATA": APPDATA}
-        return folders.get(variable, LOCALAPPDATA if variable == "LOCALAPPDATA" else None)
 
 
 def report(
