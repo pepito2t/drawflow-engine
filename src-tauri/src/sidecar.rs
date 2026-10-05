@@ -161,6 +161,9 @@ pub fn run_module(
     on_event: Channel<EngineMessage>,
 ) -> Result<RunId, BridgeError> {
     lock.ensure_unlocked()?;
+    if !is_module_id(&module_id) {
+        return Err(BridgeError::InvalidModuleId(module_id));
+    }
     let input_file = write_input_file(&inputs)?;
     let input_path = path_argument(input_file.path().to_path_buf());
     let settings_path = path_argument(settings_file(&app)?);
@@ -222,6 +225,15 @@ async fn query_engine(
         success: output.status.success(),
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
     })
+}
+
+/// Module ids come from `list-modules`; anything else must not reach the engine's CLI parser.
+fn is_module_id(module_id: &str) -> bool {
+    !module_id.is_empty()
+        && !module_id.starts_with('-')
+        && module_id
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '_'))
 }
 
 fn run_arguments(module_id: &str, input: String, settings: String) -> Vec<String> {
@@ -320,6 +332,15 @@ mod tests {
 
     use super::*;
     use tauri_plugin_shell::process::TerminatedPayload;
+
+    #[test]
+    fn module_ids_cannot_become_options() {
+        assert!(is_module_id("dwg-parts"));
+        assert!(is_module_id("pdf_report2"));
+        assert!(!is_module_id("--settings"));
+        assert!(!is_module_id(""));
+        assert!(!is_module_id("Dwg Parts"));
+    }
 
     #[test]
     fn decode_line_strips_windows_and_unix_line_endings() {

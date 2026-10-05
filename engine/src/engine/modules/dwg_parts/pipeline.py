@@ -7,7 +7,7 @@ from engine.core.cache import resolve_cache_root
 from engine.core.contract import ModuleResult, RunContext
 from engine.core.errors import EngineError
 from engine.core.events import LogEvent, WarningEvent
-from engine.core.naming import naming_values, render_file_name, unique_output_path
+from engine.core.naming import naming_values, output_target, writing_output
 from engine.modules.dwg_parts.collect import collect_plans
 from engine.modules.dwg_parts.export import export_parts
 from engine.modules.dwg_parts.oda import is_dxf, require_oda
@@ -43,7 +43,8 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
         emit(WarningEvent(message=warning))
     target = _target(inputs, settings, plans, moment)
     emit(LogEvent(message=f"Écriture de {target.name}"))
-    export_parts(parts_list.lines, parts_list.headers, target, inputs.template, settings)
+    with writing_output(target):
+        export_parts(parts_list.lines, parts_list.headers, target, inputs.template, settings)
     summary = describe_result(parts_list, len(outcome.results), len(plans))
     return ModuleResult(summary=summary, outputs=[target])
 
@@ -62,5 +63,6 @@ def _target(
 ) -> Path:
     source = plans[0].stem if len(plans) == 1 else ""
     values = naming_values(moment, projet=inputs.project.strip(), type=DOCUMENT_TYPE, source=source)
-    file_name = render_file_name(settings.file_name_template, values, OUTPUT_EXTENSION)
-    return unique_output_path(inputs.output_folder, file_name)
+    return output_target(
+        inputs.output_folder, settings.file_name_template, values, OUTPUT_EXTENSION
+    )
