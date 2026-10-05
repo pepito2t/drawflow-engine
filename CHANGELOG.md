@@ -4,7 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
-- Correctif : **Installer Ollama** (Windows) télécharge l'installeur officiel avec sa progression au lieu de winget. La progression des installations et des téléchargements de modèles reste visible après avoir quitté puis rouvert l'écran (#118).
+- Correctif : **Installer Ollama** (Windows) télécharge l'installeur officiel avec sa progression au lieu de winget. La progression des installations et des téléchargements de modèles reste visible après avoir quitté puis rouvert l'écran (#119).
 
 - Correctif : **Installer ODA** télécharge l'installeur directement sur le site de l'éditeur (toujours la dernière version) au lieu de winget, dont le lien renvoyait une erreur 404. L'aide donne les liens de téléchargement d'ODA, d'Ollama et de Stream Dock (#114).
 
