@@ -14,6 +14,8 @@ from engine.assistant.tools import (
     describe_features,
     describe_presets,
     describe_templates,
+    help_section,
+    help_topics,
     propose_feature_run,
     propose_preset_run,
 )
@@ -55,6 +57,22 @@ def build_server(settings: Path) -> FastMCP:
     )
     def list_templates() -> dict[str, Any]:
         return _as_tool_result(lambda: describe_templates(settings))
+
+    @server.tool(
+        description="Liste les sections du guide utilisateur de Drawflow (installation, "
+        "fonctionnalités, assistant, Stream Dock, dépannage…).",
+        annotations=READ_ONLY,
+    )
+    def list_help_topics() -> dict[str, Any]:
+        return _as_tool_result(help_topics)
+
+    @server.tool(
+        description="Lit une section du guide utilisateur (identifiant ou titre) : la marche à "
+        "suivre officielle, à utiliser pour expliquer comment faire.",
+        annotations=READ_ONLY,
+    )
+    def read_help(topic: str) -> dict[str, Any]:
+        return _as_tool_result(lambda: help_section(topic))
 
     @server.tool(
         description="Propose de lancer un préréglage. Rien n'est lancé : l'utilisateur voit "

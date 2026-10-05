@@ -1,5 +1,7 @@
 import { Suspense, use, useState } from "react";
+import { useCommands } from "../hooks/command-registry";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { COMMANDS } from "../lib/commands";
 import { useSetupRun } from "../hooks/use-setup-run";
 import { toReadableError } from "../lib/error-message";
 import {
@@ -145,6 +147,7 @@ function SetupRow({ item, run, disabled, pending, onAction, onConfirm, onCancel 
       <div className="setup-body">
         <strong>{item.label}</strong>
         <span className="muted">{item.detail}</span>
+        {item.help && <HelpLink topic={item.help} />}
         {ownRun && <RunLine run={ownRun} />}
         {confirming && (
           <div className="setup-confirm">
@@ -206,4 +209,25 @@ function RunLine({ run }: { run: Exclude<SetupRun, { status: "idle" }> }) {
         <ErrorPanel title="Action impossible" message={run.error.message} hint={run.error.hint} />
       );
   }
+}
+
+function HelpLink({ topic }: { topic: string }) {
+  const { execute } = useCommands();
+  return (
+    <button
+      type="button"
+      className="link-button help-link"
+      onClick={() => {
+        execute(COMMANDS.openHelp, { topic })
+          .then((result) => {
+            if (!result.ok) console.error(result.error);
+          })
+          .catch((error: unknown) => {
+            console.error(error);
+          });
+      }}
+    >
+      Marche à suivre
+    </button>
+  );
 }

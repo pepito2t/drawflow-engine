@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseInlines, parseMarkdown } from "./markdown-lite";
+import { parseInlines, parseMarkdown, slug } from "./markdown-lite";
 
 describe("parseMarkdown", () => {
   it("joins wrapped lines into one paragraph and splits on blank lines", () => {
@@ -14,12 +14,18 @@ describe("parseMarkdown", () => {
       {
         kind: "list",
         ordered: false,
-        items: [[{ kind: "text", text: "un" }], [{ kind: "text", text: "deux" }]],
+        items: [
+          { inlines: [{ kind: "text", text: "un" }], children: [] },
+          { inlines: [{ kind: "text", text: "deux" }], children: [] },
+        ],
       },
       {
         kind: "list",
         ordered: true,
-        items: [[{ kind: "text", text: "premier" }], [{ kind: "text", text: "second" }]],
+        items: [
+          { inlines: [{ kind: "text", text: "premier" }], children: [] },
+          { inlines: [{ kind: "text", text: "second" }], children: [] },
+        ],
       },
     ]);
   });
@@ -33,10 +39,62 @@ describe("parseMarkdown", () => {
 
   it("reads headings and a list right after a paragraph", () => {
     expect(parseMarkdown("## Titre\nTexte :\n- point")).toEqual([
-      { kind: "heading", inlines: [{ kind: "text", text: "Titre" }] },
+      { kind: "heading", id: "titre", inlines: [{ kind: "text", text: "Titre" }] },
       { kind: "paragraph", inlines: [{ kind: "text", text: "Texte :" }] },
-      { kind: "list", ordered: false, items: [[{ kind: "text", text: "point" }]] },
+      {
+        kind: "list",
+        ordered: false,
+        items: [{ inlines: [{ kind: "text", text: "point" }], children: [] }],
+      },
     ]);
+  });
+});
+
+describe("guide constructs", () => {
+  it("nests indented steps under their parent step", () => {
+    const [list] = parseMarkdown(
+      "1. **Installer**\n2. Régler :\n   1. ODA\n   2. Ollama\n3. Lancer",
+    );
+
+    expect(list).toMatchObject({
+      kind: "list",
+      ordered: true,
+      items: [
+        { children: [] },
+        { children: [[{ text: "ODA" }], [{ text: "Ollama" }]] },
+        { inlines: [{ text: "Lancer" }] },
+      ],
+    });
+  });
+
+  it("reads pipe tables", () => {
+    expect(parseMarkdown("| Prérequis | Rôle |\n|---|---|\n| ODA | Lire les **DWG** |")).toEqual([
+      {
+        kind: "table",
+        header: [[{ kind: "text", text: "Prérequis" }], [{ kind: "text", text: "Rôle" }]],
+        rows: [
+          [
+            [{ kind: "text", text: "ODA" }],
+            [
+              { kind: "text", text: "Lire les " },
+              { kind: "strong", text: "DWG" },
+            ],
+          ],
+        ],
+      },
+    ]);
+  });
+
+  it("reads links and builds the same anchors as GitHub", () => {
+    expect(parseInlines("Voir [le guide](#utiliser-lassistant).")).toEqual([
+      { kind: "text", text: "Voir " },
+      { kind: "link", text: "le guide", href: "#utiliser-lassistant" },
+      { kind: "text", text: "." },
+    ]);
+    expect(slug("Utiliser l'assistant")).toBe("utiliser-lassistant");
+    expect(slug("Adapter une fonctionnalité à votre norme")).toBe(
+      "adapter-une-fonctionnalité-à-votre-norme",
+    );
   });
 });
 

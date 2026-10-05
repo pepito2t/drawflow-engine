@@ -1128,6 +1128,38 @@ small {
   color: var(--color-error);
 }
 
+.markdown table {
+  width: 100%;
+  margin: 0 0 8px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.markdown th,
+.markdown td {
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown th {
+  background: var(--color-surface-raised);
+}
+
+.markdown-sublist {
+  margin: 4px 0;
+  list-style: lower-alpha;
+}
+
+.help-content {
+  line-height: 1.55;
+}
+
+.help-link {
+  align-self: flex-start;
+}
+
 .proposal-card {
   display: flex;
   flex-direction: column;

@@ -18,6 +18,7 @@ const REPORT = JSON.stringify({
       label: "ODA File Converter",
       status: "missing",
       detail: "Nécessaire pour lire les fichiers DWG.",
+      help: "installer-les-prérequis",
       actions: [
         { id: "oda.install", label: "Installer", url: null },
         {
@@ -32,6 +33,7 @@ const REPORT = JSON.stringify({
       label: "Plugin Stream Dock",
       status: "optional",
       detail: "Facultatif",
+      help: null,
       actions: [{ id: "streamdock.install-plugin", label: "Installer le plugin", url: null }],
     },
   ],

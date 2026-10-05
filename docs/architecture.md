@@ -58,6 +58,7 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Commandes nommées + centre de notifications | Toute l'application pilotable de l'extérieur par un seul registre | #70 |
 | API locale en WebSocket sur 127.0.0.1 avec jeton | Stream Dock et outils tiers, sans exposition réseau | #71 |
 | Assistant via MCP (SDK officiel), modèle local par API compatible OpenAI | Fonctionne avec Ollama, LM Studio, llama.cpp ; outils générés depuis le registre | #78, #79 |
+| `docs/guide.md` est la seule source d'aide : embarqué dans le sidecar, affiché par l'app, lu par l'assistant via MCP | L'aide de l'app et les réponses de l'assistant ne peuvent pas se contredire | #112 |
 | L'assistant propose, l'utilisateur lance | Aucun traitement sans confirmation ; le lancement suit le même circuit que l'interface | #95 |
 | Catalogue de modèles choisi + téléchargement par nom, pas de recherche dans la bibliothèque | Ollama n'a pas d'API de recherche publique ; recommandation selon la mémoire du poste | #105 |
 | Adresse du modèle limitée au loopback | Aucune donnée ne quitte le poste | #79 |

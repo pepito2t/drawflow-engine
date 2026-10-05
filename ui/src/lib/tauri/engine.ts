@@ -30,6 +30,7 @@ export type EngineRequestName =
   | "assistant.history-save"
   | "assistant.catalog"
   | "assistant.model-delete"
+  | "help.guide"
   | "setup.scan";
 
 export async function engineRequest(
