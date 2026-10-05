@@ -8,6 +8,8 @@ from dataclasses import dataclass
 # Downloading and installing a package can take several minutes on a slow connection.
 INSTALL_TIMEOUT_SECONDS = 15 * 60
 WINDOWS_NO_WINDOW_FLAG = 0x08000000
+# Console programs such as winget write in the console code page, not in UTF-8.
+WINDOWS_CONSOLE_ENCODING = "oem"
 OUTPUT_TAIL_LINES = 5
 
 
@@ -30,7 +32,7 @@ def run_command(arguments: Sequence[str]) -> CommandOutcome:
         list(arguments),
         capture_output=True,
         text=True,
-        encoding="utf-8",
+        encoding=WINDOWS_CONSOLE_ENCODING if sys.platform == "win32" else "utf-8",
         errors="replace",
         timeout=INSTALL_TIMEOUT_SECONDS,
         creationflags=_no_window(),

@@ -37,6 +37,10 @@ WINGET_FLAGS = (
 # winget reports "already installed" and "no newer version" as failures; both mean done.
 WINGET_ALREADY_DONE = {0x8A150061, 0x8A15002B}
 UNSIGNED_32_BITS = 0xFFFFFFFF
+# 0x8019xxxx: the download got an HTTP error (xxxx = status), e.g. a file removed upstream.
+HTTP_ERROR_FACILITY = 0x80190000
+FACILITY_MASK = 0xFFFF0000
+STATUS_MASK = 0x0000FFFF
 PERCENT = 100
 
 
@@ -151,6 +155,13 @@ def _check(outcome: CommandOutcome, name: str) -> None:
     code = outcome.return_code & UNSIGNED_32_BITS
     if code == 0 or code in WINGET_ALREADY_DONE:
         return
+    if code & FACILITY_MASK == HTTP_ERROR_FACILITY:
+        raise SetupError(
+            f"Le téléchargement de {name} a échoué : le fichier proposé par winget n'est plus "
+            f"disponible chez l'éditeur (HTTP {code & STATUS_MASK}).",
+            hint=f"Cliquez sur « Page de téléchargement », installez {name}, puis sur "
+            "« Analyser à nouveau » : Drawflow le détectera.",
+        )
     raise SetupError(
         f"L'installation de {name} a échoué (code {outcome.return_code}).",
         hint=outcome.tail() or "Réessayez, ou utilisez la page de téléchargement.",
