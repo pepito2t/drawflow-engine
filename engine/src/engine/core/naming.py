@@ -1,5 +1,6 @@
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from string import Formatter
@@ -7,6 +8,7 @@ from typing import Annotated, Any
 
 from pydantic import AfterValidator
 
+from engine.core.errors import EngineError
 from engine.core.fields import ui_field
 
 NAMING_VARIABLES: dict[str, str] = {
@@ -84,13 +86,44 @@ def render_file_name(template: str, values: Mapping[str, str], extension: str) -
     return f"{_safe_stem(filled)}.{extension.lstrip('.')}"
 
 
+class OutputFolderError(EngineError):
+    pass
+
+
+def output_target(folder: Path, template: str, values: Mapping[str, str], extension: str) -> Path:
+    return unique_output_path(folder, render_file_name(template, values, extension))
+
+
 def unique_output_path(folder: Path, file_name: str) -> Path:
-    candidate = folder / file_name
-    index = 2
-    while candidate.exists():
-        candidate = folder / f"{Path(file_name).stem} ({index}){Path(file_name).suffix}"
-        index += 1
-    return candidate
+    """Reserves the name atomically: two runs writing to the same folder never share it."""
+    stem, suffix = Path(file_name).stem, Path(file_name).suffix
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        index = 1
+        while True:
+            name = file_name if index == 1 else f"{stem} ({index}){suffix}"
+            try:
+                (folder / name).touch(exist_ok=False)
+            except FileExistsError:
+                index += 1
+                continue
+            return folder / name
+    except OSError as error:
+        raise OutputFolderError(
+            "Le dossier de sortie est inaccessible.",
+            file=folder,
+            hint="Choisissez un autre dossier de sortie, ou vérifiez vos droits dessus.",
+        ) from error
+
+
+@contextmanager
+def writing_output(path: Path) -> Iterator[Path]:
+    """Removes the reserved file when the writer fails, so no empty document is left behind."""
+    try:
+        yield path
+    except BaseException:
+        path.unlink(missing_ok=True)
+        raise
 
 
 def _safe_stem(raw: str) -> str:

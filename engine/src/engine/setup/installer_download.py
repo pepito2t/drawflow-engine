@@ -56,15 +56,22 @@ async def _save(
     total = int(response.headers.get("content-length", 0))
     received = 0
     reported = -1
-    with target.open("wb") as file:
-        async for chunk in response.aiter_bytes():
-            received += len(chunk)
-            if received > max_bytes:
-                raise InstallerDownloadError(
-                    f"{name} : l'installeur téléchargé est anormalement volumineux."
-                )
-            file.write(chunk)
-            percent = received * PERCENT // total if total else 0
-            if percent != reported:
-                reported = percent
-                on_progress(percent)
+    try:
+        with target.open("wb") as file:
+            async for chunk in response.aiter_bytes():
+                received += len(chunk)
+                if received > max_bytes:
+                    raise InstallerDownloadError(
+                        f"{name} : l'installeur téléchargé est anormalement volumineux."
+                    )
+                file.write(chunk)
+                percent = received * PERCENT // total if total else 0
+                if percent != reported:
+                    reported = percent
+                    on_progress(percent)
+    except OSError as error:
+        raise InstallerDownloadError(
+            f"{name} : impossible d'enregistrer l'installeur sur le disque.",
+            file=target,
+            hint="Vérifiez l'espace disque et les droits sur le dossier temporaire.",
+        ) from error
