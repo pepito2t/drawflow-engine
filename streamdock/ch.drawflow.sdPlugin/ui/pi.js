@@ -32,7 +32,7 @@ function fillChoices(items) {
     select.add(new Option(item.label, item.value, false, item.value === current));
   }
   if (items.length === 0) {
-    select.add(new Option("Drawflow hors ligne : vérifiez le port et le jeton", "", false, false));
+    select.add(new Option("Drawflow hors ligne : lancez Drawflow sur ce poste", "", false, false));
   }
 }
 

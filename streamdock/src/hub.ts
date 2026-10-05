@@ -1,4 +1,9 @@
-import { DrawflowClient, type ConnectionState, type SocketLike } from "./drawflow-client";
+import {
+  DrawflowClient,
+  type Connection,
+  type ConnectionState,
+  type SocketLike,
+} from "./drawflow-client";
 import { appStateSchema, type AppState, type CommandResult } from "./protocol";
 import { acknowledge, applyEvent, runsFromState, type Runs } from "./run-tracker";
 
@@ -11,6 +16,8 @@ export class DrawflowHub {
   runs: Runs = new Map();
   private readonly listeners = new Set<() => void>();
   private readonly client: DrawflowClient;
+  private manual: Connection | null = null;
+  private automatic: Connection | null = null;
 
   constructor(createSocket: (url: string) => SocketLike) {
     this.client = new DrawflowClient({ createSocket });
@@ -30,8 +37,19 @@ export class DrawflowHub {
     });
   }
 
+  /** What was typed in a key: only used when Drawflow's own settings cannot be read. */
   configure(port: number, token: string): void {
-    this.client.configure(token ? { port, token } : null);
+    this.manual = token ? { port, token } : null;
+    this.apply();
+  }
+
+  setAutomatic(connection: Connection | null): void {
+    this.automatic = connection;
+    this.apply();
+  }
+
+  private apply(): void {
+    this.client.configure(this.automatic ?? this.manual);
   }
 
   onChange(listener: () => void): void {
