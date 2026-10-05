@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds the Python engine as a single executable named as Tauri's externalBin expects.
+# Builds the Python engine as a folder: the executable goes to Tauri's externalBin, its
+# _internal libraries are bundled next to it (a single-file build unpacks itself on every call).
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -13,7 +14,7 @@ fi
 
 cd "$engine_dir"
 uv run pyinstaller \
-  --onefile \
+  --onedir \
   --clean \
   --noconfirm \
   --name engine \
@@ -27,5 +28,7 @@ uv run pyinstaller \
   pyinstaller-entry.py
 
 mkdir -p "$binaries_dir"
-cp "dist/engine$extension" "$binaries_dir/engine-$target_triple$extension"
+rm -rf "$binaries_dir/_internal"
+cp "dist/engine/engine$extension" "$binaries_dir/engine-$target_triple$extension"
+cp -R "dist/engine/_internal" "$binaries_dir/_internal"
 echo "Sidecar: $binaries_dir/engine-$target_triple$extension"

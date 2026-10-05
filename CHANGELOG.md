@@ -5,6 +5,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 ## Non publié
 
 - Correctif : **Installer ODA** télécharge l'installeur directement sur le site de l'éditeur (toujours la dernière version) au lieu de winget, dont le lien renvoyait une erreur 404. L'aide donne les liens de téléchargement d'ODA, d'Ollama et de Stream Dock (#114).
+- Correctif : démarrage et ouverture des Paramètres nettement plus rapides. Le moteur n'est plus décompressé à chaque appel et ne charge les bibliothèques DWG, PDF et Excel qu'au lancement d'un traitement (#116).
 
 ## 0.8.0 — 2026-10-05
 
