@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from engine.core.errors import InvalidSettingsError, ModuleContractError, SettingsFileError
+from engine.core.json_files import write_json_atomically
 from engine.core.registry import AnyModule
 from engine.core.settings_models import (
     AssistantSettings,
@@ -161,11 +162,8 @@ def _store_section(document: Document, section_id: str, values: Document) -> Non
 
 
 def _write_atomically(path: Path, document: Document) -> None:
-    temporary = path.with_name(f"{path.name}.tmp")
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
-        temporary.replace(path)
+        write_json_atomically(path, document)
     except OSError as error:
         raise SettingsFileError(
             "Impossible d'enregistrer les paramètres.",

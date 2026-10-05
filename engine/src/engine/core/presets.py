@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from engine.core.errors import EngineError, OutputWriteError
+from engine.core.json_files import write_json_atomically
 from engine.core.registry import AnyModule
 from engine.core.validation import describe_validation_error
 
@@ -66,14 +67,8 @@ class PresetStore:
         self._write(remaining)
 
     def _write(self, presets: list[Preset]) -> None:
-        temporary = self.path.with_name(f"{self.path.name}.tmp")
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            content = [preset.model_dump(mode="json") for preset in presets]
-            temporary.write_text(
-                json.dumps(content, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
-            temporary.replace(self.path)
+            write_json_atomically(self.path, [preset.model_dump(mode="json") for preset in presets])
         except OSError as error:
             raise OutputWriteError(
                 "Impossible d'enregistrer les préréglages.", file=self.path

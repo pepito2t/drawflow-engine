@@ -30,6 +30,8 @@ INTERNAL_ERROR_HINT = "Réessayez ; si le problème persiste, transmettez le jou
 ASSISTANT_ACTIONS = {
     "chat": "Un tour de conversation (flux NDJSON).",
     "models": "Modèles disponibles sur le serveur local (JSON).",
+    "history-get": "Conversation enregistrée (JSON).",
+    "history-save": "Enregistre la conversation en cours (JSON).",
 }
 
 
@@ -155,10 +157,14 @@ def _serve_mcp(settings: Path) -> None:
 
 
 def _assistant(arguments: argparse.Namespace) -> None:
-    from engine.assistant import service
+    from engine.assistant import history, service
 
     if arguments.assistant_command == "models":
         _write_json(service.list_models(arguments.settings))
+    elif arguments.assistant_command == "history-get":
+        _write_json(history.read_history(arguments.settings))
+    elif arguments.assistant_command == "history-save":
+        _write_json(history.save_history(arguments.settings, _request(arguments)))
     else:
         service.chat(arguments.settings, _request(arguments), make_assistant_emitter())
 

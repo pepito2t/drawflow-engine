@@ -5,6 +5,8 @@ import {
   chatReducer,
   conversationWith,
   INITIAL_CHAT,
+  parseSavedHistory,
+  savedHistory,
   streamingAnswer,
   toolLabel,
   type AssistantEntry,
@@ -139,6 +141,45 @@ describe("chatReducer", () => {
     const state = reduce([{ type: "sent", text: "Salut" }, { type: "cleared" }]);
 
     expect(state.entries).toEqual([]);
+  });
+});
+
+describe("conversation storage", () => {
+  it("restores saved messages as finished entries, without proposals", () => {
+    const state = chatReducer(INITIAL_CHAT, {
+      type: "restored",
+      messages: [
+        { role: "user", content: "Salut" },
+        { role: "assistant", content: "Bonjour" },
+      ],
+    });
+
+    expect(state.entries).toMatchObject([
+      { role: "user", text: "Salut" },
+      { role: "assistant", text: "Bonjour", status: "done", proposals: [] },
+    ]);
+    expect(savedHistory(state)).toEqual([
+      { role: "user", content: "Salut" },
+      { role: "assistant", content: "Bonjour" },
+    ]);
+  });
+
+  it("does not overwrite a conversation already started", () => {
+    const started = reduce([{ type: "sent", text: "Déjà là" }]);
+
+    const state = chatReducer(started, {
+      type: "restored",
+      messages: [{ role: "user", content: "Ancienne" }],
+    });
+
+    expect(state).toBe(started);
+  });
+
+  it("reads an unreadable saved file as an empty conversation", () => {
+    expect(parseSavedHistory("{oops")).toEqual([]);
+    expect(parseSavedHistory('{"messages":[{"role":"user","content":"Salut"}]}')).toEqual([
+      { role: "user", content: "Salut" },
+    ]);
   });
 });
 

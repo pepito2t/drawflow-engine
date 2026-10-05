@@ -60,7 +60,7 @@ L'icône **bulle** ouvre le panneau de discussion. L'assistant répond aux quest
 Il peut aussi **proposer un lancement** (« lance la soumission sur C:\Chantier\Soumissions ») : une carte affiche la fonctionnalité et les entrées, et rien ne démarre tant que vous n'avez pas cliqué sur **Lancer**. Le traitement suit ensuite le circuit normal : progression dans Traitements, annulation, notification.
 
 - Prérequis : un modèle local (voir [Installer les prérequis](#installer-les-prérequis)). L'adresse du serveur doit désigner ce poste : aucune donnée ne sort de la machine.
-- La liste en haut du panneau change de modèle. **Arrêter** interrompt une réponse, **+** démarre une nouvelle conversation (effacée à la fermeture de l'application).
+- La liste en haut du panneau change de modèle. **Arrêter** interrompt une réponse, **+** démarre une nouvelle conversation. La conversation en cours est conservée sur le poste entre deux lancements (sans les cartes de lancement).
 
 ## Piloter avec un Stream Deck
 

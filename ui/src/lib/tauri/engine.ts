@@ -26,6 +26,8 @@ export type EngineRequestName =
   | "settings.export"
   | "settings.read-import"
   | "assistant.models"
+  | "assistant.history-get"
+  | "assistant.history-save"
   | "setup.scan";
 
 export async function engineRequest(
