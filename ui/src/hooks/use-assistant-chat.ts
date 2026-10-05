@@ -6,6 +6,7 @@ import {
   INITIAL_CHAT,
   streamingAnswer,
   type ChatState,
+  type ProposalStatus,
 } from "../lib/assistant-chat";
 import { toReadableError } from "../lib/error-message";
 import { cancelAssistant, startAssistantChat } from "../lib/tauri/assistant";
@@ -16,6 +17,7 @@ interface AssistantChat {
   ask: (question: string) => void;
   stop: () => void;
   clear: () => void;
+  markProposal: (proposalId: string, status: ProposalStatus, error?: string) => void;
 }
 
 export function useAssistantChat(): AssistantChat {
@@ -60,5 +62,13 @@ export function useAssistantChat(): AssistantChat {
     dispatch({ type: "cleared" });
   }, [isAnswering, stop]);
 
-  return { state, isAnswering, ask, stop, clear };
+  const markProposal = useCallback((proposalId: string, status: ProposalStatus, error?: string) => {
+    dispatch(
+      error === undefined
+        ? { type: "proposal", proposalId, status }
+        : { type: "proposal", proposalId, status, error },
+    );
+  }, []);
+
+  return { state, isAnswering, ask, stop, clear, markProposal };
 }

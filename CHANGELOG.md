@@ -4,7 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
-- L'assistant peut **proposer** de lancer un préréglage ou une fonctionnalité ; rien ne démarre sans confirmation (#93).
+- L'assistant peut **proposer** de lancer un préréglage ou une fonctionnalité ; rien ne démarre sans confirmation (#95).
 
 ## 0.4.0 — 2026-10-05
 

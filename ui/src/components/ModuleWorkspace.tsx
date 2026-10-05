@@ -5,7 +5,7 @@ import { useFieldDrop } from "../hooks/use-field-drop";
 import { useModuleRun } from "../hooks/use-module-run";
 import type { CatalogModule } from "../lib/catalog";
 import { initialValues, toEngineInputs, type FormValue } from "../lib/form-schema";
-import { presetFormValues } from "../lib/presets";
+import { formValuesFrom, presetFormValues } from "../lib/presets";
 import { ModuleForm } from "./ModuleForm";
 import { ModuleInstructions } from "./ModuleInstructions";
 import { PresetBar } from "./PresetBar";
@@ -31,14 +31,20 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
   useEffect(
     () =>
       subscribe((event) => {
-        if (event.type !== "presetRunRequested" || event.moduleId !== manifest.id) {
+        if (event.type !== "presetRunRequested" && event.type !== "featureRunRequested") {
           return;
         }
-        const preset = presets.find((candidate) => candidate.id === event.presetId);
-        if (preset) {
-          const presetValues = presetFormValues(preset, fields);
-          setValues(presetValues);
-          start(toEngineInputs(fields, presetValues));
+        if (event.moduleId !== manifest.id) {
+          return;
+        }
+        const inputs =
+          event.type === "featureRunRequested"
+            ? event.inputs
+            : presets.find((candidate) => candidate.id === event.presetId)?.inputs;
+        if (inputs) {
+          const requested = formValuesFrom(inputs, fields);
+          setValues(requested);
+          start(toEngineInputs(fields, requested));
         }
       }),
     [subscribe, presets, fields, manifest.id, start],

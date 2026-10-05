@@ -68,6 +68,18 @@ export function useAppCommands({
   );
   useCommand(COMMANDS.runPreset, runPreset);
 
+  const runFeature = useCallback(
+    async ({ moduleId, inputs }: { moduleId: string; inputs: Record<string, unknown> }) => {
+      if (entryFor(state, moduleId).run.status === "running") {
+        throw new Error("Cette fonctionnalité est déjà en cours d'exécution.");
+      }
+      await openTab({ moduleId });
+      publish({ type: "featureRunRequested", moduleId, inputs });
+    },
+    [state, openTab, publish],
+  );
+  useCommand(COMMANDS.runFeature, runFeature);
+
   const cancelAll = useCallback(async () => {
     const running = runningModuleIds(state)
       .map((moduleId) => ({ moduleId, runId: entryFor(state, moduleId).runId }))

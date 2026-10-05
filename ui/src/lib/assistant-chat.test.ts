@@ -102,6 +102,39 @@ describe("chatReducer", () => {
     expect(lastAnswer(state)).toMatchObject({ text: "", status: "streaming" });
   });
 
+  it("adds a pending proposal that stays actionable after the answer ends", () => {
+    const proposal = event({
+      type: "proposal",
+      id: "call-1",
+      kind: "feature",
+      feature: "soumission",
+      feature_name: "Soumission",
+      label: "Soumission",
+      preset_id: null,
+      inputs: { output_folder: "C:\\Sortie" },
+    });
+    const shown = reduce([{ type: "sent", text: "Lance" }, proposal, event({ type: "done" })]);
+    expect(lastAnswer(shown).proposals).toMatchObject([{ id: "call-1", status: "pending" }]);
+
+    const launched = chatReducer(shown, {
+      type: "proposal",
+      proposalId: "call-1",
+      status: "launched",
+    });
+    expect(lastAnswer(launched).proposals[0]?.status).toBe("launched");
+
+    const failed = chatReducer(shown, {
+      type: "proposal",
+      proposalId: "call-1",
+      status: "failed",
+      error: "Déjà en cours",
+    });
+    expect(lastAnswer(failed).proposals[0]).toMatchObject({
+      status: "failed",
+      error: "Déjà en cours",
+    });
+  });
+
   it("clears the conversation", () => {
     const state = reduce([{ type: "sent", text: "Salut" }, { type: "cleared" }]);
 
