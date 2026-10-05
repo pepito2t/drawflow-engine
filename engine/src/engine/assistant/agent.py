@@ -15,6 +15,7 @@ from engine.assistant.events import (
 )
 from engine.assistant.model_client import ModelClient, ModelReply, ToolCall
 from engine.assistant.toolbox import ToolBox, ToolOutcome
+from engine.core.guide import GuideUnavailableError, sections
 
 MAX_TOOL_ROUNDS = 6
 PROPOSAL_SHOWN = (
@@ -26,19 +27,29 @@ SYSTEM_PROMPT = (
     "en façade : listes de pièces depuis des plans DWG, rapports DOCX depuis des PDF et "
     "soumissions. Réponds en français, de façon brève et concrète. Utilise les outils pour "
     "consulter les fonctionnalités, les préréglages et les modèles au lieu de supposer. Pour "
-    "expliquer comment installer, configurer ou dépanner, lis le guide (list_help_topics puis "
-    "read_help) et suis sa marche à suivre sans inventer de bouton ni de menu. Pour "
+    "expliquer comment installer, configurer ou dépanner, lis directement la rubrique du guide "
+    "concernée avec read_help et suis sa marche à suivre sans inventer de bouton ni de menu. Pour "
     "lancer un traitement, propose-le avec propose_preset ou propose_feature : l'utilisateur "
     "voit une carte et décide. Ne dis jamais qu'un traitement est lancé ; dis qu'il attend sa "
     "confirmation. N'invente aucun chemin de fichier : demande-le s'il manque."
 )
+HELP_TOPICS_HEADING = "Rubriques du guide (identifiant : titre) : "
 JsonObject = dict[str, Any]
+
+
+def system_prompt() -> str:
+    """Lists the guide's topics up front, so a how-to needs one tool call instead of two."""
+    try:
+        topics = "; ".join(f"{section.id} : {section.title}" for section in sections())
+    except GuideUnavailableError:
+        return SYSTEM_PROMPT
+    return f"{SYSTEM_PROMPT}\n{HELP_TOPICS_HEADING}{topics}."
 
 
 async def run_turn(
     request: ChatRequest, model: ModelClient, tools: ToolBox, emit: EmitAssistant
 ) -> None:
-    messages: list[JsonObject] = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages: list[JsonObject] = [{"role": "system", "content": system_prompt()}]
     messages += [message.model_dump() for message in request.recent_history()]
     definitions = await tools.definitions()
     for _ in range(MAX_TOOL_ROUNDS):

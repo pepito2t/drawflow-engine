@@ -27,6 +27,7 @@ def test_streamed_text_is_forwarded_piece_by_piece() -> None:
     assert received == ["Bon", "jour é"]
     assert reply == ModelReply(text="Bonjour é", tool_calls=[])
     assert server.requests[0]["model"] == "qwen2.5:7b"
+    assert server.requests[0]["reasoning_effort"] == "none"
     assert "tools" not in server.requests[0]
 
 

@@ -64,6 +64,7 @@ def test_tool_call_is_executed_and_its_result_sent_back_to_the_model() -> None:
     assert tools.calls == [("list_presets", {"feature": "x"})]
     follow_up = server.requests[1]["messages"]
     assert follow_up[0]["role"] == "system"
+    assert "installer-les-prérequis : Installer les prérequis" in follow_up[0]["content"]
     assert follow_up[-2]["tool_calls"][0]["function"]["name"] == "list_presets"
     assert follow_up[-1] == {"role": "tool", "tool_call_id": "call-1", "content": '{"presets": []}'}
 

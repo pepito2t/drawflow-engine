@@ -7,6 +7,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 - **Plugin Drawflow pour Stream Dock sans configuration** : Installer le plugin active l'API locale, et le plugin lit lui-même le port et le jeton de Drawflow sur ce poste. Plus rien à copier dans les touches (#148).
 
 - **Plugin AutoCAD pour Stream Dock** installable en un clic depuis Paramètres → Installation (dernière version publiée du projet streamdock_autocad). L'écran Installation signale les mises à jour disponibles des deux plugins Stream Dock (**Mettre à jour**) et affiche un badge vert quand un prérequis est prêt (#146).
+- Assistant plus réactif : le raisonnement interne des modèles « pensants » (Qwen 3.x) est désactivé, et les rubriques du guide sont connues d'avance, ce qui évite un aller-retour avec le modèle pour chaque question d'aide (#144).
 
 - Correctifs issus de l'audit : conversion DWG fiable quand plusieurs plans identiques sont traités en parallèle ; signature de l'éditeur vérifiée avant d'exécuter les installeurs ODA et Ollama ; seuls les fichiers produits par Drawflow peuvent être ouverts depuis l'app ; le jeton de l'API locale n'est plus lisible app verrouillée ; plus d'avertissement React au changement d'onglet ni d'erreur non gérée quand le modèle local ne répond pas (#141).
 
