@@ -14,6 +14,8 @@ pub enum BridgeError {
     RunInProgress,
     #[error("« {0} » n'est pas un nom de modèle valide.")]
     InvalidModelName(String),
+    #[error("« {0} » n'est pas un identifiant de fonctionnalité valide.")]
+    InvalidModuleId(String),
     #[error("Cette adresse n'est pas une page de téléchargement autorisée.")]
     PageNotAllowed,
     #[error("L'assistant répond déjà à une question.")]

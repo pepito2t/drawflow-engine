@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
@@ -6,10 +7,13 @@ from pydantic import BaseModel, ValidationError
 
 from engine.core.naming import (
     FileNameTemplate,
+    OutputFolderError,
     naming_values,
+    output_target,
     render_file_name,
     unique_output_path,
     validate_template,
+    writing_output,
 )
 
 MOMENT = datetime(2026, 10, 1, 9, 5)
@@ -84,3 +88,41 @@ def test_unique_output_path_never_overwrites(tmp_path: Path) -> None:
 
     assert unique_output_path(tmp_path, "liste.xlsx") == tmp_path / "liste (3).xlsx"
     assert unique_output_path(tmp_path, "autre.xlsx") == tmp_path / "autre.xlsx"
+
+
+def test_unique_output_path_reserves_the_name_for_concurrent_runs(tmp_path: Path) -> None:
+    workers = 8
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        paths = list(pool.map(lambda _: unique_output_path(tmp_path, "liste.xlsx"), range(workers)))
+
+    assert len(set(paths)) == workers
+    assert all(path.exists() for path in paths)
+
+
+def test_unique_output_path_creates_the_folder_and_reports_an_unwritable_one(
+    tmp_path: Path,
+) -> None:
+    assert unique_output_path(tmp_path / "nouveau", "liste.xlsx").parent.is_dir()
+
+    blocked = tmp_path / "fichier"
+    blocked.write_text("", encoding="utf-8")
+    with pytest.raises(OutputFolderError, match="inaccessible") as caught:
+        unique_output_path(blocked / "sous-dossier", "liste.xlsx")
+    assert caught.value.file == blocked / "sous-dossier"
+
+
+def test_writing_output_removes_the_reserved_file_on_failure(tmp_path: Path) -> None:
+    target = unique_output_path(tmp_path, "liste.xlsx")
+
+    with pytest.raises(RuntimeError), writing_output(target):
+        raise RuntimeError("export impossible")
+
+    assert not target.exists()
+
+
+def test_output_target_renders_then_reserves(tmp_path: Path) -> None:
+    target = output_target(tmp_path, "{projet}_{type}", {"projet": "A", "type": "liste"}, "xlsx")
+
+    assert target == tmp_path / "A_liste.xlsx"
+    assert target.exists()

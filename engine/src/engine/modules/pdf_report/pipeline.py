@@ -7,7 +7,7 @@ from engine.core.collect import collect_files
 from engine.core.contract import ModuleResult, RunContext
 from engine.core.errors import EngineError
 from engine.core.events import LogEvent, WarningEvent
-from engine.core.naming import naming_values, render_file_name, unique_output_path
+from engine.core.naming import naming_values, output_target, writing_output
 from engine.modules.pdf_report.docx_render import render_report
 from engine.modules.pdf_report.report import PlanData, build_context
 from engine.modules.pdf_report.schema import PdfReportInputs
@@ -46,7 +46,8 @@ def run_report(inputs: PdfReportInputs, context: RunContext, moment: datetime) -
     target = _target(inputs, settings, plans, moment)
     context.emit(LogEvent(message=f"Écriture de {target.name}"))
     report = build_context(plan_data, settings.fields, inputs.project.strip(), moment)
-    render_report(inputs.template, report, target)
+    with writing_output(target):
+        render_report(inputs.template, report, target)
     summary = f"Rapport de {len(plan_data)} plan(s) ({len(plan_data)}/{len(plans)} lu(s))"
     return ModuleResult(summary=summary, outputs=[target])
 
@@ -63,5 +64,6 @@ def _target(
 ) -> Path:
     source = plans[0].stem if len(plans) == 1 else ""
     values = naming_values(moment, projet=inputs.project.strip(), type=DOCUMENT_TYPE, source=source)
-    file_name = render_file_name(settings.file_name_template, values, OUTPUT_EXTENSION)
-    return unique_output_path(inputs.output_folder, file_name)
+    return output_target(
+        inputs.output_folder, settings.file_name_template, values, OUTPUT_EXTENSION
+    )
