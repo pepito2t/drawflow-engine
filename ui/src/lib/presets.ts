@@ -28,14 +28,21 @@ export function presetsFor(presets: Preset[], moduleId: string): Preset[] {
     .sort((left, right) => left.name.localeCompare(right.name, "fr"));
 }
 
-/** Fields missing from an older preset fall back to the form defaults. */
 export function presetFormValues(preset: Preset, fields: FieldDescriptor[]): FormValues {
+  return formValuesFrom(preset.inputs, fields);
+}
+
+/** Fields missing from the inputs (older preset, assistant proposal) fall back to the defaults. */
+export function formValuesFrom(
+  inputs: Record<string, unknown>,
+  fields: FieldDescriptor[],
+): FormValues {
   const defaults = initialValues(fields);
   return Object.fromEntries(
     fields.map((field) => [
       field.name,
-      field.name in preset.inputs
-        ? toFormValue(field.kind, preset.inputs[field.name])
+      field.name in inputs
+        ? toFormValue(field.kind, inputs[field.name])
         : (defaults[field.name] ?? ""),
     ]),
   );

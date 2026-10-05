@@ -11,6 +11,16 @@ export const assistantEventSchema = z.discriminatedUnion("type", [
     arguments: z.record(z.string(), z.unknown()),
   }),
   z.object({ type: z.literal("tool_result"), id: z.string(), name: z.string(), ok: z.boolean() }),
+  z.object({
+    type: z.literal("proposal"),
+    id: z.string(),
+    kind: z.enum(["preset", "feature"]),
+    feature: z.string(),
+    feature_name: z.string(),
+    label: z.string(),
+    preset_id: z.string().nullable(),
+    inputs: z.record(z.string(), z.unknown()),
+  }),
   z.object({ type: z.literal("done") }),
   errorEventSchema,
 ]);

@@ -4,6 +4,10 @@ import { z } from "zod";
 export const COMMAND_ARGUMENTS = {
   "tab.open": z.object({ moduleId: z.string().min(1) }),
   "preset.run": z.object({ presetId: z.string().min(1) }),
+  "feature.run": z.object({
+    moduleId: z.string().min(1),
+    inputs: z.record(z.string(), z.unknown()),
+  }),
   "runs.cancel-all": z.object({}),
   "result.open-last": z.object({}),
   "settings.open": z.object({}),
@@ -20,6 +24,7 @@ export type CommandHandler<Id extends CommandId> = (args: CommandArguments<Id>) 
 export const COMMANDS = {
   openTab: "tab.open",
   runPreset: "preset.run",
+  runFeature: "feature.run",
   cancelAllRuns: "runs.cancel-all",
   openLastResult: "result.open-last",
   openSettings: "settings.open",

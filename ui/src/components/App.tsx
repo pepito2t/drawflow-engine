@@ -199,6 +199,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
             ))}
           </main>
           <AssistantPanel
+            modules={modules}
             isOpen={isAssistantOpen}
             onClose={() => {
               setIsAssistantOpen(false);

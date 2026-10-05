@@ -10,6 +10,20 @@ export interface ToolActivity {
   status: ToolStatus;
 }
 
+export type ProposalStatus = "pending" | "launching" | "launched" | "dismissed" | "failed";
+
+export interface RunProposal {
+  id: string;
+  kind: "preset" | "feature";
+  feature: string;
+  featureName: string;
+  label: string;
+  presetId: string | null;
+  inputs: Record<string, unknown>;
+  status: ProposalStatus;
+  error: string | null;
+}
+
 export interface UserEntry {
   role: "user";
   id: number;
@@ -21,6 +35,7 @@ export interface AssistantEntry {
   id: number;
   text: string;
   tools: ToolActivity[];
+  proposals: RunProposal[];
   status: AnswerStatus;
   error: ReadableError | null;
 }
@@ -39,7 +54,8 @@ export type ChatAction =
   | { type: "exited"; answerId: number; code: number | null }
   | { type: "failed"; answerId: number; error: ReadableError }
   | { type: "cancelled" }
-  | { type: "cleared" };
+  | { type: "cleared" }
+  | { type: "proposal"; proposalId: string; status: ProposalStatus; error?: string };
 
 export interface ConversationMessage {
   role: "user" | "assistant";
@@ -84,6 +100,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     }
     case "cleared":
       return { entries: [], nextId: state.nextId };
+    case "proposal":
+      return updateProposal(state, action.proposalId, action.status, action.error ?? null);
   }
 }
 
@@ -111,6 +129,7 @@ function startAnswer(state: ChatState, text: string): ChatState {
     id: state.nextId + 1,
     text: "",
     tools: [],
+    proposals: [],
     status: "streaming",
     error: null,
   };
@@ -145,6 +164,24 @@ function applyEvent(answer: AssistantEntry, event: AssistantEvent): AssistantEnt
           tool.id === event.id ? { ...tool, status: event.ok ? "succeeded" : "failed" } : tool,
         ),
       };
+    case "proposal":
+      return {
+        ...answer,
+        proposals: [
+          ...answer.proposals,
+          {
+            id: event.id,
+            kind: event.kind,
+            feature: event.feature,
+            featureName: event.feature_name,
+            label: event.label,
+            presetId: event.preset_id,
+            inputs: event.inputs,
+            status: "pending",
+            error: null,
+          },
+        ],
+      };
     case "done":
       return settleTools("done")(answer);
     case "error":
@@ -153,6 +190,28 @@ function applyEvent(answer: AssistantEntry, event: AssistantEvent): AssistantEnt
         error: { message: event.message, hint: event.hint, file: event.file },
       };
   }
+}
+
+/** Proposals stay actionable after the answer ends, so they are found in any entry. */
+function updateProposal(
+  state: ChatState,
+  proposalId: string,
+  status: ProposalStatus,
+  error: string | null,
+): ChatState {
+  return {
+    ...state,
+    entries: state.entries.map((entry) =>
+      entry.role === "assistant" && entry.proposals.some((p) => p.id === proposalId)
+        ? {
+            ...entry,
+            proposals: entry.proposals.map((p) =>
+              p.id === proposalId ? { ...p, status, error } : p,
+            ),
+          }
+        : entry,
+    ),
+  };
 }
 
 function settleTools(status: AnswerStatus): (answer: AssistantEntry) => AssistantEntry {

@@ -51,6 +51,7 @@ export function toastFor(event: AppEvent): ToastSpec | null {
     case "runStarted":
     case "runProgress":
     case "presetRunRequested":
+    case "featureRunRequested":
       return null;
     case "runFinished":
       return runToast(event);

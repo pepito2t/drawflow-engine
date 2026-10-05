@@ -48,6 +48,7 @@ Réponse (même `id`) :
 | `app.state` | — | État : fonctionnalités, préréglages, traitements (renvoyé dans `data`) |
 | `tab.open` | `moduleId` | Ouvre l'onglet et met l'app au premier plan |
 | `preset.run` | `presetId` | Ouvre l'onglet, remplit le formulaire et lance le traitement |
+| `feature.run` | `moduleId`, `inputs` | Ouvre l'onglet, remplit le formulaire avec `inputs` et lance le traitement |
 | `runs.cancel-all` | — | Annule tous les traitements en cours |
 | `result.open-last` | — | Ouvre le dernier fichier produit |
 | `settings.open` | — | Ouvre les paramètres |
@@ -62,4 +63,4 @@ Réponse (même `id`) :
 { "type": "locked", "locked": false }
 ```
 
-Types d'événements : `runStarted`, `runProgress`, `runFinished` (`outcome` = `succeeded` | `failed` | `cancelled`, `outputs`), `presetRunRequested`, `updateAvailable`, `updateDeferred`, `settingsSaved`, `presetSaved`, `templateImported`, `settingsExported`, `accessCodeChanged`.
+Types d'événements : `runStarted`, `runProgress`, `runFinished` (`outcome` = `succeeded` | `failed` | `cancelled`, `outputs`), `presetRunRequested`, `featureRunRequested`, `updateAvailable`, `updateDeferred`, `settingsSaved`, `presetSaved`, `templateImported`, `settingsExported`, `accessCodeChanged`.

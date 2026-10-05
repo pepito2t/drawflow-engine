@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useAssistantChat } from "../hooks/use-assistant-chat";
+import type { CatalogModule } from "../lib/catalog";
 import { AssistantConnection } from "./AssistantConnection";
 import { AssistantMessage } from "./AssistantMessage";
 import { CloseIcon, PlusIcon, SendIcon, StopIcon } from "./icons";
@@ -7,17 +8,18 @@ import { CloseIcon, PlusIcon, SendIcon, StopIcon } from "./icons";
 const SUGGESTIONS = [
   "Quelles fonctionnalités propose Drawflow ?",
   "Quels préréglages sont enregistrés ?",
-  "Comment faire une liste de pièces ?",
+  "Lance la liste de pièces sur un dossier de plans",
 ];
 
 interface AssistantPanelProps {
+  modules: CatalogModule[];
   isOpen: boolean;
   onClose: () => void;
   onOpenSettings: () => void;
 }
 
-export function AssistantPanel({ isOpen, onClose, onOpenSettings }: AssistantPanelProps) {
-  const { state, isAnswering, ask, stop, clear } = useAssistantChat();
+export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: AssistantPanelProps) {
+  const { state, isAnswering, ask, stop, clear, markProposal } = useAssistantChat();
   const [draft, setDraft] = useState("");
   const messagesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -97,7 +99,12 @@ export function AssistantPanel({ isOpen, onClose, onOpenSettings }: AssistantPan
           </div>
         )}
         {state.entries.map((entry) => (
-          <AssistantMessage key={entry.id} entry={entry} />
+          <AssistantMessage
+            key={entry.id}
+            entry={entry}
+            modules={modules}
+            onProposal={markProposal}
+          />
         ))}
       </div>
       <form

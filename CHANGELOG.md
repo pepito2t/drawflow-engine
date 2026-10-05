@@ -4,7 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
-- L'assistant peut **proposer** de lancer un préréglage ou une fonctionnalité ; rien ne démarre sans confirmation (#93).
+- L'assistant peut **proposer** de lancer un préréglage ou une fonctionnalité ; rien ne démarre sans confirmation (#95).
+- Carte de confirmation dans le chat : **Lancer** / **Ignorer** ; nouvelle commande `feature.run` (#96).
 
 ## 0.4.0 — 2026-10-05
 

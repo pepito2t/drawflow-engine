@@ -4,6 +4,7 @@ export type AppEvent =
   | { type: "runStarted"; moduleId: string; moduleName: string }
   | { type: "runProgress"; moduleId: string; current: number; total: number }
   | { type: "presetRunRequested"; presetId: string; moduleId: string }
+  | { type: "featureRunRequested"; moduleId: string; inputs: Record<string, unknown> }
   | {
       type: "runFinished";
       moduleId: string;
