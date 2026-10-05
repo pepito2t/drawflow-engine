@@ -6,7 +6,6 @@ import {
   describeSystem,
   isEngineAction,
   needsConfirmation,
-  pageFor,
   parseSetupReport,
   type EngineSetupAction,
   type SetupActionSpec,
@@ -16,7 +15,6 @@ import {
   AI_MODELS_TAB_ID,
   OPEN_MODELS_ACTION,
 } from "../lib/setup";
-import { getAppVersion } from "../lib/tauri/app";
 import { openDownloadPage, runSetupAction, scanSetup } from "../lib/tauri/setup";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
@@ -121,11 +119,10 @@ function SetupChecklist({ reportPromise, run, onStart, onOpenTab }: SetupCheckli
 }
 
 async function openPage(action: SetupActionSpec): Promise<void> {
-  const url = pageFor(action, await getAppVersion());
-  if (url === null) {
+  if (action.url === null) {
     throw new Error("Aucune page de téléchargement pour cette action.");
   }
-  await openDownloadPage(url);
+  await openDownloadPage(action.url);
 }
 
 interface SetupRowProps {

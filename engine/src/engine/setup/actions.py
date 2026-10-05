@@ -18,10 +18,16 @@ from engine.setup.commands import (
     run_command,
     start_detached,
 )
-from engine.setup.locations import OLLAMA_APP_MACOS, OLLAMA_PROGRAM, find_oda
+from engine.setup.locations import (
+    OLLAMA_APP_MACOS,
+    OLLAMA_PROGRAM,
+    find_oda,
+    stream_dock_plugins_folder,
+)
 from engine.setup.machine import LocalMachine, Machine
 from engine.setup.ollama import START_WAIT_SECONDS, pull_model, wait_until_up
 from engine.setup.report import ActionId
+from engine.setup.stream_dock import install_plugin
 
 ODA_PACKAGE = "ODA.ODAFileConverter"
 OLLAMA_PACKAGE = "Ollama.Ollama"
@@ -57,6 +63,7 @@ class SetupContext:
     start: ProcessStarter = start_detached
     transport: httpx.AsyncBaseTransport | None = None
     start_wait_seconds: float = START_WAIT_SECONDS
+    app_version: str | None = None
 
 
 def run_action(action: str, context: SetupContext) -> None:
@@ -66,6 +73,7 @@ def run_action(action: str, context: SetupContext) -> None:
         "ollama.install": _install_ollama,
         "ollama.start": _start_ollama,
         "model.pull": _pull_model,
+        "streamdock.install-plugin": _install_stream_dock_plugin,
     }
     if action not in handlers:
         raise InvalidInputError(f"Action d'installation inconnue : {action}.")
@@ -122,6 +130,19 @@ def _pull_model(context: SetupContext) -> str:
         pull_model, assistant.model_server_url, assistant.model, on_percent, context.transport
     )
     return f"Modèle {assistant.model} téléchargé."
+
+
+def _install_stream_dock_plugin(context: SetupContext) -> str:
+    plugins = stream_dock_plugins_folder(context.machine)
+    if plugins is None:
+        raise SetupError(
+            "Le logiciel Stream Dock est introuvable sur ce poste.",
+            hint="Installez Stream Dock depuis la page de téléchargement de Mirabox.",
+        )
+    if context.app_version is None:
+        raise SetupError("Version de Drawflow inconnue : relancez l'installation depuis l'app.")
+    context.emit(LogEvent(message="Téléchargement du plugin Stream Dock…"))
+    return install_plugin(plugins, context.app_version, context.transport)
 
 
 def _ollama_launcher(machine: Machine) -> list[str]:

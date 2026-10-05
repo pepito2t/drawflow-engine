@@ -4,7 +4,6 @@ import {
   isEngineAction,
   missingCount,
   needsConfirmation,
-  pageFor,
   parseSetupReport,
   setupRunReducer,
   type SetupRun,
@@ -30,10 +29,10 @@ const REPORT = JSON.stringify({
     },
     {
       id: "stream-deck",
-      label: "Plugin Stream Deck",
+      label: "Plugin Stream Dock",
       status: "optional",
       detail: "Facultatif",
-      actions: [{ id: "streamdeck.install-plugin", label: "Installer le plugin", url: null }],
+      actions: [{ id: "streamdock.install-plugin", label: "Installer le plugin", url: null }],
     },
   ],
 });
@@ -59,17 +58,9 @@ describe("setup report", () => {
   it("tells engine actions from pages and asks before installing third-party software", () => {
     expect(isEngineAction("oda.install")).toBe(true);
     expect(isEngineAction("oda.open-page")).toBe(false);
+    expect(isEngineAction("streamdock.install-plugin")).toBe(true);
     expect(needsConfirmation("ollama.install")).toBe(true);
     expect(needsConfirmation("oda.use-detected")).toBe(false);
-  });
-
-  it("points the plugin install to the release of the running version", () => {
-    const [, streamDeck] = parseSetupReport(REPORT).items;
-    const [install] = streamDeck?.actions ?? [];
-
-    expect(install && pageFor(install, "0.3.0")).toBe(
-      "https://github.com/pepito2t/drawflow-engine/releases/download/v0.3.0/ch.drawflow.streamDeckPlugin",
-    );
   });
 });
 

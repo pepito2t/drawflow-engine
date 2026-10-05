@@ -38,6 +38,7 @@ export const ENGINE_ACTIONS = [
   "ollama.install",
   "ollama.start",
   "model.pull",
+  "streamdock.install-plugin",
 ] as const;
 export type EngineSetupAction = (typeof ENGINE_ACTIONS)[number];
 
@@ -45,9 +46,6 @@ const INSTALLS_THIRD_PARTY = new Set(["oda.install", "ollama.install", "model.pu
 export const SETUP_TAB_ID = "setup";
 export const AI_MODELS_TAB_ID = "ai-models";
 export const OPEN_MODELS_ACTION = "models.open";
-const PLUGIN_ACTION = "streamdeck.install-plugin";
-const RELEASES_URL = "https://github.com/pepito2t/drawflow-engine/releases/download";
-const PLUGIN_FILE = "ch.drawflow.streamDeckPlugin";
 const OS_LABELS = { windows: "Windows", macos: "macOS", linux: "Linux" } as const;
 
 export function parseSetupReport(rawJson: string): SetupReport {
@@ -73,14 +71,6 @@ export function missingCount(report: SetupReport): number {
 export function describeSystem(report: SetupReport): string {
   const { os, arch, package_manager: manager } = report.system;
   return `${OS_LABELS[os]} · ${arch} · ${manager ?? "sans gestionnaire de paquets"}`;
-}
-
-/** The plugin attached to the release of the running version (the Stream Deck app opens it). */
-export function pageFor(action: SetupActionSpec, appVersion: string): string | null {
-  if (action.id === PLUGIN_ACTION) {
-    return `${RELEASES_URL}/v${appVersion}/${PLUGIN_FILE}`;
-  }
-  return action.url;
 }
 
 export type SetupRun =

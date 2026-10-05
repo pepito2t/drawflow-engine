@@ -17,7 +17,7 @@ interface AppCommandTargets {
   toggleAssistant: () => void;
 }
 
-/** Registers the app-level commands shared by the UI, the Stream Deck and future integrations. */
+/** Registers the app-level commands shared by the UI, the Stream Dock and future integrations. */
 export function useAppCommands({
   modules,
   selectModule,

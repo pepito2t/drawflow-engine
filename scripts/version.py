@@ -42,7 +42,7 @@ SOURCES = [
         ROOT / "engine" / "pyproject.toml", re.compile(r'(?m)^(version = ")([^"]+)(")')
     ),
     VersionSource(
-        ROOT / "streamdeck" / "package.json",
+        ROOT / "streamdock" / "package.json",
         re.compile(r'(?m)^(  "version": ")([^"]+)(")'),
     ),
     VersionSource(
@@ -52,14 +52,14 @@ SOURCES = [
 ]
 
 
-# Stream Deck manifests require a purely numeric four-part version (no pre-release suffix).
-STREAMDECK_MANIFEST = ROOT / "streamdeck" / "ch.drawflow.sdPlugin" / "manifest.json"
+# The Stream Dock manifest takes a plain X.Y.Z version, without pre-release suffix.
+STREAMDOCK_MANIFEST = ROOT / "streamdock" / "ch.drawflow.sdPlugin" / "manifest.json"
 MANIFEST_VERSION = re.compile(r'(?m)^(  "Version": ")([^"]+)(")')
 PRERELEASE_SEPARATOR = "-"
 
 
 def manifest_version(version: str) -> str:
-    return f"{version.split(PRERELEASE_SEPARATOR)[0]}.0"
+    return version.split(PRERELEASE_SEPARATOR)[0]
 
 
 def read_versions() -> dict[Path, str]:
@@ -83,10 +83,10 @@ def check(tag: str | None) -> None:
         )
         raise SystemExit(f"Versions incohérentes :\n{details}")
     version = distinct.pop()
-    manifest = MANIFEST_VERSION.search(STREAMDECK_MANIFEST.read_text(encoding="utf-8"))
+    manifest = MANIFEST_VERSION.search(STREAMDOCK_MANIFEST.read_text(encoding="utf-8"))
     if manifest is None or manifest.group(2) != manifest_version(version):
         raise SystemExit(
-            f"Version du plugin Stream Deck incohérente (attendu {manifest_version(version)})"
+            f"Version du plugin Stream Dock incohérente (attendu {manifest_version(version)})"
         )
     if tag is not None and tag != f"{TAG_PREFIX}{version}":
         raise SystemExit(f"Le tag {tag} ne correspond pas à la version {version}")
@@ -102,13 +102,13 @@ def bump(version: str) -> None:
             lambda match: f"{match.group(1)}{version}{match.group(3)}", content, count=1
         )
         source.path.write_text(updated, encoding="utf-8")
-    content = STREAMDECK_MANIFEST.read_text(encoding="utf-8")
+    content = STREAMDOCK_MANIFEST.read_text(encoding="utf-8")
     replacement = manifest_version(version)
     content = MANIFEST_VERSION.sub(
         lambda match: f"{match.group(1)}{replacement}{match.group(3)}", content, count=1
     )
-    STREAMDECK_MANIFEST.write_text(content, encoding="utf-8")
-    for path in (ROOT / "src-tauri" / "tauri.conf.json", STREAMDECK_MANIFEST):
+    STREAMDOCK_MANIFEST.write_text(content, encoding="utf-8")
+    for path in (ROOT / "src-tauri" / "tauri.conf.json", STREAMDOCK_MANIFEST):
         json.loads(path.read_text(encoding="utf-8"))
     sys.stdout.write(
         f"Version {version} appliquée ; commit puis tag {TAG_PREFIX}{version}\n"

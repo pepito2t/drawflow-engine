@@ -8,7 +8,8 @@ export default {
   input: "src/plugin.ts",
   output: {
     file: `${PLUGIN_FOLDER}/bin/plugin.js`,
-    format: "esm",
+    // Stream Dock runs the plugin with its built-in Node 20 as a plain CommonJS script.
+    format: "cjs",
     sourcemap: true,
   },
   plugins: [
@@ -21,9 +22,14 @@ export default {
     nodeResolve({ browser: false, exportConditions: ["node"], preferBuiltins: true }),
     commonjs(),
     {
-      name: "emit-module-package-file",
+      name: "emit-commonjs-package-file",
       generateBundle() {
-        this.emitFile({ fileName: "package.json", source: '{ "type": "module" }', type: "asset" });
+        // Keeps the bundle CommonJS even under a parent package.json declaring ES modules.
+        this.emitFile({
+          fileName: "package.json",
+          source: '{ "type": "commonjs" }',
+          type: "asset",
+        });
       },
     },
   ],

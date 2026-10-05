@@ -33,7 +33,7 @@ def test_fresh_windows_with_winget_offers_direct_installs() -> None:
     assert action_ids(items["oda"]) == ["oda.install", "oda.open-page"]
     assert action_ids(items["model-server"]) == ["ollama.install", "ollama.open-page"]
     assert items["model"].status == "missing"
-    assert items["stream-deck"].status == "optional"
+    assert items["stream-dock"].status == "optional"
 
 
 def test_without_package_manager_only_the_download_pages_are_offered() -> None:
@@ -78,15 +78,21 @@ def test_missing_model_on_another_server_cannot_be_pulled() -> None:
     assert action_ids(report(FakeMachine(), server)["model"]) == []
 
 
-def test_stream_deck_plugin_install_is_offered_once_the_app_is_there() -> None:
-    stream_deck = PROGRAM_FILES / "Elgato" / "StreamDeck" / "StreamDeck.exe"
-    plugin = APPDATA / "Elgato" / "StreamDeck" / "Plugins" / "ch.drawflow.sdPlugin" / "x.json"
+def test_stream_dock_plugin_install_is_offered_once_stream_dock_is_there() -> None:
+    stream_dock = APPDATA / "HotSpot" / "StreamDock" / "config.json"
+    plugin = (
+        APPDATA / "HotSpot" / "StreamDock" / "plugins" / "ch.drawflow.sdPlugin" / "manifest.json"
+    )
 
-    without_plugin = report(FakeMachine(files={stream_deck}))["stream-deck"]
-    with_plugin = report(FakeMachine(files={stream_deck, plugin}))["stream-deck"]
+    absent = report(FakeMachine())["stream-dock"]
+    without_plugin = report(FakeMachine(files={stream_dock}))["stream-dock"]
+    with_plugin = report(FakeMachine(files={stream_dock, plugin}))["stream-dock"]
 
-    assert action_ids(without_plugin) == ["streamdeck.install-plugin"]
+    assert action_ids(absent) == ["streamdock.open-page"]
+    assert absent.actions[0].url == "https://mirabox.net/pages/download"
+    assert action_ids(without_plugin) == ["streamdock.install-plugin"]
     assert with_plugin.status == "ok"
+    assert action_ids(with_plugin) == ["streamdock.install-plugin"]
 
 
 def test_macos_installs_ollama_with_homebrew_but_not_oda() -> None:

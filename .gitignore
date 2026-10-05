@@ -33,6 +33,6 @@ Thumbs.db
 samples/
 
 # Stream Deck plugin build output
-streamdeck/ch.drawflow.sdPlugin/bin/
-streamdeck/ch.drawflow.sdPlugin/logs/
-streamdeck/dist/
+streamdock/ch.drawflow.sdPlugin/bin/
+streamdock/ch.drawflow.sdPlugin/logs/
+streamdock/dist/

@@ -1,6 +1,6 @@
 # API locale (protocole v1)
 
-API WebSocket qui permet de piloter Drawflow depuis un autre programme sur le même ordinateur (plugin Stream Deck, futur assistant local).
+API WebSocket qui permet de piloter Drawflow depuis un autre programme sur le même ordinateur (plugin Stream Dock, outils tiers).
 
 ## Activation
 

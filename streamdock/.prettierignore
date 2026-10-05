@@ -1,4 +1,4 @@
 ch.drawflow.sdPlugin/bin
-ch.drawflow.sdPlugin/ui/sdpi-components.js
 dist
 ch.drawflow.sdPlugin/manifest.json
+pnpm-lock.yaml
