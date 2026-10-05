@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+## 0.6.0 — 2026-10-05
+
 - **Paramètres → Modèles d'IA** : recherche, téléchargement avec progression, utilisation et suppression des modèles ; « Choisir un modèle » depuis l'écran Installation ; commande `models.open` (#106).
 - Modèle conseillé selon la mémoire du poste (famille Qwen 3.5), modèle par défaut `qwen3.5:9b` ; téléchargement et suppression de modèles par le moteur (#105).
 - La conversation de l'assistant est conservée sur le poste entre deux lancements ; **+** l'efface (#102).

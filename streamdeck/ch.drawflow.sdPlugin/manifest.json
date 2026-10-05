@@ -2,7 +2,7 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "UUID": "ch.drawflow",
   "Name": "Drawflow",
-  "Version": "0.5.0.0",
+  "Version": "0.6.0.0",
   "Author": "Drawflow",
   "Description": "Pilotez Drawflow : préréglages, onglets, annulation, dernier résultat et suivi des traitements.",
   "Category": "Drawflow",
