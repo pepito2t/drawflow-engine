@@ -18,6 +18,7 @@ from engine.setup.commands import (
     run_command,
     start_detached,
 )
+from engine.setup.installer_download import DownloadProgress
 from engine.setup.locations import (
     OLLAMA_APP_MACOS,
     OLLAMA_PROGRAM,
@@ -27,26 +28,12 @@ from engine.setup.locations import (
 from engine.setup.machine import LocalMachine, Machine
 from engine.setup.oda_installer import install_oda
 from engine.setup.ollama import START_WAIT_SECONDS, pull_model, wait_until_up
+from engine.setup.ollama_installer import install_ollama_windows
 from engine.setup.report import ActionId
 from engine.setup.stream_dock import install_plugin
 
-OLLAMA_PACKAGE = "Ollama.Ollama"
 OLLAMA_CASK = "ollama"
 OLLAMA_APP_WINDOWS = Path("Programs") / "Ollama" / "ollama app.exe"
-WINGET_FLAGS = (
-    "--exact",
-    "--silent",
-    "--accept-package-agreements",
-    "--accept-source-agreements",
-    "--disable-interactivity",
-)
-# winget reports "already installed" and "no newer version" as failures; both mean done.
-WINGET_ALREADY_DONE = {0x8A150061, 0x8A15002B}
-UNSIGNED_32_BITS = 0xFFFFFFFF
-# 0x8019xxxx: the download got an HTTP error (xxxx = status), e.g. a file removed upstream.
-HTTP_ERROR_FACILITY = 0x80190000
-FACILITY_MASK = 0xFFFF0000
-STATUS_MASK = 0x0000FFFF
 PERCENT = 100
 
 
@@ -88,11 +75,7 @@ def _install_oda(context: SetupContext) -> str:
             hint="Utilisez la page de téléchargement.",
         )
     context.emit(LogEvent(message="Téléchargement d'ODA File Converter depuis le site officiel…"))
-
-    def on_download(percent: int) -> None:
-        context.emit(ProgressEvent(current=percent, total=PERCENT, message="Téléchargement d'ODA"))
-
-    install_oda(context.run, on_download, context.transport)
+    install_oda(context.run, _download_progress(context, "ODA File Converter"), context.transport)
     return _use_detected_oda(context)
 
 
@@ -111,7 +94,10 @@ def _use_detected_oda(context: SetupContext) -> str:
 
 def _install_ollama(context: SetupContext) -> str:
     if context.machine.os == "windows":
-        _winget_install(context, OLLAMA_PACKAGE, "Ollama")
+        context.emit(LogEvent(message="Téléchargement d'Ollama depuis ollama.com (1,5 Go)…"))
+        install_ollama_windows(
+            context.run, _download_progress(context, "Ollama"), context.transport
+        )
     else:
         context.emit(LogEvent(message="Installation d'Ollama avec Homebrew…"))
         _check(context.run(["brew", "install", "--cask", OLLAMA_CASK]), "Ollama")
@@ -171,28 +157,17 @@ def _ollama_launcher(machine: Machine) -> list[str]:
     return [str(program), "serve"]
 
 
-def _winget_install(context: SetupContext, package: str, name: str) -> None:
-    if context.machine.which("winget") is None:
-        raise SetupError(
-            "winget n'est pas disponible sur ce poste.",
-            hint="Utilisez la page de téléchargement, ou mettez Windows à jour.",
-        )
-    context.emit(LogEvent(message=f"Installation de {name} avec winget (plusieurs minutes)…"))
-    context.emit(ProgressEvent(current=0, total=PERCENT, message=f"Installation de {name}"))
-    _check(context.run(["winget", "install", "--id", package, *WINGET_FLAGS]), name)
+def _download_progress(context: SetupContext, name: str) -> DownloadProgress:
+    def on_percent(percent: int) -> None:
+        message = f"Téléchargement de {name}" if percent < PERCENT else f"Installation de {name}…"
+        context.emit(ProgressEvent(current=percent, total=PERCENT, message=message))
+
+    return on_percent
 
 
 def _check(outcome: CommandOutcome, name: str) -> None:
-    code = outcome.return_code & UNSIGNED_32_BITS
-    if code == 0 or code in WINGET_ALREADY_DONE:
+    if outcome.return_code == 0:
         return
-    if code & FACILITY_MASK == HTTP_ERROR_FACILITY:
-        raise SetupError(
-            f"Le téléchargement de {name} a échoué : le fichier proposé par winget n'est plus "
-            f"disponible chez l'éditeur (HTTP {code & STATUS_MASK}).",
-            hint=f"Cliquez sur « Page de téléchargement », installez {name}, puis sur "
-            "« Analyser à nouveau » : Drawflow le détectera.",
-        )
     raise SetupError(
         f"L'installation de {name} a échoué (code {outcome.return_code}).",
         hint=outcome.tail() or "Réessayez, ou utilisez la page de téléchargement.",

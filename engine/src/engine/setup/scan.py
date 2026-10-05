@@ -38,9 +38,6 @@ DOWNLOAD_PAGES: dict[ActionId, str] = {
     "ollama.open-page": "https://ollama.com/download",
     "streamdock.open-page": "https://mirabox.net/pages/download",
 }
-INSTALLABLE_WITH: dict[ActionId, set[PackageManager]] = {
-    "ollama.install": {"winget", "brew"},
-}
 
 
 # Sections of docs/guide.md that walk the user through each item.
@@ -120,7 +117,7 @@ def _model_server_item(
         label=label,
         status="missing",
         detail="Ollama fait tourner l'assistant sur ce poste, sans connexion externe.",
-        actions=_install_actions(system, "ollama.install", "ollama.open-page"),
+        actions=_ollama_install_actions(system),
     )
 
 
@@ -189,11 +186,11 @@ def _manager(machine: Machine) -> PackageManager | None:
     return None
 
 
-def _install_actions(system: SystemInfo, install: ActionId, page: ActionId) -> list[SetupAction]:
-    managers = INSTALLABLE_WITH.get(install, set())
-    if system.package_manager is not None and system.package_manager in managers:
-        return _actions(install, page)
-    return _actions(page)
+def _ollama_install_actions(system: SystemInfo) -> list[SetupAction]:
+    """Windows downloads Ollama's own installer; macOS needs Homebrew for a silent install."""
+    if system.os == "windows" or system.package_manager == "brew":
+        return _actions("ollama.install", "ollama.open-page")
+    return _actions("ollama.open-page")
 
 
 def _oda_install_actions(machine: Machine) -> list[SetupAction]:
