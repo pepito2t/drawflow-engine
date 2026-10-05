@@ -88,7 +88,7 @@ Drawflow fonctionne avec le **Stream Dock** de Mirabox (logiciel Stream Dock pou
 2. **Redémarrez Stream Dock** (il ne charge un nouveau plugin qu'au démarrage).
 3. Dans Stream Dock, glissez une action de la catégorie **Drawflow** sur une touche ; pour une touche **Préréglage** ou **Onglet**, choisissez le préréglage ou l'onglet dans la liste.
 
-Le plugin se connecte tout seul à Drawflow installé sur ce poste : il n'y a ni port ni jeton à saisir. Les champs de la touche ne servent que si Drawflow tourne sous un autre compte Windows (port et jeton dans Paramètres → Intégrations).
+Le plugin se connecte tout seul à Drawflow installé sur ce poste : il n'y a ni port ni jeton à saisir. Les champs de la touche ne servent que si Drawflow tourne sous un autre compte Windows (port et jeton dans Paramètres → API locale).
 
 Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée et « Hors ligne » quand Drawflow est fermée.
 

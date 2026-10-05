@@ -137,26 +137,31 @@ def _model_server_item(
 def _model_item(
     assistant: AssistantSettings, server: ModelServerState, recommended: str
 ) -> SetupItem:
-    label = f"Modèle {assistant.model}"
+    label = "Modèle d'IA"
+    model = assistant.model
     if not server.reachable:
         return SetupItem(
-            id="model", label=label, status="missing", detail="Démarrez d'abord le serveur."
+            id="model",
+            label=label,
+            status="missing",
+            detail=f"{model} — démarrez d'abord le serveur.",
         )
-    if assistant.model in server.available:
-        return SetupItem(id="model", label=label, status="ok", detail="Disponible.")
+    if model in server.available:
+        return SetupItem(id="model", label=label, status="ok", detail=f"{model} disponible.")
     if server.is_ollama:
         return SetupItem(
             id="model",
             label=label,
             status="missing",
-            detail=f"Pas encore téléchargé. Recommandé pour ce poste : {recommended}.",
+            detail=f"{model} pas encore téléchargé. Recommandé pour ce poste : {recommended}.",
             actions=_actions("model.pull", "models.open"),
         )
     return SetupItem(
         id="model",
         label=label,
         status="missing",
-        detail="Introuvable sur le serveur : chargez-le dans LM Studio ou changez de modèle.",
+        detail=f"{model} introuvable sur le serveur : chargez-le dans LM Studio ou changez de "
+        "modèle.",
     )
 
 
@@ -167,7 +172,7 @@ def _stream_dock_item(machine: Machine, app_version: str | None) -> SetupItem:
             id="stream-dock",
             label=label,
             status="optional",
-            detail="Facultatif : logiciel Stream Dock (Mirabox) non installé.",
+            detail="Logiciel Stream Dock (Mirabox) non installé.",
             actions=_actions("streamdock.open-page"),
         )
     if not stream_dock_plugin_installed(machine):
@@ -191,7 +196,7 @@ def _autocad_plugin_item(machine: Machine, latest: str | None) -> SetupItem:
             id="autocad-plugin",
             label=label,
             status="optional",
-            detail="Facultatif : logiciel Stream Dock (Mirabox) non installé.",
+            detail="Logiciel Stream Dock (Mirabox) non installé.",
             actions=_actions("autocad-plugin.open-page"),
         )
     autocad = (

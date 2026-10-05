@@ -7,8 +7,8 @@
   --color-border: #2b313b;
   --color-text: #d8dce3;
   --color-muted: #8a93a2;
-  --color-accent: #5b9bff;
-  --color-accent-strong: #3d7ff0;
+  --color-accent: #4cb8e0;
+  --color-accent-strong: #1b7ea6;
   --color-success: #4cc483;
   --color-success-background: rgb(76 196 131 / 10%);
   --color-warning: #e5aa45;
@@ -389,15 +389,15 @@ input[type="checkbox"] {
   z-index: 20;
   display: grid;
   place-items: center;
-  padding: 32px;
+  padding: 16px;
   background: rgb(0 0 0 / 55%);
 }
 
 .dialog {
   display: flex;
   flex-direction: column;
-  width: min(880px, 100%);
-  height: min(620px, 100%);
+  width: min(960px, 100%);
+  height: min(680px, 100%);
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-background);
@@ -568,6 +568,13 @@ input[type="checkbox"] {
 small {
   margin: 0;
   color: var(--color-muted);
+}
+
+/* Running text stays under ~80 characters whatever the window width. */
+.module-workspace header p,
+.instructions ol,
+.settings-section > p {
+  max-width: 72ch;
 }
 
 .centered {
@@ -922,11 +929,12 @@ small {
   margin: 0;
   padding: 0;
   list-style: none;
+  container-type: inline-size;
 }
 
 .setup-item {
   display: grid;
-  grid-template-columns: 96px 1fr auto;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
   align-items: start;
   gap: 12px;
   padding: 12px;
@@ -961,7 +969,31 @@ small {
   font-weight: 600;
 }
 
+/* Narrow dialog: the buttons go under the text instead of squeezing it. */
+@container (max-width: 640px) {
+  .setup-item {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .setup-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+.setup-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.setup-title .icon-button {
+  width: 22px;
+  height: 22px;
+}
+
 .setup-body {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1271,8 +1303,12 @@ small {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner,
-  .status-dot.loading {
+  .spinner {
     animation-duration: 3s;
+  }
+
+  .status-dot.loading,
+  .toast {
+    animation: none;
   }
 }

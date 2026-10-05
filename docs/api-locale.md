@@ -4,7 +4,7 @@ API WebSocket qui permet de piloter Drawflow depuis un autre programme sur le m�
 
 ## Activation
 
-Paramètres → **Intégrations** : activer l'API, choisir le port (défaut `51717`), copier le jeton.
+Paramètres → **API locale** : activer l'API, choisir le port (défaut `51717`), copier le jeton. Le plugin Stream Dock lit ces réglages tout seul ; la copie du jeton ne concerne que les outils tiers.
 
 - Écoute **uniquement** sur `127.0.0.1` : jamais accessible depuis le réseau.
 - Jeton obligatoire (48 caractères hexadécimaux), régénérable.
