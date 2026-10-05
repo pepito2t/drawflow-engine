@@ -66,6 +66,8 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Modules importés avant la boucle stdio MCP | Sous Windows, un import pendant une lecture bloquante de stdin figeait le serveur | #82 |
 | Sidecar PyInstaller en dossier (`--onedir`), `_internal` livré en ressource à côté de l'exécutable ; pipelines importés à la demande | Un `--onefile` se décompresse à chaque appel (lent sous Windows, Defender) ; lister ou lire les réglages n'a pas besoin d'ezdxf/openpyxl/pdfplumber | #116 |
 | Installations via winget / Homebrew, commandes en liste d'arguments | Sources officielles et intégrité vérifiée, pas d'injection shell | #88 |
+| Installeurs téléchargés vérifiés par leur signature Authenticode (PowerShell `Get-AuthenticodeSignature`) avant exécution | HTTPS protège le transport, pas l'authenticité du fichier ; aucun checksum publié par ODA | #141 |
+| `open_output` limité aux chemins annoncés dans les événements `result` du moteur | L'UI ne doit pas pouvoir faire ouvrir un exécutable arbitraire | #141 |
 | ODA et Ollama installés depuis l'installeur officiel (lien sans version), pas par winget | winget pointe vers des versions retirées (404) et n'affiche aucune progression ; le lien sans version suit toujours la dernière | #114, #119 |
 | État des installations et téléchargements de modèles au niveau de l'application | Un traitement de plusieurs minutes survit au changement d'écran | #119 |
 | Pages de téléchargement en liste blanche côté Rust | L'UI ne peut pas ouvrir une URL arbitraire | #90 |
