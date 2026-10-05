@@ -64,6 +64,7 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Adresse du modèle limitée au loopback | Aucune donnée ne quitte le poste | #79 |
 | SDK MCP importé à la demande | ~200 ms de démarrage évités pour les autres commandes | #78 |
 | Modules importés avant la boucle stdio MCP | Sous Windows, un import pendant une lecture bloquante de stdin figeait le serveur | #82 |
+| Sidecar PyInstaller en dossier (`--onedir`), `_internal` livré en ressource à côté de l'exécutable ; pipelines importés à la demande | Un `--onefile` se décompresse à chaque appel (lent sous Windows, Defender) ; lister ou lire les réglages n'a pas besoin d'ezdxf/openpyxl/pdfplumber | #116 |
 | Installations via winget / Homebrew, commandes en liste d'arguments | Sources officielles et intégrité vérifiée, pas d'injection shell | #88 |
 | ODA installé par le MSI du site de l'éditeur (nom sans version), pas par winget | Le manifeste winget pointe vers des versions retirées (404) ; le lien sans version suit toujours la dernière | #98 |
 | Pages de téléchargement en liste blanche côté Rust | L'UI ne peut pas ouvrir une URL arbitraire | #90 |
