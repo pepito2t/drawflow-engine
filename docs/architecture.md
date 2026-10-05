@@ -38,7 +38,7 @@ chat ─▶ Rust assistant_chat ─▶ engine assistant chat ─┬─ HTTP ─�
                                                       └─ stdio ─▶ engine mcp (outils Drawflow, lecture seule)
 ```
 
-Un tour envoie la conversation au modèle et exécute les outils demandés, puis recommence. Le nombre d'appels, l'historique, la taille des réponses d'outils et la durée des requêtes sont bornés.
+Un tour envoie la conversation au modèle et exécute les outils demandés, puis recommence. Le nombre d'appels, l'historique, la taille des réponses d'outils et la durée des requêtes sont bornés. Les outils `propose_*` ne lancent rien : ils valident la demande et la boucle émet un événement `proposal`, que l'utilisateur confirme dans le chat.
 
 **Installation du poste.** `engine setup scan` produit la liste des prérequis et les actions possibles. `engine setup run <action>` exécute une action de la liste blanche, partagée avec Rust.
 
@@ -58,6 +58,7 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Commandes nommées + centre de notifications | Toute l'application pilotable de l'extérieur par un seul registre | #70 |
 | API locale en WebSocket sur 127.0.0.1 avec jeton | Stream Deck et outils tiers, sans exposition réseau | #71 |
 | Assistant via MCP (SDK officiel), modèle local par API compatible OpenAI | Fonctionne avec Ollama, LM Studio, llama.cpp ; outils générés depuis le registre | #78, #79 |
+| L'assistant propose, l'utilisateur lance | Aucun traitement sans confirmation ; le lancement suit le même circuit que l'interface | #95 |
 | Adresse du modèle limitée au loopback | Aucune donnée ne quitte le poste | #79 |
 | SDK MCP importé à la demande | ~200 ms de démarrage évités pour les autres commandes | #78 |
 | Modules importés avant la boucle stdio MCP | Sous Windows, un import pendant une lecture bloquante de stdin figeait le serveur | #82 |

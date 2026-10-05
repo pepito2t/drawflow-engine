@@ -10,7 +10,13 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
-from engine.assistant.tools import describe_features, describe_presets, describe_templates
+from engine.assistant.tools import (
+    describe_features,
+    describe_presets,
+    describe_templates,
+    propose_feature_run,
+    propose_preset_run,
+)
 from engine.core.errors import EngineError
 from engine.core.registry import discover_modules
 
@@ -18,8 +24,10 @@ SERVER_NAME = "drawflow"
 SERVER_INSTRUCTIONS = (
     "Drawflow automatise le travail d'un dessinateur en façade : listes de pièces depuis des "
     "plans DWG, rapports DOCX depuis des PDF et soumissions. Ces outils décrivent les "
-    "fonctionnalités, les préréglages et les modèles disponibles."
+    "fonctionnalités, les préréglages et les modèles disponibles, et proposent des lancements "
+    "que l'utilisateur confirme."
 )
+# Proposals are read-only too: a run only starts when the user confirms it in the app.
 READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
 
@@ -47,6 +55,23 @@ def build_server(settings: Path) -> FastMCP:
     )
     def list_templates() -> dict[str, Any]:
         return _as_tool_result(lambda: describe_templates(settings))
+
+    @server.tool(
+        description="Propose de lancer un préréglage. Rien n'est lancé : l'utilisateur voit "
+        "une carte et doit cliquer sur Lancer.",
+        annotations=READ_ONLY,
+    )
+    def propose_preset(preset_id: str) -> dict[str, Any]:
+        return _as_tool_result(lambda: propose_preset_run(settings, preset_id))
+
+    @server.tool(
+        description="Propose de lancer une fonctionnalité avec des entrées conformes à son "
+        "inputs_schema (voir list_features). Rien n'est lancé : l'utilisateur voit une carte "
+        "et doit cliquer sur Lancer.",
+        annotations=READ_ONLY,
+    )
+    def propose_feature(feature_id: str, inputs: dict[str, Any]) -> dict[str, Any]:
+        return _as_tool_result(lambda: propose_feature_run(feature_id, inputs))
 
     return server
 

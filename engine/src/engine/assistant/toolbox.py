@@ -7,16 +7,23 @@ from typing import Any, Protocol
 from mcp import ClientSession
 from mcp.shared.exceptions import McpError
 from mcp.types import TextContent
+from pydantic import ValidationError
+
+from engine.assistant.events import Proposal
 
 # Keeps one verbose tool answer from filling a small model's context.
 MAX_TOOL_OUTPUT_CHARS = 20_000
 TRUNCATION_NOTICE = "\n[… réponse tronquée]"
 
 
+PROPOSAL_KEY = "proposal"
+
+
 @dataclass(frozen=True)
 class ToolOutcome:
     ok: bool
     text: str
+    proposal: Proposal | None = None
 
 
 class ToolBox(Protocol):
@@ -51,7 +58,19 @@ class McpToolBox:
         texts = [part.text for part in result.content if isinstance(part, TextContent)]
         if not texts and result.structuredContent is not None:
             texts = [json.dumps(result.structuredContent, ensure_ascii=False)]
-        return ToolOutcome(ok=not result.isError, text=_truncate("\n".join(texts)))
+        proposal = None if result.isError else _proposal(result.structuredContent)
+        return ToolOutcome(
+            ok=not result.isError, text=_truncate("\n".join(texts)), proposal=proposal
+        )
+
+
+def _proposal(structured: dict[str, Any] | None) -> Proposal | None:
+    if not structured or PROPOSAL_KEY not in structured:
+        return None
+    try:
+        return Proposal.model_validate(structured[PROPOSAL_KEY])
+    except ValidationError:
+        return None
 
 
 def _truncate(text: str) -> str:

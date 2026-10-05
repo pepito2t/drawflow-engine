@@ -8,6 +8,7 @@ from engine.assistant.errors import AssistantError
 from engine.assistant.events import (
     DoneEvent,
     EmitAssistant,
+    ProposalEvent,
     TextDeltaEvent,
     ToolCallEvent,
     ToolResultEvent,
@@ -16,13 +17,18 @@ from engine.assistant.model_client import ModelClient, ModelReply, ToolCall
 from engine.assistant.toolbox import ToolBox, ToolOutcome
 
 MAX_TOOL_ROUNDS = 6
+PROPOSAL_SHOWN = (
+    "Proposition affichée à l'utilisateur : le traitement démarrera seulement s'il clique sur "
+    "Lancer. Rien n'est lancé pour l'instant."
+)
 SYSTEM_PROMPT = (
     "Tu es l'assistant de Drawflow, une application qui automatise le travail d'un dessinateur "
     "en façade : listes de pièces depuis des plans DWG, rapports DOCX depuis des PDF et "
     "soumissions. Réponds en français, de façon brève et concrète. Utilise les outils pour "
-    "consulter les fonctionnalités, les préréglages et les modèles au lieu de supposer. Tu ne "
-    "peux pas encore lancer de traitement : explique comment le faire depuis l'onglet de la "
-    "fonctionnalité."
+    "consulter les fonctionnalités, les préréglages et les modèles au lieu de supposer. Pour "
+    "lancer un traitement, propose-le avec propose_preset ou propose_feature : l'utilisateur "
+    "voit une carte et décide. Ne dis jamais qu'un traitement est lancé ; dis qu'il attend sa "
+    "confirmation. N'invente aucun chemin de fichier : demande-le s'il manque."
 )
 JsonObject = dict[str, Any]
 
@@ -57,6 +63,9 @@ async def _answer_tool_call(call: ToolCall, tools: ToolBox, emit: EmitAssistant)
     else:
         outcome = await tools.call(call.name, arguments)
     emit(ToolResultEvent(id=call.id, name=call.name, ok=outcome.ok))
+    if outcome.proposal is not None:
+        emit(ProposalEvent(id=call.id, **outcome.proposal.model_dump()))
+        return {"role": "tool", "tool_call_id": call.id, "content": PROPOSAL_SHOWN}
     return {"role": "tool", "tool_call_id": call.id, "content": outcome.text}
 
 

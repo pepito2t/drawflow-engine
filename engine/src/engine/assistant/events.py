@@ -32,12 +32,28 @@ class ToolResultEvent(_BaseEvent):
     ok: bool
 
 
+class Proposal(_BaseEvent):
+    """A run the assistant suggests; nothing starts until the user confirms it."""
+
+    kind: Literal["preset", "feature"]
+    feature: str
+    feature_name: str
+    label: str
+    preset_id: str | None = None
+    inputs: dict[str, Any]
+
+
+class ProposalEvent(Proposal):
+    type: Literal["proposal"] = "proposal"
+    id: str
+
+
 class DoneEvent(_BaseEvent):
     type: Literal["done"] = "done"
 
 
 AssistantEvent = Annotated[
-    TextDeltaEvent | ToolCallEvent | ToolResultEvent | DoneEvent | ErrorEvent,
+    TextDeltaEvent | ToolCallEvent | ToolResultEvent | ProposalEvent | DoneEvent | ErrorEvent,
     Field(discriminator="type"),
 ]
 EmitAssistant = Callable[[AssistantEvent], None]

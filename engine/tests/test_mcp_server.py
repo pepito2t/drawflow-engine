@@ -10,10 +10,18 @@ from mcp.shared.exceptions import McpError
 from mcp.types import CallToolResult, ErrorData, TextContent
 
 from engine.assistant.mcp_server import server_parameters
-from engine.assistant.toolbox import McpToolBox
+from engine.assistant.toolbox import McpToolBox, ToolOutcome
+from engine.core.presets import PresetStore
+from engine.core.registry import get_module
 
 MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
-EXPECTED_TOOLS = {"list_features", "list_presets", "list_templates"}
+EXPECTED_TOOLS = {
+    "list_features",
+    "list_presets",
+    "list_templates",
+    "propose_feature",
+    "propose_preset",
+}
 
 
 async def _call_tools(settings: Path, *names: str) -> tuple[set[str], list[CallToolResult]]:
@@ -73,3 +81,52 @@ def test_tool_that_never_answers_is_reported_to_the_model() -> None:
 
     assert not outcome.ok
     assert "n'a pas répondu" in outcome.text
+
+
+async def _toolbox_call(settings: Path, name: str, arguments: dict[str, Any]) -> ToolOutcome:
+    async with (
+        stdio_client(server_parameters(settings)) as (read, write),
+        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT) as session,
+    ):
+        await session.initialize()
+        return await McpToolBox(session).call(name, arguments)
+
+
+def test_feature_proposal_is_validated_and_nothing_runs(tmp_path: Path) -> None:
+    output = tmp_path / "Sortie é"
+    inputs = {"folders": [str(tmp_path / "Soumissions")], "output_folder": str(output)}
+    arguments = {"feature_id": "soumission", "inputs": inputs}
+
+    outcome = anyio.run(_toolbox_call, tmp_path / "settings.json", "propose_feature", arguments)
+
+    assert outcome.ok
+    assert outcome.proposal is not None
+    assert (outcome.proposal.kind, outcome.proposal.feature) == ("feature", "soumission")
+    assert outcome.proposal.inputs["output_folder"] == str(output)
+    assert outcome.proposal.inputs["recursive"] is True
+    assert not output.exists()
+
+
+def test_invalid_feature_inputs_are_refused_without_proposal(tmp_path: Path) -> None:
+    arguments = {"feature_id": "soumission", "inputs": {"project": "Sans sortie"}}
+
+    outcome = anyio.run(_toolbox_call, tmp_path / "settings.json", "propose_feature", arguments)
+
+    assert not outcome.ok
+    assert outcome.proposal is None
+    assert "Entrées invalides" in outcome.text
+
+
+def test_preset_proposal_carries_the_preset(tmp_path: Path) -> None:
+    settings = tmp_path / "settings.json"
+    preset = PresetStore(settings).save(
+        get_module("soumission"),
+        "Chantier Nord",
+        {"folders": [str(tmp_path)], "output_folder": str(tmp_path)},
+    )
+
+    outcome = anyio.run(_toolbox_call, settings, "propose_preset", {"preset_id": preset.id})
+
+    assert outcome.proposal is not None
+    assert (outcome.proposal.kind, outcome.proposal.label) == ("preset", "Chantier Nord")
+    assert outcome.proposal.preset_id == preset.id

@@ -13,7 +13,7 @@ from engine.assistant import service
 from engine.assistant.agent import MAX_TOOL_ROUNDS, run_turn
 from engine.assistant.conversation import ChatRequest
 from engine.assistant.errors import AssistantError, ModelUnavailableError
-from engine.assistant.events import AssistantEvent
+from engine.assistant.events import AssistantEvent, Proposal
 from engine.assistant.model_client import ModelClient
 from engine.assistant.toolbox import ToolOutcome
 from engine.cli import EXIT_BUSINESS_ERROR
@@ -68,6 +68,31 @@ def test_tool_call_is_executed_and_its_result_sent_back_to_the_model() -> None:
     assert follow_up[-1] == {"role": "tool", "tool_call_id": "call-1", "content": '{"presets": []}'}
 
 
+class ProposingToolBox(RecordingToolBox):
+    async def call(self, name: str, arguments: dict[str, Any]) -> ToolOutcome:
+        proposal = Proposal(
+            kind="preset",
+            feature="soumission",
+            feature_name="Soumission",
+            label="Chantier Nord",
+            preset_id="ab12cd34",
+            inputs={},
+        )
+        return ToolOutcome(ok=True, text='{"proposal": "…"}', proposal=proposal)
+
+
+def test_proposal_is_shown_and_the_model_is_told_nothing_runs_yet() -> None:
+    server = FakeModelServer(tool_reply("propose_preset"), text_reply("À confirmer."))
+
+    events = turn(server, ProposingToolBox())
+
+    assert kinds(events) == ["tool_call", "tool_result", "proposal", "delta", "done"]
+    proposal = events[2]
+    assert proposal.type == "proposal"
+    assert (proposal.id, proposal.label) == ("call-1", "Chantier Nord")
+    assert "Rien n'est lancé" in server.requests[1]["messages"][-1]["content"]
+
+
 def test_invalid_arguments_are_returned_to_the_model_without_calling_the_tool() -> None:
     server = FakeModelServer(tool_reply("list_presets", "{pas json"), text_reply("Pardon"))
     tools = RecordingToolBox()
@@ -104,7 +129,7 @@ def test_chat_uses_the_real_drawflow_mcp_server(tmp_path: Path) -> None:
 
     assert kinds(events) == ["tool_call", "tool_result", "delta", "done"]
     tool_names = {tool["function"]["name"] for tool in server.requests[0]["tools"]}
-    assert tool_names == {"list_features", "list_presets", "list_templates"}
+    assert {"list_features", "propose_feature", "propose_preset"} <= tool_names
     features = json.loads(server.requests[1]["messages"][-1]["content"])
     assert features["features"][0]["id"] == "dwg-parts"
 
