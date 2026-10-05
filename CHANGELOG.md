@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- Correctifs issus de l'audit : conversion DWG fiable quand plusieurs plans identiques sont traités en parallèle ; signature de l'éditeur vérifiée avant d'exécuter les installeurs ODA et Ollama ; seuls les fichiers produits par Drawflow peuvent être ouverts depuis l'app ; le jeton de l'API locale n'est plus lisible app verrouillée ; plus d'avertissement React au changement d'onglet ni d'erreur non gérée quand le modèle local ne répond pas (#141).
+
 ## 0.8.1 — 2026-10-05
 
 - Correctif : **Installer ODA** télécharge l'installeur directement sur le site de l'éditeur (toujours la dernière version) au lieu de winget, dont le lien renvoyait une erreur 404. L'aide donne les liens de téléchargement d'ODA, d'Ollama et de Stream Dock (#114).

@@ -9,9 +9,11 @@ import httpx
 from engine.core.errors import EngineError
 from engine.setup.commands import CommandOutcome, CommandRunner
 from engine.setup.installer_download import DownloadProgress, download_installer
+from engine.setup.signature import verify_signature
 
 OLLAMA_SETUP_URL = "https://ollama.com/download/OllamaSetup.exe"
 OLLAMA_NAME = "Ollama"
+OLLAMA_SIGNER = "Ollama"
 OLLAMA_SETUP_NAME = "OllamaSetup.exe"
 MAX_SETUP_BYTES = 4_000_000_000
 # Inno Setup: per-user install, no window, no reboot prompt.
@@ -31,6 +33,7 @@ def install_ollama_windows(
     with tempfile.TemporaryDirectory(prefix="drawflow-ollama-") as folder:
         setup = Path(folder) / OLLAMA_SETUP_NAME
         anyio.run(_download, setup, on_progress, transport)
+        verify_signature(run, setup, name=OLLAMA_NAME, expected_signer=OLLAMA_SIGNER)
         _check(run([str(setup), *SILENT_FLAGS]))
 
 

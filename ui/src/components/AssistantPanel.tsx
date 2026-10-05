@@ -76,7 +76,7 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
           </button>
         </div>
       </header>
-      {isOpen && <AssistantConnection onOpenSettings={onOpenSettings} />}
+      <AssistantConnection onOpenSettings={onOpenSettings} />
       <div className="assistant-messages" ref={messagesRef} aria-live="polite">
         {state.entries.length === 0 && (
           <div className="assistant-empty">

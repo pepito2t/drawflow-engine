@@ -20,15 +20,28 @@ OLLAMA_APP = LOCALAPPDATA / "Programs" / "Ollama" / "ollama app.exe"
 NO_WAIT = 0.05
 
 
+SIGNED_BY_ODA = "Valid\nCN=Open Design Alliance, O=Open Design Alliance"
+SIGNED_BY_OLLAMA = "Valid\nCN=Ollama Inc, O=Ollama Inc"
+
+
 class Recorder:
-    def __init__(self, machine: FakeMachine, code: int = 0, installs: Path | None = None) -> None:
+    def __init__(
+        self,
+        machine: FakeMachine,
+        code: int = 0,
+        installs: Path | None = None,
+        signature: str = SIGNED_BY_ODA,
+    ) -> None:
         self.machine = machine
         self.code = code
         self.installs = installs
+        self.signature = signature
         self.commands: list[list[str]] = []
 
     def run(self, arguments: Sequence[str]) -> CommandOutcome:
         self.commands.append(list(arguments))
+        if arguments[0] == "powershell":
+            return CommandOutcome(0, self.signature)
         if self.installs is not None:
             self.machine.files.add(self.installs)
         return CommandOutcome(self.code, "Téléchargement…\nÉchec de l'installation : 0x80070005")
@@ -64,8 +77,9 @@ def test_oda_install_downloads_the_official_msi_then_configures_it(tmp_path: Pat
 
     run_action("oda.install", context(tmp_path, recorder, events, _oda_site()))
 
-    assert recorder.commands[0][:2] == ["msiexec", "/i"]
-    assert recorder.commands[0][2].endswith(".msi")
+    assert recorder.commands[0][0] == "powershell"
+    assert recorder.commands[1][:2] == ["msiexec", "/i"]
+    assert recorder.commands[1][2].endswith(".msi")
     assert load_general_settings(tmp_path / "settings.json").oda_converter_path == ODA
     assert events[-1].type == "result"
 
@@ -100,21 +114,22 @@ def _ollama_site(request: httpx.Request) -> httpx.Response:
 
 
 def test_windows_installs_ollama_from_its_own_setup_then_starts_it(tmp_path: Path) -> None:
-    recorder = Recorder(FakeMachine(programs={"ollama"}))
+    recorder = Recorder(FakeMachine(programs={"ollama"}), signature=SIGNED_BY_OLLAMA)
     events: list[Event] = []
 
     run_action("ollama.install", context(tmp_path, recorder, events, MockTransport(_ollama_site)))
 
-    setup, *flags = recorder.commands[0]
+    assert recorder.commands[0][0] == "powershell"
+    setup, *flags = recorder.commands[1]
     assert setup.endswith("OllamaSetup.exe")
     assert "/VERYSILENT" in flags
-    assert recorder.commands[1] == ["ollama", "serve"]
+    assert recorder.commands[2] == ["ollama", "serve"]
     assert any(event.type == "progress" for event in events)
     assert events[-1].type == "result"
 
 
 def test_failed_install_explains_with_the_end_of_the_installer_output(tmp_path: Path) -> None:
-    recorder = Recorder(FakeMachine(), code=1)
+    recorder = Recorder(FakeMachine(), code=1, signature=SIGNED_BY_OLLAMA)
 
     with pytest.raises(EngineError, match="a échoué") as caught:
         run_action("ollama.install", context(tmp_path, recorder, [], MockTransport(_ollama_site)))
