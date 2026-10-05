@@ -23,6 +23,7 @@ const setupReportSchema = z.object({
       status: z.enum(["ok", "missing", "optional"]),
       detail: z.string(),
       actions: z.array(setupActionSchema),
+      help: z.string().nullable(),
     }),
   ),
 });

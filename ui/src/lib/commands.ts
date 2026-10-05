@@ -14,6 +14,7 @@ export const COMMAND_ARGUMENTS = {
   "assistant.toggle": z.object({}),
   "setup.open": z.object({}),
   "models.open": z.object({}),
+  "help.open": z.object({ topic: z.string().optional() }),
   "update.install": z.object({}),
   "app.state": z.object({}),
 } as const;
@@ -32,6 +33,7 @@ export const COMMANDS = {
   toggleAssistant: "assistant.toggle",
   openSetup: "setup.open",
   openModels: "models.open",
+  openHelp: "help.open",
   installUpdate: "update.install",
   appState: "app.state",
 } as const satisfies Record<string, CommandId>;

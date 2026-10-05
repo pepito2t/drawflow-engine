@@ -20,6 +20,7 @@ uv run pyinstaller \
   --paths src \
   --additional-hooks-dir pyinstaller-hooks \
   --collect-submodules engine.modules \
+  --add-data "../../docs/guide.md:docs" \
   --distpath dist \
   --workpath build \
   --specpath build \

@@ -15,6 +15,7 @@ interface AppCommandTargets {
   selectModule: (moduleId: string) => void;
   openSettings: (tab?: string) => void;
   toggleAssistant: () => void;
+  openHelp: (topic?: string) => void;
 }
 
 /** Registers the app-level commands shared by the UI, the Stream Dock and future integrations. */
@@ -23,6 +24,7 @@ export function useAppCommands({
   selectModule,
   openSettings,
   toggleAssistant,
+  openHelp,
 }: AppCommandTargets): void {
   const { state, dispatch } = useRunsStore();
   const { presets } = usePresets();
@@ -141,4 +143,13 @@ export function useAppCommands({
     await bringToFront();
   }, [openSettings]);
   useCommand(COMMANDS.openModels, aiModels);
+
+  const helpCommand = useCallback(
+    async ({ topic }: { topic?: string | undefined }) => {
+      openHelp(topic);
+      await bringToFront();
+    },
+    [openHelp],
+  );
+  useCommand(COMMANDS.openHelp, helpCommand);
 }

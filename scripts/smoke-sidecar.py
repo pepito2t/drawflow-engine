@@ -19,10 +19,12 @@ from mcp.client.stdio import stdio_client
 EXPECTED_MODULE_IDS = ["dwg-parts", "pdf-report", "soumission"]
 EXPECTED_MCP_TOOLS = [
     "list_features",
+    "list_help_topics",
     "list_presets",
     "list_templates",
     "propose_feature",
     "propose_preset",
+    "read_help",
 ]
 PARALLEL_BATCH_SIZE = 2
 MCP_REQUEST_TIMEOUT = timedelta(seconds=120)
@@ -76,8 +78,9 @@ async def smoke_mcp(binary: Path, settings_file: Path) -> None:
         await session.initialize()
         tools = sorted(tool.name for tool in (await session.list_tools()).tools)
         features = await session.call_tool("list_features", {})
-    if tools != EXPECTED_MCP_TOOLS or features.isError:
-        raise SystemExit(f"Unexpected MCP server answer: {tools} {features}")
+        guide = await session.call_tool("read_help", {"topic": "premiers-pas"})
+    if tools != EXPECTED_MCP_TOOLS or features.isError or guide.isError:
+        raise SystemExit(f"Unexpected MCP server answer: {tools} {features} {guide}")
 
 
 def smoke_assistant(binary: Path, workdir: Path) -> None:

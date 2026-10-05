@@ -4,6 +4,22 @@ Drawflow automatise trois tâches du dessinateur en façade : la **liste de piè
 
 Les réglages et leurs valeurs par défaut sont décrits directement dans l'application (Paramètres) ; ce guide explique comment s'en servir.
 
+## Premiers pas
+
+La marche à suivre complète, dans l'ordre. Chaque étape renvoie à sa section.
+
+1. **Installer Drawflow** et saisir le code d'accès (`0000` au départ) : [Installer Drawflow](#installer-drawflow).
+2. **Ouvrir Paramètres → Installation** et régler chaque ligne marquée « À configurer » : [Installer les prérequis](#installer-les-prérequis).
+   1. **ODA File Converter** (pour les DWG) : **Installer**. Si winget échoue, **Page de téléchargement**, installez ODA, puis **Analyser à nouveau** et **Utiliser**.
+   2. **Serveur du modèle** : **Installer** Ollama, puis **Démarrer** s'il ne répond pas.
+   3. **Modèle** : **Choisir un modèle** ouvre Paramètres → Modèles d'IA ; téléchargez le modèle **Recommandé**, puis **Utiliser**.
+3. **Adapter les fonctionnalités à votre norme** (blocs, champs, colonnes, noms de fichiers) dans Paramètres : [Adapter une fonctionnalité à votre norme](#adapter-une-fonctionnalité-à-votre-norme).
+4. **Facultatif — Stream Dock** : [Piloter avec un Stream Dock](#piloter-avec-un-stream-dock).
+5. **Lancer un premier traitement** depuis l'onglet d'une fonctionnalité : [Lancer une fonctionnalité](#lancer-une-fonctionnalité). Enregistrez-le comme préréglage pour le relancer en un clic.
+6. **Poser une question à l'assistant** (icône bulle) : [Utiliser l'assistant](#utiliser-lassistant).
+
+En cas de souci : [Dépannage](#dépannage).
+
 ## Installer Drawflow
 
 1. Téléchargez `Drawflow_X.Y.Z_x64-setup.exe` depuis la [dernière release](https://github.com/pepito2t/drawflow-engine/releases/latest) et lancez-le (installation pour l'utilisateur courant, sans droits administrateur).
@@ -65,11 +81,18 @@ Il peut aussi **proposer un lancement** (« lance la soumission sur C:\Chantier\
 
 ## Piloter avec un Stream Dock
 
-1. **Paramètres → Intégrations** : activez l'API locale et copiez le jeton.
-2. **Paramètres → Installation → Installer le plugin** : Drawflow installe lui-même le plugin dans Stream Dock. Redémarrez ensuite Stream Dock. Après une mise à jour de Drawflow, cliquez de nouveau sur Installer pour mettre le plugin à jour.
-3. Glissez une action « Drawflow » sur une touche et collez le jeton (une fois pour toutes les touches).
+Drawflow fonctionne avec le **Stream Dock** de Mirabox (logiciel Stream Dock pour Windows).
 
-Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée et « Hors ligne » quand Drawflow est fermée.
+1. **Paramètres → Intégrations** : activez l'API locale et copiez le jeton.
+2. **Paramètres → Installation → Plugin Stream Dock → Installer le plugin** : Drawflow installe lui-même le plugin dans Stream Dock.
+3. **Redémarrez Stream Dock** (il ne charge un nouveau plugin qu'au démarrage).
+4. Dans Stream Dock, glissez une action de la catégorie **Drawflow** sur une touche.
+5. Dans les réglages de la touche, saisissez le port (`51717` par défaut) et collez le jeton : une seule fois pour toutes les touches.
+6. Pour une touche **Préréglage** ou **Onglet**, choisissez le préréglage ou l'onglet dans la liste.
+
+Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée et « Hors ligne » quand Drawflow est fermée ou que le jeton est faux.
+
+Après une mise à jour de Drawflow, cliquez de nouveau sur **Installer le plugin** puis redémarrez Stream Dock.
 
 ## Code d'accès
 

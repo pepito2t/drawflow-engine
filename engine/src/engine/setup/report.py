@@ -36,6 +36,7 @@ class SetupItem(_Frozen):
     status: ItemStatus
     detail: str
     actions: list[SetupAction] = []
+    help: str | None = None
 
 
 class SystemInfo(_Frozen):

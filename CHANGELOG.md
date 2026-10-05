@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Aide intégrée** : icône **?** qui affiche le guide, section **Premiers pas** (marche à suivre complète), liens **Marche à suivre** sur l'écran Installation, commande `help.open`. L'assistant lit le même guide (outils `list_help_topics` / `read_help`) pour expliquer comment faire (#112).
+
 ## 0.7.0 — 2026-10-05
 
 - **Plugin Stream Dock (Mirabox)** à la place du plugin Elgato Stream Deck, qui ne correspondait pas à l'appareil de l'utilisateur. Installation automatique depuis **Paramètres → Installation** : Drawflow installe le plugin dans Stream Dock, il suffit de redémarrer Stream Dock (#109).

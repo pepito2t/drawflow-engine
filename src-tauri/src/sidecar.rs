@@ -105,6 +105,8 @@ pub enum EngineRequest {
     AssistantCatalog,
     #[serde(rename = "assistant.model-delete")]
     AssistantModelDelete,
+    #[serde(rename = "help.guide")]
+    HelpGuide,
     #[serde(rename = "setup.scan")]
     SetupScan,
 }
@@ -126,6 +128,7 @@ impl EngineRequest {
             Self::AssistantHistorySave => ("assistant", "history-save"),
             Self::AssistantCatalog => ("assistant", "catalog"),
             Self::AssistantModelDelete => ("assistant", "model-delete"),
+            Self::HelpGuide => ("help", "guide"),
             Self::SetupScan => ("setup", "scan"),
         }
     }

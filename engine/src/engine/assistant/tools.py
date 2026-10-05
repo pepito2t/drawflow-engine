@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from engine.assistant.events import Proposal
 from engine.core.errors import InvalidInputError
+from engine.core.guide import read_section, sections
 from engine.core.presets import PresetStore
 from engine.core.registry import discover_modules, get_module
 from engine.core.templates import TemplateLibrary
@@ -78,3 +79,12 @@ def propose_feature_run(feature_id: str, inputs: dict[str, Any]) -> dict[str, An
         inputs=validated.model_dump(mode="json"),
     )
     return {"proposal": proposal.model_dump(mode="json")}
+
+
+def help_topics() -> dict[str, Any]:
+    return {"topics": [{"id": section.id, "title": section.title} for section in sections()]}
+
+
+def help_section(topic: str) -> dict[str, Any]:
+    section = read_section(topic)
+    return {"id": section.id, "title": section.title, "markdown": section.markdown}

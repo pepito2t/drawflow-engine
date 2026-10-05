@@ -19,7 +19,8 @@ import { AppShell } from "./AppShell";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { AssistantPanel } from "./AssistantPanel";
-import { ChatIcon, GearIcon } from "./icons";
+import { HelpDialog } from "./HelpDialog";
+import { ChatIcon, GearIcon, HelpIcon } from "./icons";
 import { LockScreen } from "./LockScreen";
 import { ModuleTabs, tabPanelId } from "./ModuleTabs";
 import { SettingsDialog } from "./SettingsDialog";
@@ -117,6 +118,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const modules = use(catalogPromise);
   const [selectedId, setSelectedId] = useState(modules[0]?.manifest.id ?? null);
   const [settingsTab, setSettingsTab] = useState<string | null>(null);
+  const [help, setHelp] = useState<{ topic: string | undefined } | null>(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const { state, dispatch } = useRunsStore();
   useRunEvents(state, modules);
@@ -142,7 +144,10 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const toggleAssistant = useCallback(() => {
     setIsAssistantOpen((open) => !open);
   }, []);
-  useAppCommands({ modules, selectModule: select, openSettings, toggleAssistant });
+  const openHelp = useCallback((topic?: string) => {
+    setHelp({ topic });
+  }, []);
+  useAppCommands({ modules, selectModule: select, openSettings, toggleAssistant, openHelp });
   useIntegrationBridge();
 
   const sidebarActions = (
@@ -168,6 +173,17 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
         onClick={toggleAssistant}
       >
         <ChatIcon />
+      </button>
+      <button
+        type="button"
+        className="icon-button"
+        aria-label="Aide"
+        title="Aide"
+        onClick={() => {
+          openHelp();
+        }}
+      >
+        <HelpIcon />
       </button>
     </>
   );
@@ -216,6 +232,15 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
             initialTab={settingsTab === DEFAULT_SETTINGS_TAB ? undefined : settingsTab}
             onClose={() => {
               setSettingsTab(null);
+            }}
+          />
+        )}
+        {help !== null && (
+          <HelpDialog
+            key={help.topic ?? ""}
+            topic={help.topic}
+            onClose={() => {
+              setHelp(null);
             }}
           />
         )}

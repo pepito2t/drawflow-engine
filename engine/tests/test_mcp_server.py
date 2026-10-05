@@ -17,10 +17,12 @@ from engine.core.registry import get_module
 MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
 EXPECTED_TOOLS = {
     "list_features",
+    "list_help_topics",
     "list_presets",
     "list_templates",
     "propose_feature",
     "propose_preset",
+    "read_help",
 }
 
 
@@ -130,3 +132,12 @@ def test_preset_proposal_carries_the_preset(tmp_path: Path) -> None:
     assert outcome.proposal is not None
     assert (outcome.proposal.kind, outcome.proposal.label) == ("preset", "Chantier Nord")
     assert outcome.proposal.preset_id == preset.id
+
+
+def test_assistant_reads_the_guide_through_mcp(tmp_path: Path) -> None:
+    outcome = anyio.run(
+        _toolbox_call, tmp_path / "settings.json", "read_help", {"topic": "stream dock"}
+    )
+
+    assert outcome.ok
+    assert "Installer le plugin" in outcome.text

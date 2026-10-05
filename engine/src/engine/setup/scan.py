@@ -45,6 +45,11 @@ INSTALLABLE_WITH: dict[ActionId, set[PackageManager]] = {
 }
 
 
+# Sections of docs/guide.md that walk the user through each item.
+PREREQUISITES_HELP = "installer-les-prérequis"
+STREAM_DOCK_HELP = "piloter-avec-un-stream-dock"
+
+
 @dataclass(frozen=True)
 class ModelServerState:
     reachable: bool
@@ -60,10 +65,12 @@ def build_report(
 ) -> SetupReport:
     system = SystemInfo(os=machine.os, arch=machine.arch, package_manager=_manager(machine))
     items = [
-        _oda_item(machine, system, oda_configured),
-        _model_server_item(machine, system, assistant, server),
-        _model_item(assistant, server, recommend(machine.memory_bytes)),
-        _stream_dock_item(machine),
+        _with_help(_oda_item(machine, system, oda_configured), PREREQUISITES_HELP),
+        _with_help(_model_server_item(machine, system, assistant, server), PREREQUISITES_HELP),
+        _with_help(
+            _model_item(assistant, server, recommend(machine.memory_bytes)), PREREQUISITES_HELP
+        ),
+        _with_help(_stream_dock_item(machine), STREAM_DOCK_HELP),
     ]
     return SetupReport(system=system, items=items)
 
@@ -170,6 +177,10 @@ def _stream_dock_item(machine: Machine) -> SetupItem:
         detail="Pilotez Drawflow depuis les touches du Stream Dock.",
         actions=_actions("streamdock.install-plugin"),
     )
+
+
+def _with_help(item: SetupItem, topic: str) -> SetupItem:
+    return item.model_copy(update={"help": topic})
 
 
 def _manager(machine: Machine) -> PackageManager | None:

@@ -3,12 +3,14 @@ import json
 import sys
 import traceback
 from collections.abc import Sequence
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from engine.assistant.events import make_assistant_emitter
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ErrorEvent, make_stream_emitter
+from engine.core.guide import sections as guide_sections
 from engine.core.registry import discover_modules, get_module
 from engine.core.runner import read_input_file, run_module
 from engine.core.settings import describe_settings, load_run_settings, save_settings
@@ -91,6 +93,10 @@ def _build_parser() -> argparse.ArgumentParser:
     pull_parser.add_argument("model")
     pull_parser.add_argument("--settings", type=Path, required=True)
 
+    help_parser = commands.add_parser("help", help="Guide utilisateur, par section.")
+    help_commands = help_parser.add_subparsers(dest="help_command", required=True)
+    _add_request_parser(help_commands, "guide", "Toutes les sections du guide (JSON).")
+
     setup_parser = commands.add_parser("setup", help="Prérequis de l'installation.")
     setup_commands = setup_parser.add_subparsers(dest="setup_command", required=True)
     _add_request_parser(setup_commands, "scan", "État des prérequis et actions proposées (JSON).")
@@ -125,6 +131,8 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
         _assistant(arguments, emit)
     elif arguments.command == "setup":
         _setup(arguments, emit)
+    elif arguments.command == "help":
+        _write_json({"sections": [asdict(section) for section in guide_sections()]})
     elif arguments.command == "presets":
         _write_json(
             handle_presets(arguments.presets_command, arguments.settings, _request(arguments))
