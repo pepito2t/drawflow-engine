@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- La conversation de l'assistant est conservée sur le poste entre deux lancements ; **+** l'efface (#102).
+
 ## 0.5.0 — 2026-10-05
 
 - L'assistant peut **proposer** de lancer un préréglage ou une fonctionnalité ; rien ne démarre sans confirmation (#95).

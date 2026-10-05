@@ -20,3 +20,11 @@ export function cancelAssistant(): Promise<void> {
 export function getAssistantModels(): Promise<string> {
   return engineRequest("assistant.models");
 }
+
+export function getAssistantHistory(): Promise<string> {
+  return engineRequest("assistant.history-get");
+}
+
+export async function saveAssistantHistory(messages: ConversationMessage[]): Promise<void> {
+  await engineRequest("assistant.history-save", { messages });
+}

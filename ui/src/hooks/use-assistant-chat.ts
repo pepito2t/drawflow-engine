@@ -1,15 +1,23 @@
-import { useCallback, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { parseAssistantLine } from "../lib/assistant-events";
 import {
   chatReducer,
   conversationWith,
   INITIAL_CHAT,
+  parseSavedHistory,
+  savedHistory,
   streamingAnswer,
+  type ChatAction,
   type ChatState,
   type ProposalStatus,
 } from "../lib/assistant-chat";
 import { toReadableError } from "../lib/error-message";
-import { cancelAssistant, startAssistantChat } from "../lib/tauri/assistant";
+import {
+  cancelAssistant,
+  getAssistantHistory,
+  saveAssistantHistory,
+  startAssistantChat,
+} from "../lib/tauri/assistant";
 
 interface AssistantChat {
   state: ChatState;
@@ -23,6 +31,7 @@ interface AssistantChat {
 export function useAssistantChat(): AssistantChat {
   const [state, dispatch] = useReducer(chatReducer, INITIAL_CHAT);
   const isAnswering = streamingAnswer(state) !== null;
+  useConversationStorage(state, isAnswering, dispatch);
 
   const ask = useCallback(
     (question: string) => {
@@ -60,6 +69,7 @@ export function useAssistantChat(): AssistantChat {
       stop();
     }
     dispatch({ type: "cleared" });
+    saveAssistantHistory([]).catch(reportStorageError);
   }, [isAnswering, stop]);
 
   const markProposal = useCallback((proposalId: string, status: ProposalStatus, error?: string) => {
@@ -71,4 +81,38 @@ export function useAssistantChat(): AssistantChat {
   }, []);
 
   return { state, isAnswering, ask, stop, clear, markProposal };
+}
+
+/** Restores the last conversation once, then saves it each time an answer ends. */
+function useConversationStorage(
+  state: ChatState,
+  isAnswering: boolean,
+  dispatch: (action: ChatAction) => void,
+): void {
+  const wasAnswering = useRef(false);
+
+  useEffect(() => {
+    let isActive = true;
+    getAssistantHistory()
+      .then((raw) => {
+        if (isActive) {
+          dispatch({ type: "restored", messages: parseSavedHistory(raw) });
+        }
+      })
+      .catch(reportStorageError);
+    return () => {
+      isActive = false;
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (wasAnswering.current && !isAnswering) {
+      saveAssistantHistory(savedHistory(state)).catch(reportStorageError);
+    }
+    wasAnswering.current = isAnswering;
+  }, [isAnswering, state]);
+}
+
+function reportStorageError(error: unknown): void {
+  console.error("Conversation de l'assistant non enregistrée :", error);
 }

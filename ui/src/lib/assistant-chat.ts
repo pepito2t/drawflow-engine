@@ -1,4 +1,6 @@
+import { z } from "zod";
 import type { AssistantEvent } from "./assistant-events";
+import { parseJsonOrNull } from "./json";
 import type { ReadableError } from "./error-message";
 
 export type ToolStatus = "running" | "succeeded" | "failed";
@@ -55,12 +57,17 @@ export type ChatAction =
   | { type: "failed"; answerId: number; error: ReadableError }
   | { type: "cancelled" }
   | { type: "cleared" }
+  | { type: "restored"; messages: ConversationMessage[] }
   | { type: "proposal"; proposalId: string; status: ProposalStatus; error?: string };
 
 export interface ConversationMessage {
   role: "user" | "assistant";
   content: string;
 }
+
+const savedHistorySchema = z.object({
+  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1) })),
+});
 
 export const INITIAL_CHAT: ChatState = { entries: [], nextId: 1 };
 
@@ -102,7 +109,40 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { entries: [], nextId: state.nextId };
     case "proposal":
       return updateProposal(state, action.proposalId, action.status, action.error ?? null);
+    case "restored":
+      return state.entries.length === 0 ? restore(action.messages, state.nextId) : state;
   }
+}
+
+/** The texts worth keeping between launches; run proposals are never restored. */
+export function savedHistory(state: ChatState): ConversationMessage[] {
+  return state.entries.flatMap((entry): ConversationMessage[] => {
+    const content = entry.text.trim();
+    return content ? [{ role: entry.role, content }] : [];
+  });
+}
+
+export function parseSavedHistory(rawJson: string): ConversationMessage[] {
+  const parsed = savedHistorySchema.safeParse(parseJsonOrNull(rawJson));
+  return parsed.success ? parsed.data.messages : [];
+}
+
+function restore(messages: ConversationMessage[], firstId: number): ChatState {
+  const entries = messages.map((message, index): ChatEntry => {
+    const id = firstId + index;
+    return message.role === "user"
+      ? { role: "user", id, text: message.content }
+      : {
+          role: "assistant",
+          id,
+          text: message.content,
+          tools: [],
+          proposals: [],
+          status: "done",
+          error: null,
+        };
+  });
+  return { entries, nextId: firstId + messages.length };
 }
 
 export function streamingAnswer(state: ChatState): AssistantEntry | null {
@@ -111,11 +151,7 @@ export function streamingAnswer(state: ChatState): AssistantEntry | null {
 }
 
 export function conversationWith(state: ChatState, question: string): ConversationMessage[] {
-  const history = state.entries.flatMap((entry): ConversationMessage[] => {
-    const content = entry.text.trim();
-    return content ? [{ role: entry.role, content }] : [];
-  });
-  return [...history, { role: "user", content: question }];
+  return [...savedHistory(state), { role: "user", content: question }];
 }
 
 export function toolLabel(name: string): string {
