@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- Correctif : **Installer ODA** télécharge l'installeur directement sur le site de l'éditeur (toujours la dernière version) au lieu de winget, dont le lien renvoyait une erreur 404. L'aide donne les liens de téléchargement d'ODA, d'Ollama et de Stream Dock (#98).
+
 ## 0.8.0 — 2026-10-05
 
 - **Aide intégrée** : icône **?** qui affiche le guide, section **Premiers pas** (marche à suivre complète), liens **Marche à suivre** sur l'écran Installation, commande `help.open`. L'assistant lit le même guide (outils `list_help_topics` / `read_help`) pour expliquer comment faire (#112).

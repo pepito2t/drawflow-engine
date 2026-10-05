@@ -38,9 +38,7 @@ DOWNLOAD_PAGES: dict[ActionId, str] = {
     "ollama.open-page": "https://ollama.com/download",
     "streamdock.open-page": "https://mirabox.net/pages/download",
 }
-# Homebrew has no ODA File Converter package: on macOS the download page is the only way.
 INSTALLABLE_WITH: dict[ActionId, set[PackageManager]] = {
-    "oda.install": {"winget"},
     "ollama.install": {"winget", "brew"},
 }
 
@@ -93,7 +91,7 @@ def _oda_item(machine: Machine, system: SystemInfo, configured: Path | None) -> 
         label=label,
         status="missing",
         detail="Nécessaire pour lire les fichiers DWG.",
-        actions=_install_actions(system, "oda.install", "oda.open-page"),
+        actions=_oda_install_actions(machine),
     )
 
 
@@ -196,6 +194,13 @@ def _install_actions(system: SystemInfo, install: ActionId, page: ActionId) -> l
     if system.package_manager is not None and system.package_manager in managers:
         return _actions(install, page)
     return _actions(page)
+
+
+def _oda_install_actions(machine: Machine) -> list[SetupAction]:
+    """ODA ships its own Windows installer; macOS has no silent install, only the page."""
+    if machine.os == "windows":
+        return _actions("oda.install", "oda.open-page")
+    return _actions("oda.open-page")
 
 
 def _actions(*ids: ActionId) -> list[SetupAction]:

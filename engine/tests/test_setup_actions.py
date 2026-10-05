@@ -11,6 +11,7 @@ from engine.core.events import Event
 from engine.core.settings import load_general_settings
 from engine.setup.actions import SetupContext, SetupError, run_action
 from engine.setup.commands import CommandOutcome
+from engine.setup.oda_installer import OdaInstallError
 from engine.testing.fake_machine import LOCALAPPDATA, PROGRAM_FILES, FakeMachine
 
 ODA = PROGRAM_FILES / "ODA" / "ODAFileConverter 26.4.0" / "ODAFileConverter.exe"
@@ -53,25 +54,53 @@ def context(
     )
 
 
-def test_oda_install_uses_winget_then_configures_the_detected_path(tmp_path: Path) -> None:
-    recorder = Recorder(FakeMachine(programs={"winget"}), installs=ODA)
+def _oda_site(status: int = 200) -> httpx.MockTransport:
+    return httpx.MockTransport(lambda _: httpx.Response(status, content=b"msi"))
+
+
+def test_oda_install_downloads_the_official_msi_then_configures_it(tmp_path: Path) -> None:
+    recorder = Recorder(FakeMachine(), installs=ODA)
     events: list[Event] = []
 
-    run_action("oda.install", context(tmp_path, recorder, events))
+    run_action("oda.install", context(tmp_path, recorder, events, _oda_site()))
 
-    assert recorder.commands[0][:4] == ["winget", "install", "--id", "ODA.ODAFileConverter"]
-    assert "--accept-package-agreements" in recorder.commands[0]
+    assert recorder.commands[0][:2] == ["msiexec", "/i"]
+    assert recorder.commands[0][2].endswith(".msi")
     assert load_general_settings(tmp_path / "settings.json").oda_converter_path == ODA
     assert events[-1].type == "result"
 
 
+def test_oda_install_does_not_depend_on_winget(tmp_path: Path) -> None:
+    recorder = Recorder(FakeMachine(programs=set()), installs=ODA)
+
+    run_action("oda.install", context(tmp_path, recorder, [], _oda_site()))
+
+    assert all(command[0] != "winget" for command in recorder.commands)
+
+
+def test_oda_removed_from_the_site_points_to_the_download_page(tmp_path: Path) -> None:
+    recorder = Recorder(FakeMachine())
+
+    with pytest.raises(OdaInstallError, match="HTTP 404") as caught:
+        run_action("oda.install", context(tmp_path, recorder, [], _oda_site(404)))
+    assert caught.value.hint is not None
+    assert "Page de téléchargement" in caught.value.hint
+    assert recorder.commands == []
+
+
+def test_oda_install_is_windows_only(tmp_path: Path) -> None:
+    with pytest.raises(SetupError, match="Windows"):
+        run_action("oda.install", context(tmp_path, Recorder(FakeMachine(os="macos")), []))
+
+
 def test_already_installed_package_is_not_a_failure(tmp_path: Path) -> None:
-    machine = FakeMachine(programs={"winget"}, files={ODA})
+    machine = FakeMachine(programs={"winget", "ollama"})
     recorder = Recorder(machine, code=WINGET_ALREADY_INSTALLED)
+    ollama_up = httpx.MockTransport(lambda _: httpx.Response(200, json={"version": "0.12.0"}))
 
-    run_action("oda.install", context(tmp_path, recorder, []))
+    run_action("ollama.install", context(tmp_path, recorder, [], ollama_up))
 
-    assert load_general_settings(tmp_path / "settings.json").oda_converter_path == ODA
+    assert recorder.commands[0][:4] == ["winget", "install", "--id", "Ollama.Ollama"]
 
 
 def test_failed_install_explains_with_the_end_of_the_installer_output(tmp_path: Path) -> None:
@@ -88,14 +117,14 @@ def test_removed_download_points_to_the_official_page(tmp_path: Path) -> None:
     recorder = Recorder(FakeMachine(programs={"winget"}), code=http_not_found)
 
     with pytest.raises(SetupError, match="HTTP 404") as caught:
-        run_action("oda.install", context(tmp_path, recorder, []))
+        run_action("ollama.install", context(tmp_path, recorder, []))
     assert caught.value.hint is not None
     assert "Page de téléchargement" in caught.value.hint
 
 
 def test_install_without_winget_points_to_the_download_page(tmp_path: Path) -> None:
     with pytest.raises(SetupError, match="winget"):
-        run_action("oda.install", context(tmp_path, Recorder(FakeMachine()), []))
+        run_action("ollama.install", context(tmp_path, Recorder(FakeMachine()), []))
 
 
 def test_macos_installs_ollama_with_homebrew(tmp_path: Path) -> None:

@@ -25,11 +25,11 @@ from engine.setup.locations import (
     stream_dock_plugins_folder,
 )
 from engine.setup.machine import LocalMachine, Machine
+from engine.setup.oda_installer import install_oda
 from engine.setup.ollama import START_WAIT_SECONDS, pull_model, wait_until_up
 from engine.setup.report import ActionId
 from engine.setup.stream_dock import install_plugin
 
-ODA_PACKAGE = "ODA.ODAFileConverter"
 OLLAMA_PACKAGE = "Ollama.Ollama"
 OLLAMA_CASK = "ollama"
 OLLAMA_APP_WINDOWS = Path("Programs") / "Ollama" / "ollama app.exe"
@@ -82,7 +82,17 @@ def run_action(action: str, context: SetupContext) -> None:
 
 
 def _install_oda(context: SetupContext) -> str:
-    _winget_install(context, ODA_PACKAGE, "ODA File Converter")
+    if context.machine.os != "windows":
+        raise SetupError(
+            "L'installation automatique d'ODA File Converter n'existe que sous Windows.",
+            hint="Utilisez la page de téléchargement.",
+        )
+    context.emit(LogEvent(message="Téléchargement d'ODA File Converter depuis le site officiel…"))
+
+    def on_download(percent: int) -> None:
+        context.emit(ProgressEvent(current=percent, total=PERCENT, message="Téléchargement d'ODA"))
+
+    install_oda(context.run, on_download, context.transport)
     return _use_detected_oda(context)
 
 

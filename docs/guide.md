@@ -10,7 +10,7 @@ La marche à suivre complète, dans l'ordre. Chaque étape renvoie à sa section
 
 1. **Installer Drawflow** et saisir le code d'accès (`0000` au départ) : [Installer Drawflow](#installer-drawflow).
 2. **Ouvrir Paramètres → Installation** et régler chaque ligne marquée « À configurer » : [Installer les prérequis](#installer-les-prérequis).
-   1. **ODA File Converter** (pour les DWG) : **Installer**. Si winget échoue, **Page de téléchargement**, installez ODA, puis **Analyser à nouveau** et **Utiliser**.
+   1. **ODA File Converter** (pour les DWG) : **Installer**, puis acceptez la demande d'autorisation de Windows. En cas d'échec, [téléchargez ODA](https://www.opendesign.com/guestfiles/oda_file_converter), installez-le, puis **Analyser à nouveau** et **Utiliser**.
    2. **Serveur du modèle** : **Installer** Ollama, puis **Démarrer** s'il ne répond pas.
    3. **Modèle** : **Choisir un modèle** ouvre Paramètres → Modèles d'IA ; téléchargez le modèle **Recommandé**, puis **Utiliser**.
 3. **Adapter les fonctionnalités à votre norme** (blocs, champs, colonnes, noms de fichiers) dans Paramètres : [Adapter une fonctionnalité à votre norme](#adapter-une-fonctionnalité-à-votre-norme).
@@ -31,13 +31,13 @@ En cas de souci : [Dépannage](#dépannage).
 
 **Paramètres → Installation** analyse le poste et propose pour chaque prérequis le bouton qui le règle : installer, démarrer, télécharger, ou ouvrir la page officielle.
 
-| Prérequis | À quoi il sert |
-|---|---|
-| ODA File Converter | Lire les fichiers DWG (les DXF n'en ont pas besoin) |
-| Serveur du modèle local (Ollama ou LM Studio) et un modèle | Faire tourner l'assistant |
-| Plugin Stream Dock *(facultatif)* | Piloter Drawflow depuis un Stream Dock (Mirabox) |
+| Prérequis | À quoi il sert | Téléchargement manuel |
+|---|---|---|
+| ODA File Converter | Lire les fichiers DWG (les DXF n'en ont pas besoin) | [Installeur Windows](https://www.opendesign.com/guestfiles/get?filename=ODAFileConverter_QT6_vc16_amd64dll.msi) · [Page officielle](https://www.opendesign.com/guestfiles/oda_file_converter) |
+| Serveur du modèle local (Ollama ou LM Studio) et un modèle | Faire tourner l'assistant | [Ollama](https://ollama.com/download) |
+| Logiciel Stream Dock *(facultatif)* | Piloter Drawflow depuis un Stream Dock (Mirabox) | [Mirabox](https://mirabox.net/pages/download) |
 
-- Les installations passent par winget (Windows) ou Homebrew (macOS). Sans eux, seuls les liens vers les pages officielles sont proposés.
+- ODA s'installe depuis le site de l'éditeur (dernière version), Ollama par winget (Windows) ou Homebrew (macOS). Sans eux, utilisez les liens ci-dessus.
 - Drawflow demande confirmation avant d'installer un logiciel tiers (vous acceptez sa licence) et avant de télécharger un modèle (plusieurs Go).
 - **Analyser à nouveau** après une installation manuelle.
 
@@ -116,6 +116,7 @@ Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **
 | Problème | Solution |
 |---|---|
 | « ODA File Converter n'est pas configuré » | Paramètres → Installation → **Installer** ou **Utiliser** |
+| L'installation d'ODA échoue | [Téléchargez l'installeur ODA](https://www.opendesign.com/guestfiles/get?filename=ODAFileConverter_QT6_vc16_amd64dll.msi), lancez-le, puis **Analyser à nouveau** et **Utiliser** |
 | « Le modèle local ne répond pas » | Paramètres → Installation → **Démarrer**, ou lancez LM Studio |
 | « Le modèle … est introuvable » | Paramètres → Installation → **Télécharger**, ou choisissez un modèle installé dans le panneau |
 | « Le fichier de paramètres est illisible » | Il n'est jamais écrasé : restaurez une sauvegarde ou supprimez `settings.json` |
