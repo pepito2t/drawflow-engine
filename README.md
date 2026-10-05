@@ -6,7 +6,7 @@ Application desktop Windows qui automatise les tâches d'un dessinateur en faça
 - **Rapport** : plans PDF → rapport Word (cartouche, références).
 - **Soumission** : soumissions XLSX ou PDF avec XLSX joint → tableau normalisé.
 
-S'y ajoutent un **assistant local** (modèle d'IA sur le poste, rien ne sort de la machine), un **écran Installation** qui installe les prérequis en un clic, des **préréglages**, et le pilotage par **Stream Deck**.
+S'y ajoutent un **assistant local** (modèle d'IA sur le poste, rien ne sort de la machine), un **écran Installation** qui installe les prérequis en un clic, des **préréglages**, et le pilotage par **Stream Dock** (Mirabox).
 
 Stack : Tauri 2 · React + TypeScript · moteur Python (sidecar PyInstaller).
 
@@ -14,9 +14,9 @@ Stack : Tauri 2 · React + TypeScript · moteur Python (sidecar PyInstaller).
 
 | Document | Pour qui | Contenu |
 |---|---|---|
-| [Guide utilisateur](docs/guide.md) | Utilisateur | Installer, utiliser chaque fonctionnalité, assistant, Stream Deck, dépannage |
+| [Guide utilisateur](docs/guide.md) | Utilisateur | Installer, utiliser chaque fonctionnalité, assistant, Stream Dock, dépannage |
 | [Architecture](docs/architecture.md) | Développeur | Vue d'ensemble, flux principaux, décisions et leurs raisons, CI/CD |
-| [API locale](docs/api-locale.md) | Intégrations | Protocole WebSocket (Stream Deck, outils tiers) |
+| [API locale](docs/api-locale.md) | Intégrations | Protocole WebSocket (Stream Dock, outils tiers) |
 | [Historique des versions](CHANGELOG.md) | Tous | Contenu de chaque version |
 | [CLAUDE.md](CLAUDE.md) | Développeur | Règles de développement et commandes |
 
@@ -42,9 +42,9 @@ Tests et vérifications : voir la section « Commandes » de [CLAUDE.md](CLAUDE.
 
 ## Publier une version
 
-1. `python scripts/version.py bump X.Y.Z` (UI, Tauri, Rust, moteur, plugin Stream Deck), commit via PR.
+1. `python scripts/version.py bump X.Y.Z` (UI, Tauri, Rust, moteur, plugin Stream Dock), commit via PR.
 2. Une fois mergé : `git tag vX.Y.Z && git push origin vX.Y.Z`.
-3. Le workflow `Release` construit l'installeur Windows (NSIS), publie la release avec `latest.json` signé et y joint le plugin `ch.drawflow.streamDeckPlugin`.
+3. Le workflow `Release` construit l'installeur Windows (NSIS), publie la release avec `latest.json` signé et y joint le plugin Stream Dock `ch.drawflow.sdPlugin.zip`.
 
 Prérequis (une fois) :
 - `pnpm tauri signer generate`, puis les secrets `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, et la variable `UPDATER_PUBKEY` (clé publique).

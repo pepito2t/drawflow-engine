@@ -19,7 +19,7 @@ Les réglages et leurs valeurs par défaut sont décrits directement dans l'appl
 |---|---|
 | ODA File Converter | Lire les fichiers DWG (les DXF n'en ont pas besoin) |
 | Serveur du modèle local (Ollama ou LM Studio) et un modèle | Faire tourner l'assistant |
-| Plugin Stream Deck *(facultatif)* | Piloter Drawflow depuis un Stream Deck |
+| Plugin Stream Dock *(facultatif)* | Piloter Drawflow depuis un Stream Dock (Mirabox) |
 
 - Les installations passent par winget (Windows) ou Homebrew (macOS). Sans eux, seuls les liens vers les pages officielles sont proposés.
 - Drawflow demande confirmation avant d'installer un logiciel tiers (vous acceptez sa licence) et avant de télécharger un modèle (plusieurs Go).
@@ -51,7 +51,7 @@ Chaque fonctionnalité a sa catégorie dans les Paramètres :
 
 ### Préréglages
 
-**Enregistrer comme préréglage** (en haut de l'onglet) mémorise le formulaire sous un nom, pour le recharger ou le lancer depuis le Stream Deck.
+**Enregistrer comme préréglage** (en haut de l'onglet) mémorise le formulaire sous un nom, pour le recharger ou le lancer depuis le Stream Dock.
 
 ## Utiliser l'assistant
 
@@ -63,10 +63,10 @@ Il peut aussi **proposer un lancement** (« lance la soumission sur C:\Chantier\
 - **Paramètres → Modèles d'IA** recommande le modèle adapté à la mémoire du poste, et permet de chercher, télécharger, utiliser ou supprimer un modèle (ou d'en télécharger un autre de la bibliothèque Ollama par son nom).
 - La liste en haut du panneau change de modèle. **Arrêter** interrompt une réponse, **+** démarre une nouvelle conversation. La conversation en cours est conservée sur le poste entre deux lancements (sans les cartes de lancement).
 
-## Piloter avec un Stream Deck
+## Piloter avec un Stream Dock
 
 1. **Paramètres → Intégrations** : activez l'API locale et copiez le jeton.
-2. Installez le plugin (**Paramètres → Installation**, ou double-clic sur `ch.drawflow.streamDeckPlugin` joint à chaque release).
+2. **Paramètres → Installation → Installer le plugin** : Drawflow installe lui-même le plugin dans Stream Dock. Redémarrez ensuite Stream Dock. Après une mise à jour de Drawflow, cliquez de nouveau sur Installer pour mettre le plugin à jour.
 3. Glissez une action « Drawflow » sur une touche et collez le jeton (une fois pour toutes les touches).
 
 Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée et « Hors ligne » quand Drawflow est fermée.
@@ -96,4 +96,4 @@ Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **
 | « Le modèle local ne répond pas » | Paramètres → Installation → **Démarrer**, ou lancez LM Studio |
 | « Le modèle … est introuvable » | Paramètres → Installation → **Télécharger**, ou choisissez un modèle installé dans le panneau |
 | « Le fichier de paramètres est illisible » | Il n'est jamais écrasé : restaurez une sauvegarde ou supprimez `settings.json` |
-| Touches Stream Deck « Hors ligne » | Lancez Drawflow, vérifiez l'API locale et le jeton |
+| Touches Stream Dock « Hors ligne » | Lancez Drawflow, vérifiez l'API locale et le jeton |

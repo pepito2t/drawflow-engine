@@ -97,6 +97,7 @@ def _build_parser() -> argparse.ArgumentParser:
     setup_run = setup_commands.add_parser("run", help="Exécute une action d'installation (NDJSON).")
     setup_run.add_argument("action")
     setup_run.add_argument("--settings", type=Path, required=True)
+    setup_run.add_argument("--app-version", help="Version de Drawflow (plugin Stream Dock).")
 
     templates_parser = commands.add_parser("templates", help="Bibliothèque de modèles de sortie.")
     templates_commands = templates_parser.add_subparsers(dest="templates_command", required=True)
@@ -184,7 +185,8 @@ def _setup(arguments: argparse.Namespace, emit: Emit) -> None:
     from engine.setup import actions, service
 
     if arguments.setup_command == "run":
-        actions.run_action(arguments.action, actions.SetupContext(arguments.settings, emit))
+        context = actions.SetupContext(arguments.settings, emit, app_version=arguments.app_version)
+        actions.run_action(arguments.action, context)
     else:
         _write_json(service.scan(arguments.settings))
 

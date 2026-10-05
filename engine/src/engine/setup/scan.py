@@ -8,8 +8,8 @@ from engine.core.settings_models import AssistantSettings
 from engine.setup.locations import (
     find_oda,
     ollama_installed,
-    stream_deck_installed,
-    stream_deck_plugin_installed,
+    stream_dock_folder,
+    stream_dock_plugin_installed,
 )
 from engine.setup.machine import Machine
 from engine.setup.report import (
@@ -30,13 +30,13 @@ ACTION_LABELS: dict[ActionId, str] = {
     "ollama.open-page": "Page de téléchargement",
     "model.pull": "Télécharger",
     "models.open": "Choisir un modèle",
-    "streamdeck.install-plugin": "Installer le plugin",
-    "streamdeck.open-page": "Page de téléchargement",
+    "streamdock.install-plugin": "Installer le plugin",
+    "streamdock.open-page": "Page de téléchargement",
 }
 DOWNLOAD_PAGES: dict[ActionId, str] = {
     "oda.open-page": "https://www.opendesign.com/guestfiles/oda_file_converter",
     "ollama.open-page": "https://ollama.com/download",
-    "streamdeck.open-page": "https://www.elgato.com/downloads",
+    "streamdock.open-page": "https://mirabox.net/pages/download",
 }
 # Homebrew has no ODA File Converter package: on macOS the download page is the only way.
 INSTALLABLE_WITH: dict[ActionId, set[PackageManager]] = {
@@ -63,7 +63,7 @@ def build_report(
         _oda_item(machine, system, oda_configured),
         _model_server_item(machine, system, assistant, server),
         _model_item(assistant, server, recommend(machine.memory_bytes)),
-        _stream_deck_item(machine),
+        _stream_dock_item(machine),
     ]
     return SetupReport(system=system, items=items)
 
@@ -145,24 +145,30 @@ def _model_item(
     )
 
 
-def _stream_deck_item(machine: Machine) -> SetupItem:
-    label = "Plugin Stream Deck"
-    if not stream_deck_installed(machine):
+def _stream_dock_item(machine: Machine) -> SetupItem:
+    label = "Plugin Stream Dock"
+    if stream_dock_folder(machine) is None:
         return SetupItem(
-            id="stream-deck",
+            id="stream-dock",
             label=label,
             status="optional",
-            detail="Facultatif : logiciel Stream Deck non installé.",
-            actions=_actions("streamdeck.open-page"),
+            detail="Facultatif : logiciel Stream Dock (Mirabox) non installé.",
+            actions=_actions("streamdock.open-page"),
         )
-    if stream_deck_plugin_installed(machine):
-        return SetupItem(id="stream-deck", label=label, status="ok", detail="Installé.")
+    if stream_dock_plugin_installed(machine):
+        return SetupItem(
+            id="stream-dock",
+            label=label,
+            status="ok",
+            detail="Installé. Réinstallez-le après une mise à jour de Drawflow.",
+            actions=_actions("streamdock.install-plugin"),
+        )
     return SetupItem(
-        id="stream-deck",
+        id="stream-dock",
         label=label,
         status="optional",
-        detail="Pilotez Drawflow depuis les touches du Stream Deck.",
-        actions=_actions("streamdeck.install-plugin"),
+        detail="Pilotez Drawflow depuis les touches du Stream Dock.",
+        actions=_actions("streamdock.install-plugin"),
     )
 
 

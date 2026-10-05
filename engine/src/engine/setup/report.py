@@ -14,8 +14,8 @@ ActionId = Literal[
     "ollama.open-page",
     "model.pull",
     "models.open",
-    "streamdeck.install-plugin",
-    "streamdeck.open-page",
+    "streamdock.install-plugin",
+    "streamdock.open-page",
 ]
 PackageManager = Literal["winget", "brew"]
 

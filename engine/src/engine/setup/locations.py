@@ -9,11 +9,9 @@ ODA_APP_MACOS = Path("/Applications/ODAFileConverter.app/Contents/MacOS/ODAFileC
 OLLAMA_PROGRAM = "ollama"
 OLLAMA_WINDOWS = Path("Programs") / "Ollama" / "ollama.exe"
 OLLAMA_APP_MACOS = Path("/Applications/Ollama.app")
-STREAM_DECK_WINDOWS = Path("Elgato") / "StreamDeck" / "StreamDeck.exe"
-STREAM_DECK_APP_MACOS = Path("/Applications/Elgato Stream Deck.app")
-STREAM_DECK_PLUGIN = "ch.drawflow.sdPlugin"
-STREAM_DECK_PLUGINS_WINDOWS = Path("Elgato") / "StreamDeck" / "Plugins"
-STREAM_DECK_PLUGINS_MACOS = Path("Library/Application Support/com.elgato.StreamDeck/Plugins")
+STREAM_DOCK_FOLDER_WINDOWS = Path("HotSpot") / "StreamDock"
+STREAM_DOCK_PLUGINS = "plugins"
+DRAWFLOW_PLUGIN = "ch.drawflow.sdPlugin"
 
 
 def find_oda(machine: Machine) -> Path | None:
@@ -37,19 +35,19 @@ def ollama_installed(machine: Machine) -> bool:
     return local is not None and machine.is_file(local / OLLAMA_WINDOWS)
 
 
-def stream_deck_installed(machine: Machine) -> bool:
-    if machine.os == "macos":
-        return machine.is_dir(STREAM_DECK_APP_MACOS)
-    root = machine.folder("ProgramFiles")
-    return root is not None and machine.is_file(root / STREAM_DECK_WINDOWS)
+def stream_dock_folder(machine: Machine) -> Path | None:
+    """Stream Dock keeps its settings and plugins in %APPDATA%; only Windows is supported."""
+    roaming = machine.folder("APPDATA") if machine.os == "windows" else None
+    if roaming is None or not machine.is_dir(roaming / STREAM_DOCK_FOLDER_WINDOWS):
+        return None
+    return roaming / STREAM_DOCK_FOLDER_WINDOWS
 
 
-def stream_deck_plugin_installed(machine: Machine) -> bool:
-    if machine.os == "macos":
-        plugins = machine.home / STREAM_DECK_PLUGINS_MACOS
-    else:
-        roaming = machine.folder("APPDATA")
-        if roaming is None:
-            return False
-        plugins = roaming / STREAM_DECK_PLUGINS_WINDOWS
-    return machine.is_dir(plugins / STREAM_DECK_PLUGIN)
+def stream_dock_plugins_folder(machine: Machine) -> Path | None:
+    folder = stream_dock_folder(machine)
+    return None if folder is None else folder / STREAM_DOCK_PLUGINS
+
+
+def stream_dock_plugin_installed(machine: Machine) -> bool:
+    plugins = stream_dock_plugins_folder(machine)
+    return plugins is not None and machine.is_dir(plugins / DRAWFLOW_PLUGIN)

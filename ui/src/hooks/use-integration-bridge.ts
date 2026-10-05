@@ -7,7 +7,7 @@ import {
 import { useCommands } from "./command-registry";
 import { useNotificationCenter } from "./notification-center";
 
-/** Connects the local API (Stream Deck…) to named commands and to the event stream. */
+/** Connects the local API (Stream Dock…) to named commands and to the event stream. */
 export function useIntegrationBridge(): void {
   const { execute } = useCommands();
   const { subscribe } = useNotificationCenter();

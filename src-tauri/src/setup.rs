@@ -12,7 +12,7 @@ use crate::sidecar::{path_argument, start_streaming_run, EngineMessage, EngineRu
 const DOWNLOAD_PAGES: [&str; 4] = [
     "https://www.opendesign.com/",
     "https://ollama.com/",
-    "https://www.elgato.com/",
+    "https://mirabox.net/",
     "https://github.com/pepito2t/drawflow-engine/releases/",
 ];
 
@@ -29,6 +29,8 @@ pub enum SetupAction {
     OllamaStart,
     #[serde(rename = "model.pull")]
     ModelPull,
+    #[serde(rename = "streamdock.install-plugin")]
+    StreamDockInstallPlugin,
 }
 
 impl SetupAction {
@@ -39,6 +41,7 @@ impl SetupAction {
             Self::OllamaInstall => "ollama.install",
             Self::OllamaStart => "ollama.start",
             Self::ModelPull => "model.pull",
+            Self::StreamDockInstallPlugin => "streamdock.install-plugin",
         }
     }
 }
@@ -53,15 +56,10 @@ pub fn run_setup_action(
 ) -> Result<RunId, BridgeError> {
     lock.ensure_unlocked()?;
     let settings = path_argument(settings_file(&app)?);
+    let version = app.package_info().version.to_string();
     let run_key = format!("setup:{}", action.id());
-    start_streaming_run(
-        app,
-        &runs,
-        &run_key,
-        setup_arguments(action, settings),
-        on_event,
-        None,
-    )
+    let arguments = setup_arguments(action, settings, version);
+    start_streaming_run(app, &runs, &run_key, arguments, on_event, None)
 }
 
 /// Downloads a model through Ollama; the engine validates the name, Rust only keeps it from
@@ -126,13 +124,15 @@ fn pull_arguments(model: &str, settings: String) -> Vec<String> {
     ]
 }
 
-fn setup_arguments(action: SetupAction, settings: String) -> Vec<String> {
+fn setup_arguments(action: SetupAction, settings: String, app_version: String) -> Vec<String> {
     vec![
         "setup".to_owned(),
         "run".to_owned(),
         action.id().to_owned(),
         "--settings".to_owned(),
         settings,
+        "--app-version".to_owned(),
+        app_version,
     ]
 }
 
@@ -144,10 +144,18 @@ mod tests {
 
     #[test]
     fn actions_are_allow_listed_by_name() {
-        let action: SetupAction = serde_json::from_str("\"model.pull\"").unwrap();
+        let action: SetupAction = serde_json::from_str("\"streamdock.install-plugin\"").unwrap();
         assert_eq!(
-            setup_arguments(action, "s é.json".to_owned()),
-            ["setup", "run", "model.pull", "--settings", "s é.json"]
+            setup_arguments(action, "s é.json".to_owned(), "0.7.0".to_owned()),
+            [
+                "setup",
+                "run",
+                "streamdock.install-plugin",
+                "--settings",
+                "s é.json",
+                "--app-version",
+                "0.7.0"
+            ]
         );
         assert!(serde_json::from_str::<SetupAction>("\"winget\"").is_err());
     }

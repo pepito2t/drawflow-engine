@@ -19,6 +19,7 @@ class FakeMachine:
     files: set[Path] = field(default_factory=set)
     home: Path = Path("/Users/dessin")
     memory: int | None = None
+    folders: dict[str, Path] = field(default_factory=lambda: dict(FOLDERS))
 
     def which(self, program: str) -> Path | None:
         return Path(program) if program in self.programs else None
@@ -37,4 +38,4 @@ class FakeMachine:
         return self.memory
 
     def folder(self, variable: str) -> Path | None:
-        return FOLDERS.get(variable)
+        return self.folders.get(variable)

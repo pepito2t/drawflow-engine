@@ -91,16 +91,15 @@ jobs:
           updaterJsonPreferNsis: true
           args: --bundles nsis --config updater-config.json
 
-      - name: Build Stream Deck plugin
-        working-directory: streamdeck
+      - name: Build Stream Dock plugin
+        working-directory: streamdock
         run: |
           pnpm build
-          pnpm validate
           pnpm run package
 
-      - name: Attach Stream Deck plugin to the release
+      - name: Attach Stream Dock plugin to the release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN || secrets.GITHUB_TOKEN }}
         run: >
-          gh release upload "${GITHUB_REF_NAME}" streamdeck/dist/ch.drawflow.streamDeckPlugin
+          gh release upload "${GITHUB_REF_NAME}" streamdock/dist/ch.drawflow.sdPlugin.zip
           --repo "${RELEASES_OWNER}/${RELEASES_REPO}" --clobber

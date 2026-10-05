@@ -24,7 +24,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
         tests/
   templates/              # modèles DOCX/XLSX
   fixtures/               # fichiers réels anonymisés + sorties attendues
-  streamdeck/             # plugin Stream Deck (SDK Node.js Elgato) — client de l'API locale
+  streamdock/             # plugin Stream Dock (SDK Mirabox, Node 20 intégré) — client de l'API locale
   docs/                   # guide.md, architecture.md, api-locale.md
   CHANGELOG.md            # historique des versions
   .github/workflows/      # ci.yml, release.yml
@@ -38,7 +38,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
 - Sidecar : `pnpm sidecar:build` (PyInstaller → `src-tauri/binaries/engine-<target-triple>[.exe]`) · smoke test : `uv run --project engine python scripts/smoke-sidecar.py src-tauri/binaries/engine-*`
 - Assistant (dans `engine/`) : `uv run engine mcp --settings <fichier>` (serveur MCP stdio) · `uv run engine assistant models|chat --settings <fichier> [--input <conversation.json>]`
 - Dev complet : `pnpm dev` (build du sidecar puis `tauri dev`)
-- Plugin Stream Deck (dans `streamdeck/`) : `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm build` · `pnpm validate` · `pnpm run package` (→ `dist/ch.drawflow.streamDeckPlugin`)
+- Plugin Stream Dock (dans `streamdock/`) : `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm build` · `pnpm run package` (→ `dist/ch.drawflow.sdPlugin.zip`)
 
 Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 
@@ -48,8 +48,8 @@ Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 - Les modules ne s'importent pas entre eux. Le partage passe par `core/` ou par une lib interne dédiée.
 - Ajouter un module ne doit nécessiter **aucune modification** de l'UI, de Rust ou du cœur (hormis l'enregistrement automatique par découverte).
 
-## Pilotage externe (Stream Deck)
-- Toute l'application doit rester pilotable depuis l'extérieur (Stream Deck, plus tard LLM local).
+## Pilotage externe (Stream Dock)
+- Toute l'application doit rester pilotable depuis l'extérieur (Stream Dock, assistant local).
 - Chaque action de l'UI passe par une **commande nommée** (registre unique), jamais par une logique propre à un composant.
 - Chaque événement notable (début/fin de traitement, erreur, paramètres enregistrés, mise à jour…) passe par le **centre de notifications** ; toasts, notifications système et intégrations s'y abonnent.
 

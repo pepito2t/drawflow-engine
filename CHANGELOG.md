@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Plugin Stream Dock (Mirabox)** à la place du plugin Elgato Stream Deck, qui ne correspondait pas à l'appareil de l'utilisateur. Installation automatique depuis **Paramètres → Installation** : Drawflow installe le plugin dans Stream Dock, il suffit de redémarrer Stream Dock (#109).
+
 ## 0.6.0 — 2026-10-05
 
 - **Paramètres → Modèles d'IA** : recherche, téléchargement avec progression, utilisation et suppression des modèles ; « Choisir un modèle » depuis l'écran Installation ; commande `models.open` (#106).

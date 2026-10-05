@@ -12,7 +12,7 @@ Comment les pièces s'assemblent et pourquoi. Les conventions de code et les com
 │ relaie sa sortie, verrou, updater, API locale  │ ◀────── │ assistant/ serveur MCP, client du modèle    │
 └────────────────────────────────────────────────┘         │ setup/     analyse du poste, installations  │
         ▲ WebSocket 127.0.0.1 + jeton                       └─────────────────────────────────────────────┘
- Plugin Stream Deck (streamdeck/)
+ Plugin Stream Dock (streamdock/)
 ```
 
 | Couche | Rôle | Ne fait pas |
@@ -27,9 +27,9 @@ Liste des commandes du moteur : `engine --help`.
 
 **Lancer une fonctionnalité.** L'UI génère le formulaire depuis le JSON Schema du module. Au lancement, Rust démarre `engine run <id>` et relaie chaque ligne NDJSON (`progress`, `log`, `warning`, `result`, `error`). L'UI les valide, met à jour le registre des traitements et publie les événements notables dans le centre de notifications.
 
-**Ajouter une fonctionnalité.** Il suffit d'ajouter un dossier `engine/src/engine/modules/<id>/` qui expose `MODULE = EngineModule(...)`, puis de le tester. Le registre le découvre automatiquement. L'onglet, le formulaire, les paramètres, les préréglages, l'outil de l'assistant et le Stream Deck suivent sans aucune modification de l'UI, de Rust ou du cœur.
+**Ajouter une fonctionnalité.** Il suffit d'ajouter un dossier `engine/src/engine/modules/<id>/` qui expose `MODULE = EngineModule(...)`, puis de le tester. Le registre le découvre automatiquement. L'onglet, le formulaire, les paramètres, les préréglages, l'outil de l'assistant et le Stream Dock suivent sans aucune modification de l'UI, de Rust ou du cœur.
 
-**Piloter de l'extérieur.** Chaque action pilotable est une commande nommée (`ui/src/lib/commands.ts`), utilisée à la fois par l'interface, le Stream Deck (via l'API locale, voir [api-locale.md](api-locale.md)) et plus tard l'assistant. Les événements notables passent par le centre de notifications : toasts, notifications système et API locale s'y abonnent.
+**Piloter de l'extérieur.** Chaque action pilotable est une commande nommée (`ui/src/lib/commands.ts`), utilisée à la fois par l'interface, le Stream Dock (via l'API locale, voir [api-locale.md](api-locale.md)) et plus tard l'assistant. Les événements notables passent par le centre de notifications : toasts, notifications système et API locale s'y abonnent.
 
 **Assistant.**
 
@@ -56,7 +56,7 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | `settings.json` écrit de façon atomique, jamais écrasé s'il est illisible | Ne jamais perdre une norme de l'utilisateur | #27 |
 | Code d'accès en argon2id vérifié par Rust, désactivé en développement | Pas de crypto maison ; le moteur ne voit jamais le code | #34 |
 | Commandes nommées + centre de notifications | Toute l'application pilotable de l'extérieur par un seul registre | #70 |
-| API locale en WebSocket sur 127.0.0.1 avec jeton | Stream Deck et outils tiers, sans exposition réseau | #71 |
+| API locale en WebSocket sur 127.0.0.1 avec jeton | Stream Dock et outils tiers, sans exposition réseau | #71 |
 | Assistant via MCP (SDK officiel), modèle local par API compatible OpenAI | Fonctionne avec Ollama, LM Studio, llama.cpp ; outils générés depuis le registre | #78, #79 |
 | L'assistant propose, l'utilisateur lance | Aucun traitement sans confirmation ; le lancement suit le même circuit que l'interface | #95 |
 | Catalogue de modèles choisi + téléchargement par nom, pas de recherche dans la bibliothèque | Ollama n'a pas d'API de recherche publique ; recommandation selon la mémoire du poste | #105 |
@@ -65,11 +65,12 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Modules importés avant la boucle stdio MCP | Sous Windows, un import pendant une lecture bloquante de stdin figeait le serveur | #82 |
 | Installations via winget / Homebrew, commandes en liste d'arguments | Sources officielles et intégrité vérifiée, pas d'injection shell | #88 |
 | Pages de téléchargement en liste blanche côté Rust | L'UI ne peut pas ouvrir une URL arbitraire | #90 |
+| Plugin pour Stream Dock (Mirabox), installé par Drawflow dans `%APPDATA%\HotSpot\StreamDock\plugins` | C'est l'appareil de l'utilisateur ; même protocole que le SDK Stream Deck, sans fichier d'installation à double-cliquer | #109 |
 | Délais maximum en CI, tests et requêtes MCP | Un blocage échoue vite au lieu de figer la CI ou l'application | #82 |
 | Updater activé seulement par la configuration de release | Aucune mise à jour en développement ; clé publique injectée par la CI | #52 |
 
 ## CI/CD
 
-- **`ci.yml`** : moteur, UI, Tauri + sidecar sur macOS et Windows, plugin Stream Deck. Le smoke test exécute le binaire figé de bout en bout : modules, handshake MCP, erreur de l'assistant.
-- **`release.yml`**, sur un tag `v*` : installeur NSIS, `latest.json` signé et plugin Stream Deck joint. Procédure dans le [README](../README.md#publier-une-version).
+- **`ci.yml`** : moteur, UI, Tauri + sidecar sur macOS et Windows, plugin Stream Dock. Le smoke test exécute le binaire figé de bout en bout : modules, handshake MCP, erreur de l'assistant.
+- **`release.yml`**, sur un tag `v*` : installeur NSIS, `latest.json` signé et plugin Stream Dock joint (`ch.drawflow.sdPlugin.zip`). Procédure dans le [README](../README.md#publier-une-version).
 - **`scripts/version.py`** garde toutes les versions alignées (UI, Tauri, Cargo, moteur, plugin).

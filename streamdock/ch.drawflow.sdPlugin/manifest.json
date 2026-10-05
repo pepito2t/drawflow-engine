@@ -1,0 +1,122 @@
+{
+  "Name": "Drawflow",
+  "Version": "0.6.0",
+  "Author": "Drawflow",
+  "Description": "Pilotez Drawflow : préréglages, onglets, annulation, dernier résultat et suivi des traitements.",
+  "Category": "Drawflow",
+  "CategoryIcon": "imgs/category.png",
+  "Icon": "imgs/plugin.png",
+  "URL": "https://github.com/pepito2t/drawflow-engine",
+  "CodePathWin": "bin/plugin.js",
+  "PropertyInspectorPath": "ui/connection.html",
+  "SDKVersion": 1,
+  "Software": {
+    "MinimumVersion": "3.10.188.226"
+  },
+  "Nodejs": {
+    "Version": "20"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Actions": [
+    {
+      "UUID": "ch.drawflow.preset",
+      "Name": "Lancer un préréglage",
+      "Tooltip": "Lance un préréglage Drawflow et affiche sa progression.",
+      "Icon": "imgs/preset-icon.png",
+      "States": [
+        {
+          "Image": "imgs/preset.png",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/preset.html"
+    },
+    {
+      "UUID": "ch.drawflow.open-tab",
+      "Name": "Ouvrir un onglet",
+      "Tooltip": "Met Drawflow au premier plan sur une fonctionnalité.",
+      "Icon": "imgs/tab-icon.png",
+      "States": [
+        {
+          "Image": "imgs/tab.png",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/open-tab.html"
+    },
+    {
+      "UUID": "ch.drawflow.cancel-all",
+      "Name": "Annuler les traitements",
+      "Tooltip": "Annule tous les traitements en cours.",
+      "Icon": "imgs/cancel-icon.png",
+      "States": [
+        {
+          "Image": "imgs/cancel.png",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/connection.html"
+    },
+    {
+      "UUID": "ch.drawflow.open-last",
+      "Name": "Ouvrir le dernier résultat",
+      "Tooltip": "Ouvre le dernier fichier produit par Drawflow.",
+      "Icon": "imgs/result-icon.png",
+      "States": [
+        {
+          "Image": "imgs/result.png",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/connection.html"
+    },
+    {
+      "UUID": "ch.drawflow.runs-counter",
+      "Name": "Traitements en cours",
+      "Tooltip": "Affiche le nombre de traitements en cours.",
+      "Icon": "imgs/runs-icon.png",
+      "States": [
+        {
+          "Image": "imgs/runs.png",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/connection.html"
+    }
+  ]
+}

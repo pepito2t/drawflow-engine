@@ -65,7 +65,7 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
     <section className="settings-section">
       <h3>Intégrations</h3>
       <p className="muted">
-        API locale pour le plugin Stream Deck : accessible uniquement depuis cet ordinateur,
+        API locale pour le plugin Stream Dock : accessible uniquement depuis cet ordinateur,
         protégée par un jeton. Rien ne s'exécute tant que l'application est verrouillée.
       </p>
       <label className="checkbox-row">
@@ -102,7 +102,7 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
         )}
       </div>
       <div className="form-field">
-        <label htmlFor="integration-token">Jeton (à copier dans le plugin Stream Deck)</label>
+        <label htmlFor="integration-token">Jeton (à copier dans le plugin Stream Dock)</label>
         <div className="token-row">
           <input
             id="integration-token"

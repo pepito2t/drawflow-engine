@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Every UI action reachable from outside (Stream Deck, local LLM) is declared here. */
+/** Every UI action reachable from outside (Stream Dock, local LLM) is declared here. */
 export const COMMAND_ARGUMENTS = {
   "tab.open": z.object({ moduleId: z.string().min(1) }),
   "preset.run": z.object({ presetId: z.string().min(1) }),
