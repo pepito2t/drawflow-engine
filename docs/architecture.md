@@ -67,11 +67,8 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Sidecar PyInstaller en dossier (`--onedir`), `_internal` livré en ressource à côté de l'exécutable ; pipelines importés à la demande | Un `--onefile` se décompresse à chaque appel (lent sous Windows, Defender) ; lister ou lire les réglages n'a pas besoin d'ezdxf/openpyxl/pdfplumber | #116 |
 | Actions GitHub épinglées par SHA de commit, `permissions: contents: read` sur la CI | Un tag d'action peut être déplacé ; le workflow de release manipule la clé de signature de l'updater | #142 |
 | Installations via winget / Homebrew, commandes en liste d'arguments | Sources officielles et intégrité vérifiée, pas d'injection shell | #88 |
-<<<<<<< HEAD
 | Plugins Stream Dock : version lue dans `manifest.json`, comparée à la version de l'app (plugin Drawflow) ou à la dernière release GitHub (plugin AutoCAD, redirection `releases/latest`) | Proposer la mise à jour sans serveur ni API : un `HEAD` suffit, et le plugin AutoCAD a son propre cycle de versions | #146 |
-=======
 | Assistant : `reasoning_effort: none` et rubriques du guide dans le prompt système | Le raisonnement interne coûte des dizaines de secondes sur CPU pour des réponses courtes et outillées ; une passe d'outil en moins par question d'aide | #144 |
->>>>>>> origin/main
 | Installeurs téléchargés vérifiés par leur signature Authenticode (PowerShell `Get-AuthenticodeSignature`) avant exécution | HTTPS protège le transport, pas l'authenticité du fichier ; aucun checksum publié par ODA | #141 |
 | `open_output` limité aux chemins annoncés dans les événements `result` du moteur | L'UI ne doit pas pouvoir faire ouvrir un exécutable arbitraire | #141 |
 | ODA et Ollama installés depuis l'installeur officiel (lien sans version), pas par winget | winget pointe vers des versions retirées (404) et n'affiche aucune progression ; le lien sans version suit toujours la dernière | #114, #119 |
