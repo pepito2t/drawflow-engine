@@ -39,6 +39,11 @@ class _PendingCall:
     arguments: list[str] = field(default_factory=list)
 
 
+# Reasoning models (Qwen 3.x…) think for tens of seconds before the first word; the assistant
+# answers short, tool-grounded questions and does better without it.
+REASONING_EFFORT = "none"
+
+
 class ModelClient:
     def __init__(
         self,
@@ -64,7 +69,12 @@ class ModelClient:
     async def complete(
         self, messages: list[JsonObject], tools: list[JsonObject], on_text: OnText
     ) -> ModelReply:
-        body: JsonObject = {"model": self.model, "messages": messages, "stream": True}
+        body: JsonObject = {
+            "model": self.model,
+            "messages": messages,
+            "stream": True,
+            "reasoning_effort": REASONING_EFFORT,
+        }
         if tools:
             body["tools"] = tools
         async with self._http() as http:
