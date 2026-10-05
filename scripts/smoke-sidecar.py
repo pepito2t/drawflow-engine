@@ -17,7 +17,13 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 EXPECTED_MODULE_IDS = ["dwg-parts", "pdf-report", "soumission"]
-EXPECTED_MCP_TOOLS = ["list_features", "list_presets", "list_templates"]
+EXPECTED_MCP_TOOLS = [
+    "list_features",
+    "list_presets",
+    "list_templates",
+    "propose_feature",
+    "propose_preset",
+]
 PARALLEL_BATCH_SIZE = 2
 MCP_REQUEST_TIMEOUT = timedelta(seconds=120)
 
