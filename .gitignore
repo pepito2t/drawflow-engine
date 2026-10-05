@@ -32,7 +32,7 @@ Thumbs.db
 *.key
 samples/
 
-# Stream Deck plugin build output
+# Stream Dock plugin build output
 streamdock/ch.drawflow.sdPlugin/bin/
 streamdock/ch.drawflow.sdPlugin/logs/
 streamdock/dist/
