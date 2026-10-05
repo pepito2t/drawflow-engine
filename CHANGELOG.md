@@ -4,9 +4,12 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+## 0.4.0 — 2026-10-05
+
 - **Écran Installation** (Paramètres → Installation) : analyse du poste (système, ODA File Converter, serveur du modèle, modèle, Stream Deck) et installations en un clic. Il propose winget ou Homebrew, le démarrage d'Ollama, le téléchargement du modèle avec sa progression, le plugin Stream Deck et les pages officielles (#87, #88, #90).
 - Message « Configurer Drawflow » au lancement s'il manque un prérequis ; commande `setup.open` (#90).
 - Correctif : le bouton Enregistrer restait affiché sur les onglets Paramètres sans formulaire (#90).
+- Documentation : guide utilisateur, architecture avec journal des décisions, historique des versions (#91).
 
 ## 0.3.0 — 2026-10-04
 
