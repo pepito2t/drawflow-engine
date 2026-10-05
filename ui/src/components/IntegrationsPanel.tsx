@@ -22,7 +22,7 @@ export function IntegrationsPanel() {
         const { message, hint } = toReadableError(error);
         return (
           <ErrorPanel
-            title="Intégrations indisponibles"
+            title="API locale indisponible"
             message={message}
             hint={hint}
             onRetry={retry}
@@ -63,10 +63,11 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
 
   return (
     <section className="settings-section">
-      <h3>Intégrations</h3>
+      <h3>API locale</h3>
       <p className="muted">
-        API locale pour le plugin Stream Dock : accessible uniquement depuis cet ordinateur,
-        protégée par un jeton. Rien ne s'exécute tant que l'application est verrouillée.
+        Le plugin Stream Dock se configure tout seul. Cette page sert aux autres outils qui pilotent
+        Drawflow (accès depuis cet ordinateur uniquement, protégé par un jeton) et au dépannage.
+        Rien ne s'exécute tant que l'application est verrouillée.
       </p>
       <label className="checkbox-row">
         <input
@@ -102,7 +103,7 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
         )}
       </div>
       <div className="form-field">
-        <label htmlFor="integration-token">Jeton (à copier dans le plugin Stream Dock)</label>
+        <label htmlFor="integration-token">Jeton (pour un outil tiers)</label>
         <div className="token-row">
           <input
             id="integration-token"

@@ -20,6 +20,7 @@ import {
 import { openDownloadPage, runSetupAction, scanSetup } from "../lib/tauri/setup";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
+import { HelpIcon } from "./icons";
 import { Loader } from "./Spinner";
 
 const STATUS_LABELS = {
@@ -150,9 +151,11 @@ function SetupRow({ item, run, disabled, pending, onAction, onConfirm, onCancel 
     <li className="setup-item">
       <span className={`setup-status ${item.status}`}>{STATUS_LABELS[item.status]}</span>
       <div className="setup-body">
-        <strong>{item.label}</strong>
+        <div className="setup-title">
+          <strong>{item.label}</strong>
+          {item.help && <HelpLink topic={item.help} />}
+        </div>
         <span className="muted">{item.detail}</span>
-        {item.help && <HelpLink topic={item.help} />}
         {ownRun && <RunLine run={ownRun} />}
         {confirming && (
           <div className="setup-confirm">
@@ -221,7 +224,9 @@ function HelpLink({ topic }: { topic: string }) {
   return (
     <button
       type="button"
-      className="link-button help-link"
+      className="icon-button"
+      aria-label="Marche à suivre"
+      title="Marche à suivre"
       onClick={() => {
         execute(COMMANDS.openHelp, { topic })
           .then((result) => {
@@ -232,7 +237,7 @@ function HelpLink({ topic }: { topic: string }) {
           });
       }}
     >
-      Marche à suivre
+      <HelpIcon />
     </button>
   );
 }

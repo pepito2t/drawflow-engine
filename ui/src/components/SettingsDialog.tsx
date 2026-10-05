@@ -33,8 +33,8 @@ const STATIC_TABS = [
   { id: SETUP_TAB_ID, title: "Installation" },
   { id: AI_MODELS_TAB_ID, title: "Modèles d'IA" },
   { id: TEMPLATES_TAB_ID, title: "Modèles" },
-  { id: INTEGRATIONS_TAB_ID, title: "Intégrations" },
   { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
+  { id: INTEGRATIONS_TAB_ID, title: "API locale" },
 ];
 
 type SaveState =

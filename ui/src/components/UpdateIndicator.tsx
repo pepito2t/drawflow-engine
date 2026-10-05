@@ -5,6 +5,9 @@ export function UpdateIndicator() {
   const { state, install } = useUpdateCenter();
   const label = describeUpdate(state);
 
+  if (state.status === "unconfigured") {
+    return null;
+  }
   if (state.status === "available") {
     return (
       <button
