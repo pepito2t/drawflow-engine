@@ -64,6 +64,32 @@ pub fn run_setup_action(
     )
 }
 
+/// Downloads a model through Ollama; the engine validates the name, Rust only keeps it from
+/// being read as a command-line option.
+#[tauri::command]
+pub fn pull_model(
+    app: AppHandle,
+    runs: State<'_, EngineRuns>,
+    lock: State<'_, AccessLock>,
+    model: String,
+    on_event: Channel<EngineMessage>,
+) -> Result<RunId, BridgeError> {
+    lock.ensure_unlocked()?;
+    if !is_model_name(&model) {
+        return Err(BridgeError::InvalidModelName(model));
+    }
+    let settings = path_argument(settings_file(&app)?);
+    let run_key = format!("model:{model}");
+    start_streaming_run(
+        app,
+        &runs,
+        &run_key,
+        pull_arguments(&model, settings),
+        on_event,
+        None,
+    )
+}
+
 #[tauri::command]
 pub fn open_download_page(
     app: AppHandle,
@@ -80,6 +106,24 @@ pub fn open_download_page(
 
 fn is_download_page(url: &str) -> bool {
     DOWNLOAD_PAGES.iter().any(|page| url.starts_with(page))
+}
+
+fn is_model_name(model: &str) -> bool {
+    !model.starts_with('-')
+        && !model.is_empty()
+        && model
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | ':' | '/'))
+}
+
+fn pull_arguments(model: &str, settings: String) -> Vec<String> {
+    vec![
+        "assistant".to_owned(),
+        "pull".to_owned(),
+        model.to_owned(),
+        "--settings".to_owned(),
+        settings,
+    ]
 }
 
 fn setup_arguments(action: SetupAction, settings: String) -> Vec<String> {
@@ -106,6 +150,19 @@ mod tests {
             ["setup", "run", "model.pull", "--settings", "s é.json"]
         );
         assert!(serde_json::from_str::<SetupAction>("\"winget\"").is_err());
+    }
+
+    #[test]
+    fn model_names_cannot_become_options() {
+        assert!(is_model_name("qwen3.5:9b"));
+        assert!(is_model_name("library/llama3.1:8b"));
+        assert!(!is_model_name("--settings"));
+        assert!(!is_model_name("qwen 3"));
+        assert!(!is_model_name(""));
+        assert_eq!(
+            pull_arguments("qwen3.5:4b", "s.json".to_owned()),
+            ["assistant", "pull", "qwen3.5:4b", "--settings", "s.json"]
+        );
     }
 
     #[test]

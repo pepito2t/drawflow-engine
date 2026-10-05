@@ -46,7 +46,8 @@ pub fn run() {
             assistant::assistant_chat,
             assistant::assistant_cancel,
             setup::run_setup_action,
-            setup::open_download_page
+            setup::open_download_page,
+            setup::pull_model
         ])
         .build(tauri::generate_context!());
     match app {

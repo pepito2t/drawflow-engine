@@ -43,6 +43,8 @@ export type EngineSetupAction = (typeof ENGINE_ACTIONS)[number];
 
 const INSTALLS_THIRD_PARTY = new Set(["oda.install", "ollama.install", "model.pull"]);
 export const SETUP_TAB_ID = "setup";
+export const AI_MODELS_TAB_ID = "ai-models";
+export const OPEN_MODELS_ACTION = "models.open";
 const PLUGIN_ACTION = "streamdeck.install-plugin";
 const RELEASES_URL = "https://github.com/pepito2t/drawflow-engine/releases/download";
 const PLUGIN_FILE = "ch.drawflow.streamDeckPlugin";

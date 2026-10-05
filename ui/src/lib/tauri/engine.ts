@@ -28,6 +28,8 @@ export type EngineRequestName =
   | "assistant.models"
   | "assistant.history-get"
   | "assistant.history-save"
+  | "assistant.catalog"
+  | "assistant.model-delete"
   | "setup.scan";
 
 export async function engineRequest(

@@ -28,3 +28,21 @@ export function getAssistantHistory(): Promise<string> {
 export async function saveAssistantHistory(messages: ConversationMessage[]): Promise<void> {
   await engineRequest("assistant.history-save", { messages });
 }
+
+export function getModelCatalog(): Promise<string> {
+  return engineRequest("assistant.catalog");
+}
+
+export async function deleteModel(model: string): Promise<void> {
+  await engineRequest("assistant.model-delete", { model });
+}
+
+export function pullModel(
+  model: string,
+  onMessage: (message: EngineMessage) => void,
+): Promise<string> {
+  const channel = new Channel<unknown>((raw) => {
+    onMessage(engineMessageSchema.parse(raw));
+  });
+  return invoke<string>("pull_model", { model, onEvent: channel });
+}

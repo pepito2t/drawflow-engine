@@ -4,7 +4,7 @@ import { COMMANDS } from "../lib/commands";
 import { entryFor, runningModuleIds } from "../lib/runs-store";
 import { cancelRun } from "../lib/tauri/engine";
 import { bringToFront, openOutput } from "../lib/tauri/window";
-import { SETUP_TAB_ID } from "../lib/setup";
+import { AI_MODELS_TAB_ID, SETUP_TAB_ID } from "../lib/setup";
 import { useCommand } from "./command-registry";
 import { useNotificationCenter } from "./notification-center";
 import { usePresets } from "./presets-context";
@@ -135,4 +135,10 @@ export function useAppCommands({
     await bringToFront();
   }, [openSettings]);
   useCommand(COMMANDS.openSetup, setup);
+
+  const aiModels = useCallback(async () => {
+    openSettings(AI_MODELS_TAB_ID);
+    await bringToFront();
+  }, [openSettings]);
+  useCommand(COMMANDS.openModels, aiModels);
 }

@@ -54,6 +54,7 @@ Réponse (même `id`) :
 | `settings.open` | — | Ouvre les paramètres |
 | `assistant.toggle` | — | Ouvre ou ferme le panneau de l'assistant |
 | `setup.open` | — | Ouvre Paramètres → Installation |
+| `models.open` | — | Ouvre Paramètres → Modèles d'IA |
 | `update.install` | — | Installe la mise à jour disponible |
 
 ## Événements diffusés
