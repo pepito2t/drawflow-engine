@@ -25,4 +25,4 @@ def extract_file(path: Path, *, oda_executable: Path | None, cache_root: Path) -
 
     converter = OdaConverter(oda_executable or Path())
     dxf = ensure_dxf(path, FileCache(cache_root, DXF_CACHE_NAMESPACE), converter, collect)
-    return FileExtraction(parts=read_parts(dxf, path), warnings=warnings)
+    return FileExtraction(parts=read_parts(dxf, path, collect), warnings=warnings)

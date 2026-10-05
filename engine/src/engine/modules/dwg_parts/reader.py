@@ -8,6 +8,7 @@ from ezdxf.filemanagement import readfile
 from ezdxf.lldxf.const import DXFError
 
 from engine.core.errors import EngineError
+from engine.core.events import Emit, WarningEvent
 
 MAX_NESTING_DEPTH = 8
 ANONYMOUS_BLOCK_PREFIX = "*U"
@@ -28,14 +29,23 @@ class RawPart:
     source: Path
 
 
-def read_parts(dxf_path: Path, source: Path) -> list[RawPart]:
+def read_parts(dxf_path: Path, source: Path, emit: Emit) -> list[RawPart]:
     """Lists every block reference with its attributes, nested blocks included."""
     document = _open(dxf_path, source)
     parts: list[RawPart] = []
+    truncated: set[str] = set()
     for layout in document.layouts:
         for insert in layout.query("INSERT"):
             if isinstance(insert, Insert):
-                parts.extend(_collect(document, insert, layout.name, source, depth=0))
+                parts.extend(_collect(document, insert, layout.name, source, 0, truncated))
+    if truncated:
+        emit(
+            WarningEvent(
+                message=f"Blocs imbriqués au-delà de {MAX_NESTING_DEPTH} niveaux, contenu "
+                f"ignoré : {', '.join(sorted(truncated))}.",
+                file=str(source),
+            )
+        )
     return parts
 
 
@@ -69,20 +79,24 @@ def _open(dxf_path: Path, source: Path) -> Drawing:
 
 
 def _collect(
-    document: Drawing, insert: Insert, layout: str, source: Path, depth: int
+    document: Drawing, insert: Insert, layout: str, source: Path, depth: int, truncated: set[str]
 ) -> Iterator[RawPart]:
+    name = effective_block_name(document, insert.dxf.name)
     yield RawPart(
-        block=effective_block_name(document, insert.dxf.name),
+        block=name,
         attributes={attrib.dxf.tag.upper(): attrib.dxf.text.strip() for attrib in insert.attribs},
         count=insert.mcount,
         layout=layout,
         source=source,
     )
-    if depth >= MAX_NESTING_DEPTH:
-        return
     definition = document.blocks.get(insert.dxf.name)
     if definition is None:
         return
-    for nested in definition.query("INSERT"):
-        if isinstance(nested, Insert):
-            yield from _collect(document, nested, layout, source, depth + 1)
+    nested = [entity for entity in definition.query("INSERT") if isinstance(entity, Insert)]
+    if not nested:
+        return
+    if depth >= MAX_NESTING_DEPTH:
+        truncated.add(name)
+        return
+    for child in nested:
+        yield from _collect(document, child, layout, source, depth + 1, truncated)
