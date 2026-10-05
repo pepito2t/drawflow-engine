@@ -160,7 +160,9 @@ pub fn start_at_launch(app: &AppHandle) -> Result<(), BridgeError> {
 pub async fn integration_status(
     app: AppHandle,
     state: State<'_, IntegrationState>,
+    lock: State<'_, AccessLock>,
 ) -> Result<IntegrationStatus, BridgeError> {
+    lock.ensure_unlocked()?;
     let config = config::load(&config::config_file(&app)?);
     let address = state
         .server
@@ -216,6 +218,12 @@ pub fn integration_reply(
 }
 
 #[tauri::command]
-pub fn integration_publish(state: State<'_, IntegrationState>, event: serde_json::Value) {
+pub fn integration_publish(
+    state: State<'_, IntegrationState>,
+    lock: State<'_, AccessLock>,
+    event: serde_json::Value,
+) -> Result<(), BridgeError> {
+    lock.ensure_unlocked()?;
     state.broadcast(&ServerMessage::Event { event });
+    Ok(())
 }

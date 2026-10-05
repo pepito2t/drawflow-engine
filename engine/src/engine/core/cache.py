@@ -1,6 +1,7 @@
 import hashlib
 import os
 import sys
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 
@@ -55,10 +56,27 @@ class FileCache:
         if self._is_usable(entry, source, emit):
             return entry
         self._prepare_folder(entry.parent)
-        temporary = entry.with_name(entry.name + TEMPORARY_SUFFIX)
-        produce(source, temporary)
-        temporary.replace(entry)
+        temporary = self._temporary_path(entry)
+        try:
+            produce(source, temporary)
+            self._promote(temporary, entry, source, emit)
+        finally:
+            temporary.unlink(missing_ok=True)
         return entry
+
+    def _temporary_path(self, entry: Path) -> Path:
+        # One name per call: parallel workers may convert identical files at the same time.
+        return entry.with_name(f"{entry.name}.{os.getpid()}-{uuid.uuid4().hex}{TEMPORARY_SUFFIX}")
+
+    def _promote(self, temporary: Path, entry: Path, source: Path, emit: Emit) -> None:
+        if self._is_usable(entry, source, emit):
+            return
+        try:
+            temporary.replace(entry)
+        except PermissionError:
+            # Windows refuses to replace a file another worker is already reading.
+            if not self._is_usable(entry, source, emit):
+                raise
 
     def _is_usable(self, entry: Path, source: Path, emit: Emit) -> bool:
         try:

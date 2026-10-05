@@ -34,6 +34,8 @@ pub enum BridgeError {
     AccessHashing,
     #[error("Le fichier produit est introuvable : {0}")]
     OutputMissing(String),
+    #[error("Ce fichier n'a pas été produit par Drawflow : {0}")]
+    OutputNotAllowed(String),
     #[error("Impossible d'ouvrir le fichier : {0}")]
     Opener(#[from] tauri_plugin_opener::Error),
 }

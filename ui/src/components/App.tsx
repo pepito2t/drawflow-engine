@@ -130,16 +130,14 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
 
   const select = useCallback(
     (moduleId: string) => {
-      setSelectedId((previous) => {
-        for (const visited of [previous, moduleId]) {
-          if (visited !== null) {
-            dispatch({ type: "acknowledge", moduleId: visited });
-          }
+      for (const visited of [selectedId, moduleId]) {
+        if (visited !== null) {
+          dispatch({ type: "acknowledge", moduleId: visited });
         }
-        return moduleId;
-      });
+      }
+      setSelectedId(moduleId);
     },
-    [dispatch],
+    [dispatch, selectedId],
   );
   const openSettings = useCallback((tab?: string) => {
     setSettingsTab(tab ?? DEFAULT_SETTINGS_TAB);

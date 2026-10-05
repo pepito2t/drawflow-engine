@@ -70,7 +70,7 @@ pub fn assistant_chat(
     let (turn_id, mut receiver) =
         assistant.begin(|| Ok(app.shell().sidecar(SIDECAR_NAME)?.args(arguments).spawn()?))?;
     tauri::async_runtime::spawn(async move {
-        if let Err(error) = relay_events(&mut receiver, &on_event).await {
+        if let Err(error) = relay_events(&mut receiver, &on_event, |_| {}).await {
             eprintln!("Relais de l'assistant interrompu : {error}");
         }
         if let Err(error) = app.state::<AssistantTurn>().end(turn_id) {

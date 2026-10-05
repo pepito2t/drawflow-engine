@@ -1,4 +1,6 @@
 import hashlib
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -78,6 +80,34 @@ def test_failed_production_leaves_no_entry(tmp_path: Path, source: Path) -> None
         cache.get_or_create(source, ".dxf", failing, lambda _: None)
 
     assert not cache.entry_path(file_digest(source), ".dxf").exists()
+    assert list(cache.entry_path(file_digest(source), ".dxf").parent.iterdir()) == []
+
+
+def test_parallel_productions_of_identical_files_keep_the_entry_intact(
+    tmp_path: Path, source: Path
+) -> None:
+    cache = FileCache(tmp_path / "cache", "dxf")
+    workers = 4
+    expected = "CONTENU" * 50
+
+    def slow_producer(_: Path, target: Path) -> None:
+        with target.open("w", encoding="utf-8") as stream:
+            for _ in range(50):
+                stream.write("CONTENU")
+                stream.flush()
+                time.sleep(0.001)
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        entries = list(
+            pool.map(
+                lambda _: cache.get_or_create(source, ".dxf", slow_producer, lambda _: None),
+                range(workers),
+            )
+        )
+
+    assert len(set(entries)) == 1
+    assert entries[0].read_text(encoding="utf-8") == expected
+    assert [path.name for path in entries[0].parent.iterdir()] == [entries[0].name]
 
 
 def test_unwritable_cache_folder_is_reported(tmp_path: Path, source: Path) -> None:

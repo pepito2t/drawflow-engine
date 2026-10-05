@@ -9,6 +9,7 @@ use tempfile::NamedTempFile;
 
 use crate::access::AccessLock;
 use crate::error::BridgeError;
+use crate::outputs::KnownOutputs;
 use crate::paths::settings_file;
 use crate::runs::{Killable, RunId, RunRegistry};
 
@@ -188,7 +189,9 @@ pub(crate) fn start_streaming_run(
     })?;
     let task_run_id = run_id.clone();
     tauri::async_runtime::spawn(async move {
-        if let Err(error) = relay_events(&mut receiver, &on_event).await {
+        let outputs = app.state::<KnownOutputs>();
+        let remember = |line: &str| outputs.remember_from_line(line);
+        if let Err(error) = relay_events(&mut receiver, &on_event, remember).await {
             eprintln!("Relais des événements interrompu ({task_run_id}) : {error}");
         }
         let runs = app.state::<EngineRuns>();
@@ -264,10 +267,14 @@ pub(crate) fn path_argument(path: PathBuf) -> String {
 pub(crate) async fn relay_events(
     receiver: &mut tauri::async_runtime::Receiver<CommandEvent>,
     channel: &Channel<EngineMessage>,
+    on_stdout: impl Fn(&str),
 ) -> Result<(), BridgeError> {
     while let Some(event) = receiver.recv().await {
         let is_terminal = matches!(event, CommandEvent::Terminated(_));
         if let Some(message) = to_message(event) {
+            if let EngineMessage::Stdout { line } = &message {
+                on_stdout(line);
+            }
             channel.send(message)?;
         }
         if is_terminal {

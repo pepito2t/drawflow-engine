@@ -27,6 +27,7 @@ pub fn run() {
         .manage(AccessLock::default())
         .manage(AssistantTurn::default())
         .manage(IntegrationState::default())
+        .manage(outputs::KnownOutputs::default())
         .invoke_handler(tauri::generate_handler![
             access::lock_status,
             updates::updater_configured,
