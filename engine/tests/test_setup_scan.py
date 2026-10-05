@@ -36,10 +36,10 @@ def test_fresh_windows_with_winget_offers_direct_installs() -> None:
     assert items["stream-dock"].status == "optional"
 
 
-def test_without_package_manager_only_the_download_pages_are_offered() -> None:
+def test_without_package_manager_oda_still_installs_from_its_own_installer() -> None:
     items = report(FakeMachine())
 
-    assert action_ids(items["oda"]) == ["oda.open-page"]
+    assert action_ids(items["oda"]) == ["oda.install", "oda.open-page"]
     assert action_ids(items["model-server"]) == ["ollama.open-page"]
 
 
