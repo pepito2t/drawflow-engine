@@ -20,7 +20,7 @@ const setupReportSchema = z.object({
     z.object({
       id: z.string(),
       label: z.string(),
-      status: z.enum(["ok", "missing", "optional"]),
+      status: z.enum(["ok", "missing", "optional", "update"]),
       detail: z.string(),
       actions: z.array(setupActionSchema),
       help: z.string().nullable(),
@@ -40,6 +40,7 @@ export const ENGINE_ACTIONS = [
   "ollama.start",
   "model.pull",
   "streamdock.install-plugin",
+  "streamdock.install-autocad-plugin",
 ] as const;
 export type EngineSetupAction = (typeof ENGINE_ACTIONS)[number];
 

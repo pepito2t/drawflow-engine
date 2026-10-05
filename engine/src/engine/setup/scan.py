@@ -6,10 +6,14 @@ from pathlib import Path
 from engine.assistant.catalog import recommend
 from engine.core.settings_models import AssistantSettings
 from engine.setup.locations import (
+    AUTOCAD_PLUGIN,
+    DRAWFLOW_PLUGIN,
+    find_autocad,
     find_oda,
     ollama_installed,
     stream_dock_folder,
     stream_dock_plugin_installed,
+    stream_dock_plugin_version,
 )
 from engine.setup.machine import Machine
 from engine.setup.report import (
@@ -20,6 +24,7 @@ from engine.setup.report import (
     SetupReport,
     SystemInfo,
 )
+from engine.setup.stream_dock import AUTOCAD_PLUGIN_REPOSITORY
 
 ACTION_LABELS: dict[ActionId, str] = {
     "oda.install": "Installer",
@@ -31,12 +36,17 @@ ACTION_LABELS: dict[ActionId, str] = {
     "model.pull": "Télécharger",
     "models.open": "Choisir un modèle",
     "streamdock.install-plugin": "Installer le plugin",
+    "streamdock.install-autocad-plugin": "Installer le plugin",
     "streamdock.open-page": "Page de téléchargement",
+    "autocad-plugin.open-page": "Page du projet",
 }
+UPDATE_LABEL = "Mettre à jour"
+REINSTALL_LABEL = "Réinstaller"
 DOWNLOAD_PAGES: dict[ActionId, str] = {
     "oda.open-page": "https://www.opendesign.com/guestfiles/oda_file_converter",
     "ollama.open-page": "https://ollama.com/download",
     "streamdock.open-page": "https://mirabox.net/pages/download",
+    "autocad-plugin.open-page": AUTOCAD_PLUGIN_REPOSITORY,
 }
 
 
@@ -57,6 +67,8 @@ def build_report(
     oda_configured: Path | None,
     assistant: AssistantSettings,
     server: ModelServerState,
+    app_version: str | None = None,
+    autocad_plugin_latest: str | None = None,
 ) -> SetupReport:
     system = SystemInfo(os=machine.os, arch=machine.arch, package_manager=_manager(machine))
     items = [
@@ -65,7 +77,8 @@ def build_report(
         _with_help(
             _model_item(assistant, server, recommend(machine.memory_bytes)), PREREQUISITES_HELP
         ),
-        _with_help(_stream_dock_item(machine), STREAM_DOCK_HELP),
+        _with_help(_stream_dock_item(machine, app_version), STREAM_DOCK_HELP),
+        _with_help(_autocad_plugin_item(machine, autocad_plugin_latest), STREAM_DOCK_HELP),
     ]
     return SetupReport(system=system, items=items)
 
@@ -147,8 +160,8 @@ def _model_item(
     )
 
 
-def _stream_dock_item(machine: Machine) -> SetupItem:
-    label = "Plugin Stream Dock"
+def _stream_dock_item(machine: Machine, app_version: str | None) -> SetupItem:
+    label = "Plugin Drawflow pour Stream Dock"
     if stream_dock_folder(machine) is None:
         return SetupItem(
             id="stream-dock",
@@ -157,20 +170,68 @@ def _stream_dock_item(machine: Machine) -> SetupItem:
             detail="Facultatif : logiciel Stream Dock (Mirabox) non installé.",
             actions=_actions("streamdock.open-page"),
         )
-    if stream_dock_plugin_installed(machine):
+    if not stream_dock_plugin_installed(machine):
         return SetupItem(
             id="stream-dock",
             label=label,
-            status="ok",
-            detail="Installé. Réinstallez-le après une mise à jour de Drawflow.",
+            status="optional",
+            detail="Pilotez Drawflow depuis les touches du Stream Dock.",
             actions=_actions("streamdock.install-plugin"),
         )
+    installed = stream_dock_plugin_version(machine, DRAWFLOW_PLUGIN)
+    return _installed_plugin_item(
+        "stream-dock", label, "streamdock.install-plugin", installed, app_version
+    )
+
+
+def _autocad_plugin_item(machine: Machine, latest: str | None) -> SetupItem:
+    label = "Plugin AutoCAD pour Stream Dock"
+    if stream_dock_folder(machine) is None:
+        return SetupItem(
+            id="autocad-plugin",
+            label=label,
+            status="optional",
+            detail="Facultatif : logiciel Stream Dock (Mirabox) non installé.",
+            actions=_actions("autocad-plugin.open-page"),
+        )
+    autocad = (
+        "AutoCAD détecté."
+        if find_autocad(machine) is not None
+        else "AutoCAD (version complète, pas LT) non détecté sur ce poste."
+    )
+    if not stream_dock_plugin_installed(machine, AUTOCAD_PLUGIN):
+        return SetupItem(
+            id="autocad-plugin",
+            label=label,
+            status="optional",
+            detail=f"Macros, calques et bascules AutoCAD depuis le Stream Dock. {autocad}",
+            actions=_actions("streamdock.install-autocad-plugin", "autocad-plugin.open-page"),
+        )
+    installed = stream_dock_plugin_version(machine, AUTOCAD_PLUGIN)
+    item = _installed_plugin_item(
+        "autocad-plugin", label, "streamdock.install-autocad-plugin", installed, latest
+    )
+    return item.model_copy(update={"detail": f"{item.detail} {autocad}"})
+
+
+def _installed_plugin_item(
+    item_id: str, label: str, install: ActionId, installed: str | None, available: str | None
+) -> SetupItem:
+    version = f"Version {installed} installée." if installed else "Installé."
+    if available is not None and installed != available:
+        return SetupItem(
+            id=item_id,
+            label=label,
+            status="update",
+            detail=f"{version} Version {available} disponible.",
+            actions=[_action(install, UPDATE_LABEL)],
+        )
     return SetupItem(
-        id="stream-dock",
+        id=item_id,
         label=label,
-        status="optional",
-        detail="Pilotez Drawflow depuis les touches du Stream Dock.",
-        actions=_actions("streamdock.install-plugin"),
+        status="ok",
+        detail=f"{version} Redémarrez Stream Dock après chaque installation.",
+        actions=[_action(install, REINSTALL_LABEL)],
     )
 
 
@@ -201,7 +262,10 @@ def _oda_install_actions(machine: Machine) -> list[SetupAction]:
 
 
 def _actions(*ids: ActionId) -> list[SetupAction]:
-    return [
-        SetupAction(id=action, label=ACTION_LABELS[action], url=DOWNLOAD_PAGES.get(action))
-        for action in ids
-    ]
+    return [_action(action) for action in ids]
+
+
+def _action(action: ActionId, label: str | None = None) -> SetupAction:
+    return SetupAction(
+        id=action, label=label or ACTION_LABELS[action], url=DOWNLOAD_PAGES.get(action)
+    )

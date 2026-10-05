@@ -20,6 +20,8 @@ from engine.setup.commands import (
 )
 from engine.setup.installer_download import DownloadProgress
 from engine.setup.locations import (
+    AUTOCAD_PLUGIN,
+    DRAWFLOW_PLUGIN,
     OLLAMA_APP_MACOS,
     OLLAMA_PROGRAM,
     find_oda,
@@ -30,7 +32,11 @@ from engine.setup.oda_installer import install_oda
 from engine.setup.ollama import START_WAIT_SECONDS, pull_model, wait_until_up
 from engine.setup.ollama_installer import install_ollama_windows
 from engine.setup.report import ActionId
-from engine.setup.stream_dock import install_plugin
+from engine.setup.stream_dock import (
+    AUTOCAD_PLUGIN_ASSET_URL,
+    DRAWFLOW_PLUGIN_ASSET_URL,
+    install_plugin,
+)
 
 OLLAMA_CASK = "ollama"
 OLLAMA_APP_WINDOWS = Path("Programs") / "Ollama" / "ollama app.exe"
@@ -61,6 +67,7 @@ def run_action(action: str, context: SetupContext) -> None:
         "ollama.start": _start_ollama,
         "model.pull": _pull_model,
         "streamdock.install-plugin": _install_stream_dock_plugin,
+        "streamdock.install-autocad-plugin": _install_autocad_plugin,
     }
     if action not in handlers:
         raise InvalidInputError(f"Action d'installation inconnue : {action}.")
@@ -129,16 +136,28 @@ def _pull_model(context: SetupContext) -> str:
 
 
 def _install_stream_dock_plugin(context: SetupContext) -> str:
+    plugins = _stream_dock_plugins(context)
+    if context.app_version is None:
+        raise SetupError("Version de Drawflow inconnue : relancez l'installation depuis l'app.")
+    context.emit(LogEvent(message="Téléchargement du plugin Drawflow pour Stream Dock…"))
+    asset_url = DRAWFLOW_PLUGIN_ASSET_URL.format(version=context.app_version)
+    return install_plugin(plugins, DRAWFLOW_PLUGIN, asset_url, context.transport)
+
+
+def _install_autocad_plugin(context: SetupContext) -> str:
+    plugins = _stream_dock_plugins(context)
+    context.emit(LogEvent(message="Téléchargement du plugin AutoCAD pour Stream Dock…"))
+    return install_plugin(plugins, AUTOCAD_PLUGIN, AUTOCAD_PLUGIN_ASSET_URL, context.transport)
+
+
+def _stream_dock_plugins(context: SetupContext) -> Path:
     plugins = stream_dock_plugins_folder(context.machine)
     if plugins is None:
         raise SetupError(
             "Le logiciel Stream Dock est introuvable sur ce poste.",
             hint="Installez Stream Dock depuis la page de téléchargement de Mirabox.",
         )
-    if context.app_version is None:
-        raise SetupError("Version de Drawflow inconnue : relancez l'installation depuis l'app.")
-    context.emit(LogEvent(message="Téléchargement du plugin Stream Dock…"))
-    return install_plugin(plugins, context.app_version, context.transport)
+    return plugins
 
 
 def _ollama_launcher(machine: Machine) -> list[str]:

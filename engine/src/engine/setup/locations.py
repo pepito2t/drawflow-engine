@@ -1,5 +1,6 @@
 """Standard install locations of the third-party tools Drawflow relies on."""
 
+import json
 from pathlib import Path
 
 from engine.setup.machine import Machine
@@ -12,6 +13,10 @@ OLLAMA_APP_MACOS = Path("/Applications/Ollama.app")
 STREAM_DOCK_FOLDER_WINDOWS = Path("HotSpot") / "StreamDock"
 STREAM_DOCK_PLUGINS = "plugins"
 DRAWFLOW_PLUGIN = "ch.drawflow.sdPlugin"
+AUTOCAD_PLUGIN = "com.tmbk.streamdock.autocad.sdPlugin"
+PLUGIN_MANIFEST = "manifest.json"
+AUTOCAD_EXECUTABLE = "acad.exe"
+AUTODESK_FOLDER = "Autodesk"
 
 
 def find_oda(machine: Machine) -> Path | None:
@@ -48,6 +53,33 @@ def stream_dock_plugins_folder(machine: Machine) -> Path | None:
     return None if folder is None else folder / STREAM_DOCK_PLUGINS
 
 
-def stream_dock_plugin_installed(machine: Machine) -> bool:
+def stream_dock_plugin_installed(machine: Machine, plugin_id: str = DRAWFLOW_PLUGIN) -> bool:
     plugins = stream_dock_plugins_folder(machine)
-    return plugins is not None and machine.is_dir(plugins / DRAWFLOW_PLUGIN)
+    return plugins is not None and machine.is_dir(plugins / plugin_id)
+
+
+def stream_dock_plugin_version(machine: Machine, plugin_id: str) -> str | None:
+    plugins = stream_dock_plugins_folder(machine)
+    if plugins is None:
+        return None
+    manifest = machine.read_text(plugins / plugin_id / PLUGIN_MANIFEST)
+    if manifest is None:
+        return None
+    try:
+        version = json.loads(manifest).get("Version")
+    except (ValueError, AttributeError):
+        return None
+    return str(version) if version else None
+
+
+def find_autocad(machine: Machine) -> Path | None:
+    """Full AutoCAD only: LT ships acadlt.exe and exposes no COM automation."""
+    for variable in ("ProgramFiles", "ProgramFiles(x86)"):
+        root = machine.folder(variable)
+        if root is None:
+            continue
+        found = machine.glob(root / AUTODESK_FOLDER, f"AutoCAD */{AUTOCAD_EXECUTABLE}")
+        executables = [path for path in found if path.name.lower() == AUTOCAD_EXECUTABLE]
+        if executables:
+            return executables[-1]
+    return None

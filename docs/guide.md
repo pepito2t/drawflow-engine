@@ -35,7 +35,7 @@ En cas de souci : [Dépannage](#dépannage).
 |---|---|---|
 | ODA File Converter | Lire les fichiers DWG (les DXF n'en ont pas besoin) | [Installeur Windows](https://www.opendesign.com/guestfiles/get?filename=ODAFileConverter_QT6_vc16_amd64dll.msi) · [Page officielle](https://www.opendesign.com/guestfiles/oda_file_converter) |
 | Serveur du modèle local (Ollama ou LM Studio) et un modèle | Faire tourner l'assistant | [Ollama](https://ollama.com/download) |
-| Logiciel Stream Dock *(facultatif)* | Piloter Drawflow depuis un Stream Dock (Mirabox) | [Mirabox](https://mirabox.net/pages/download) |
+| Logiciel Stream Dock *(facultatif)* | Piloter Drawflow, et AutoCAD, depuis un Stream Dock (Mirabox) | [Mirabox](https://mirabox.net/pages/download) · [Plugin AutoCAD](https://github.com/pepito2t/streamdock_autocad) |
 
 - Sous Windows, **Installer** télécharge l'installeur officiel (dernière version) avec sa progression, puis l'installe ; Ollama fait environ 1,5 Go. Sous macOS, Ollama s'installe par Homebrew. Sinon, utilisez les liens ci-dessus.
 - Vous pouvez quitter l'écran pendant une installation ou un téléchargement : la progression est toujours là en revenant.
@@ -93,7 +93,9 @@ Drawflow fonctionne avec le **Stream Dock** de Mirabox (logiciel Stream Dock pou
 
 Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée et « Hors ligne » quand Drawflow est fermée ou que le jeton est faux.
 
-Après une mise à jour de Drawflow, cliquez de nouveau sur **Installer le plugin** puis redémarrez Stream Dock.
+**Plugin AutoCAD** : la ligne **Plugin AutoCAD pour Stream Dock** installe de la même façon le plugin [streamdock_autocad](https://github.com/pepito2t/streamdock_autocad) : macros, calques, bascules (ORTHO, accrochages…) et état d'AutoCAD sur les touches. Il faut AutoCAD complet (pas LT), ouvert pendant l'utilisation.
+
+**Mises à jour** : l'écran Installation affiche **Mise à jour** quand une version plus récente d'un plugin existe (après une mise à jour de Drawflow, ou une nouvelle version du plugin AutoCAD). Cliquez sur **Mettre à jour**, puis redémarrez Stream Dock.
 
 ## Code d'accès
 

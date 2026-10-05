@@ -20,18 +20,23 @@ class FakeMachine:
     home: Path = Path("/Users/dessin")
     memory: int | None = None
     folders: dict[str, Path] = field(default_factory=lambda: dict(FOLDERS))
+    contents: dict[Path, str] = field(default_factory=dict)
 
     def which(self, program: str) -> Path | None:
         return Path(program) if program in self.programs else None
 
     def is_file(self, path: Path) -> bool:
-        return path in self.files
+        return path in self.files or path in self.contents
+
+    def read_text(self, path: Path) -> str | None:
+        return self.contents.get(path)
 
     def is_dir(self, path: Path) -> bool:
-        return any(path == file or path in file.parents for file in self.files)
+        known = self.files | set(self.contents)
+        return any(path == file or path in file.parents for file in known)
 
     def glob(self, folder: Path, pattern: str) -> list[Path]:
-        return sorted(file for file in self.files if folder in file.parents)
+        return sorted(file for file in self.files | set(self.contents) if folder in file.parents)
 
     @property
     def memory_bytes(self) -> int | None:

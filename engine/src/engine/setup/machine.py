@@ -24,6 +24,8 @@ class Machine(Protocol):
 
     def is_dir(self, path: Path) -> bool: ...
 
+    def read_text(self, path: Path) -> str | None: ...
+
     def glob(self, folder: Path, pattern: str) -> list[Path]: ...
 
     def folder(self, variable: str) -> Path | None:
@@ -60,6 +62,12 @@ class LocalMachine:
 
     def is_dir(self, path: Path) -> bool:
         return path.is_dir()
+
+    def read_text(self, path: Path) -> str | None:
+        try:
+            return path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return None
 
     def glob(self, folder: Path, pattern: str) -> list[Path]:
         return sorted(folder.glob(pattern)) if folder.is_dir() else []

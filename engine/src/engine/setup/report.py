@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 from engine.setup.machine import OperatingSystem
 
-ItemStatus = Literal["ok", "missing", "optional"]
+ItemStatus = Literal["ok", "missing", "optional", "update"]
 ActionId = Literal[
     "oda.install",
     "oda.use-detected",
@@ -15,7 +15,9 @@ ActionId = Literal[
     "model.pull",
     "models.open",
     "streamdock.install-plugin",
+    "streamdock.install-autocad-plugin",
     "streamdock.open-page",
+    "autocad-plugin.open-page",
 ]
 PackageManager = Literal["winget", "brew"]
 

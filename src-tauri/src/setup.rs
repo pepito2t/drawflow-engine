@@ -9,11 +9,12 @@ use crate::runs::RunId;
 use crate::sidecar::{path_argument, start_streaming_run, EngineMessage, EngineRuns};
 
 /// Only the official download pages of the tools Drawflow relies on can be opened.
-const DOWNLOAD_PAGES: [&str; 4] = [
+const DOWNLOAD_PAGES: [&str; 5] = [
     "https://www.opendesign.com/",
     "https://ollama.com/",
     "https://mirabox.net/",
     "https://github.com/pepito2t/drawflow-engine/releases/",
+    "https://github.com/pepito2t/streamdock_autocad",
 ];
 
 /// Allow-listed installation fixes run by the engine.
@@ -31,6 +32,8 @@ pub enum SetupAction {
     ModelPull,
     #[serde(rename = "streamdock.install-plugin")]
     StreamDockInstallPlugin,
+    #[serde(rename = "streamdock.install-autocad-plugin")]
+    StreamDockInstallAutocadPlugin,
 }
 
 impl SetupAction {
@@ -42,6 +45,7 @@ impl SetupAction {
             Self::OllamaStart => "ollama.start",
             Self::ModelPull => "model.pull",
             Self::StreamDockInstallPlugin => "streamdock.install-plugin",
+            Self::StreamDockInstallAutocadPlugin => "streamdock.install-autocad-plugin",
         }
     }
 }
@@ -178,6 +182,9 @@ mod tests {
         assert!(is_download_page("https://ollama.com/download"));
         assert!(is_download_page(
             "https://github.com/pepito2t/drawflow-engine/releases/download/v0.3.0/ch.drawflow.streamDeckPlugin"
+        ));
+        assert!(is_download_page(
+            "https://github.com/pepito2t/streamdock_autocad/releases/latest"
         ));
         assert!(!is_download_page("https://ollama.com.evil.example/"));
         assert!(!is_download_page("file:///C:/Windows/System32/calc.exe"));

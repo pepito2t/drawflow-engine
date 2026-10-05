@@ -22,7 +22,12 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { Loader } from "./Spinner";
 
-const STATUS_LABELS = { ok: "Prêt", missing: "À configurer", optional: "Facultatif" } as const;
+const STATUS_LABELS = {
+  ok: "✓ Prêt",
+  missing: "À configurer",
+  optional: "Facultatif",
+  update: "Mise à jour",
+} as const;
 
 function loadReport(): Promise<SetupReport> {
   return scanSetup().then(parseSetupReport);

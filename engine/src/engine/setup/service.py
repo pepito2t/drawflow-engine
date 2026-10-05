@@ -12,6 +12,7 @@ from engine.core.settings import load_assistant_settings, load_general_settings
 from engine.setup.machine import LocalMachine, Machine
 from engine.setup.ollama import is_ollama
 from engine.setup.scan import ModelServerState, build_report
+from engine.setup.stream_dock import AUTOCAD_PLUGIN_LATEST_URL, latest_release_version
 
 # The scan must answer quickly: a local server that is up replies in milliseconds.
 SCAN_TIMEOUT = httpx.Timeout(3.0)
@@ -21,11 +22,20 @@ def scan(
     settings: Path,
     machine: Machine | None = None,
     transport: httpx.AsyncBaseTransport | None = None,
+    app_version: str | None = None,
 ) -> dict[str, Any]:
     general = load_general_settings(settings)
     assistant = load_assistant_settings(settings)
     server = anyio.run(_probe_server, assistant.model_server_url, transport)
-    report = build_report(machine or LocalMachine(), general.oda_converter_path, assistant, server)
+    autocad_latest = anyio.run(latest_release_version, AUTOCAD_PLUGIN_LATEST_URL, transport)
+    report = build_report(
+        machine or LocalMachine(),
+        general.oda_converter_path,
+        assistant,
+        server,
+        app_version,
+        autocad_latest,
+    )
     return report.model_dump(mode="json")
 
 

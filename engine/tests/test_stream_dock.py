@@ -2,15 +2,24 @@ import io
 import zipfile
 from pathlib import Path
 
+import anyio
 import httpx
 import pytest
 
 from engine.core.events import Event
 from engine.setup.actions import SetupContext, SetupError, run_action
-from engine.setup.stream_dock import StreamDockError, install_plugin
+from engine.setup.stream_dock import (
+    AUTOCAD_PLUGIN_ASSET_URL,
+    DRAWFLOW_PLUGIN_ASSET_URL,
+    StreamDockError,
+    install_plugin,
+    latest_release_version,
+)
 from engine.testing.fake_machine import FakeMachine
 
 PLUGIN = "ch.drawflow.sdPlugin"
+AUTOCAD_PLUGIN = "com.tmbk.streamdock.autocad.sdPlugin"
+ASSET_URL = DRAWFLOW_PLUGIN_ASSET_URL.format(version="0.7.0")
 
 
 def plugin_zip(*extra: tuple[str, bytes]) -> bytes:
@@ -32,7 +41,7 @@ def release(content: bytes, status: int = 200) -> httpx.MockTransport:
 
 
 def test_plugin_is_unpacked_into_stream_dock(tmp_path: Path) -> None:
-    summary = install_plugin(tmp_path, "0.7.0", release(plugin_zip()))
+    summary = install_plugin(tmp_path, PLUGIN, ASSET_URL, release(plugin_zip()))
 
     assert (tmp_path / PLUGIN / "manifest.json").is_file()
     assert (tmp_path / PLUGIN / "bin" / "plugin.js").read_bytes() == b"console.log('ok');"
@@ -44,7 +53,7 @@ def test_previous_plugin_is_replaced(tmp_path: Path) -> None:
     old.parent.mkdir(parents=True)
     old.write_text("old")
 
-    install_plugin(tmp_path, "0.7.0", release(plugin_zip()))
+    install_plugin(tmp_path, PLUGIN, ASSET_URL, release(plugin_zip()))
 
     assert not old.exists()
     assert sorted(path.name for path in tmp_path.iterdir()) == [PLUGIN]
@@ -57,7 +66,7 @@ def test_entries_outside_the_plugin_folder_are_never_written(tmp_path: Path) -> 
         ("../evil.txt", b"x"), (f"{PLUGIN}/../../evil2.txt", b"x"), ("other/x", b"x")
     )
 
-    install_plugin(plugins, "0.7.0", release(hostile))
+    install_plugin(plugins, PLUGIN, ASSET_URL, release(hostile))
 
     assert not (tmp_path / "evil.txt").exists()
     assert not (tmp_path / "evil2.txt").exists()
@@ -66,12 +75,12 @@ def test_entries_outside_the_plugin_folder_are_never_written(tmp_path: Path) -> 
 
 def test_missing_release_asset_is_explained(tmp_path: Path) -> None:
     with pytest.raises(StreamDockError, match="HTTP 404"):
-        install_plugin(tmp_path, "0.7.0", release(b"", status=404))
+        install_plugin(tmp_path, PLUGIN, ASSET_URL, release(b"", status=404))
 
 
 def test_unreadable_download_is_refused(tmp_path: Path) -> None:
     with pytest.raises(StreamDockError, match="illisible"):
-        install_plugin(tmp_path, "0.7.0", release(b"pas un zip"))
+        install_plugin(tmp_path, PLUGIN, ASSET_URL, release(b"pas un zip"))
     assert not (tmp_path / PLUGIN).exists()
 
 
@@ -104,3 +113,62 @@ def test_action_without_stream_dock_points_to_its_download_page(tmp_path: Path) 
 
     with pytest.raises(SetupError, match="Stream Dock est introuvable"):
         run_action("streamdock.install-plugin", context)
+
+
+def autocad_release(content: bytes) -> httpx.MockTransport:
+    def handle(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == AUTOCAD_PLUGIN_ASSET_URL
+        return httpx.Response(200, content=content)
+
+    return httpx.MockTransport(handle)
+
+
+def autocad_zip() -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr(f"{AUTOCAD_PLUGIN}/manifest.json", b'{"Version": "1.2.0"}')
+        archive.writestr(f"{AUTOCAD_PLUGIN}/plugin.exe", b"MZ")
+    return buffer.getvalue()
+
+
+def test_autocad_plugin_installs_from_its_latest_release(tmp_path: Path) -> None:
+    roaming = tmp_path / "Roaming"
+    machine = FakeMachine(files={roaming / "HotSpot" / "StreamDock" / "config.json"})
+    machine.folders["APPDATA"] = roaming
+    events: list[Event] = []
+    context = SetupContext(
+        settings=tmp_path / "settings.json",
+        emit=events.append,
+        machine=machine,
+        transport=autocad_release(autocad_zip()),
+    )
+
+    run_action("streamdock.install-autocad-plugin", context)
+
+    plugin = roaming / "HotSpot" / "StreamDock" / "plugins" / AUTOCAD_PLUGIN
+    assert (plugin / "plugin.exe").read_bytes() == b"MZ"
+    assert events[-1].type == "result"
+
+
+def _latest(transport: httpx.MockTransport) -> str | None:
+    return anyio.run(latest_release_version, "https://github.com/x/y/releases/latest", transport)
+
+
+def test_latest_release_version_comes_from_the_tag_redirect() -> None:
+    redirect = httpx.MockTransport(
+        lambda _: httpx.Response(
+            302, headers={"location": "https://github.com/x/y/releases/tag/v1.3.0"}
+        )
+    )
+
+    assert _latest(redirect) == "1.3.0"
+
+
+def test_latest_release_version_is_unknown_without_release_or_network() -> None:
+    no_release = httpx.MockTransport(lambda _: httpx.Response(200))
+
+    def offline(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("offline", request=request)
+
+    assert _latest(no_release) is None
+    assert _latest(httpx.MockTransport(offline)) is None
