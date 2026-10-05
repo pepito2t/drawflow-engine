@@ -11,7 +11,7 @@ MAX_BATCH_SIZE = 32
 DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10
 MAX_NOTIFICATION_THRESHOLD_SECONDS = 3600
 DEFAULT_MODEL_SERVER_URL = "http://127.0.0.1:11434/v1"
-DEFAULT_MODEL_NAME = "qwen2.5:7b"
+DEFAULT_MODEL_NAME = "qwen3.5:9b"
 LOCAL_HOST_NAMES = {"localhost"}
 WEB_SCHEMES = {"http", "https"}
 
@@ -71,7 +71,7 @@ class AssistantSettings(SettingsSection):
         "text",
         label="Modèle",
         default=DEFAULT_MODEL_NAME,
-        description="Nom du modèle installé, par exemple qwen2.5:7b pour Ollama.",
+        description="Nom du modèle installé, par exemple qwen3.5:9b pour Ollama.",
         min_length=1,
     )
 

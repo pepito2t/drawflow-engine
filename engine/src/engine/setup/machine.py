@@ -33,6 +33,11 @@ class Machine(Protocol):
     @property
     def home(self) -> Path: ...
 
+    @property
+    def memory_bytes(self) -> int | None:
+        """Installed RAM, or None when the system does not tell."""
+        ...
+
 
 @dataclass(frozen=True)
 class LocalMachine:
@@ -66,3 +71,37 @@ class LocalMachine:
     @property
     def home(self) -> Path:
         return Path.home()
+
+    @property
+    def memory_bytes(self) -> int | None:
+        if sys.platform == "win32":
+            return _windows_memory_bytes()
+        try:
+            return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
+        except (ValueError, OSError):
+            return None
+
+
+def _windows_memory_bytes() -> int | None:
+    if sys.platform != "win32":
+        return None
+    import ctypes
+
+    class MemoryStatus(ctypes.Structure):
+        _fields_ = [  # MEMORYSTATUSEX layout
+            ("length", ctypes.c_ulong),
+            ("memory_load", ctypes.c_ulong),
+            ("total_physical", ctypes.c_ulonglong),
+            ("available_physical", ctypes.c_ulonglong),
+            ("total_page_file", ctypes.c_ulonglong),
+            ("available_page_file", ctypes.c_ulonglong),
+            ("total_virtual", ctypes.c_ulonglong),
+            ("available_virtual", ctypes.c_ulonglong),
+            ("available_extended_virtual", ctypes.c_ulonglong),
+        ]
+
+    status = MemoryStatus()
+    status.length = ctypes.sizeof(MemoryStatus)
+    if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+        return None
+    return int(status.total_physical)

@@ -13,6 +13,7 @@ ActionId = Literal[
     "ollama.start",
     "ollama.open-page",
     "model.pull",
+    "models.open",
     "streamdeck.install-plugin",
     "streamdeck.open-page",
 ]

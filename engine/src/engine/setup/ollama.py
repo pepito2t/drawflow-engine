@@ -10,6 +10,8 @@ from engine.assistant.errors import AssistantError
 
 OPENAI_PATH_SUFFIX = "/v1"
 PULL_PATH = "/api/pull"
+TAGS_PATH = "/api/tags"
+DELETE_PATH = "/api/delete"
 VERSION_PATH = "/api/version"
 # A model is several gigabytes: only the gap between two chunks is bounded.
 PULL_TIMEOUT = httpx.Timeout(connect=5.0, read=300.0, write=30.0, pool=5.0)
@@ -82,3 +84,28 @@ def _report(update: dict[str, object], model: str, on_percent: OnPercent) -> Non
     status = str(update.get("status", ""))
     if isinstance(total, int) and isinstance(completed, int) and total > 0:
         on_percent(completed * PERCENT // total, status)
+
+
+async def installed_sizes(
+    base_url: str, transport: httpx.AsyncBaseTransport | None = None
+) -> dict[str, int]:
+    """Installed models and their size on disk, in bytes."""
+    async with httpx.AsyncClient(timeout=PROBE_TIMEOUT, transport=transport) as http:
+        response = await http.get(api_root(base_url) + TAGS_PATH)
+    try:
+        return {str(model["name"]): int(model["size"]) for model in response.json()["models"]}
+    except (ValueError, KeyError, TypeError) as error:
+        raise AssistantError("Liste des modèles d'Ollama illisible.") from error
+
+
+async def delete_model(
+    base_url: str, model: str, transport: httpx.AsyncBaseTransport | None = None
+) -> None:
+    async with httpx.AsyncClient(timeout=PROBE_TIMEOUT, transport=transport) as http:
+        response = await http.request(
+            "DELETE", api_root(base_url) + DELETE_PATH, json={"model": model}
+        )
+    if not response.is_success:
+        raise AssistantError(
+            f"Ollama n'a pas pu supprimer « {model} » (HTTP {response.status_code})."
+        )

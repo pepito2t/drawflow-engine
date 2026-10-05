@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from engine.assistant.catalog import recommend
 from engine.core.settings_models import AssistantSettings
 from engine.setup.locations import (
     find_oda,
@@ -28,6 +29,7 @@ ACTION_LABELS: dict[ActionId, str] = {
     "ollama.start": "Démarrer",
     "ollama.open-page": "Page de téléchargement",
     "model.pull": "Télécharger",
+    "models.open": "Choisir un modèle",
     "streamdeck.install-plugin": "Installer le plugin",
     "streamdeck.open-page": "Page de téléchargement",
 }
@@ -60,7 +62,7 @@ def build_report(
     items = [
         _oda_item(machine, system, oda_configured),
         _model_server_item(machine, system, assistant, server),
-        _model_item(assistant, server),
+        _model_item(assistant, server, recommend(machine.memory_bytes)),
         _stream_deck_item(machine),
     ]
     return SetupReport(system=system, items=items)
@@ -117,7 +119,9 @@ def _model_server_item(
     )
 
 
-def _model_item(assistant: AssistantSettings, server: ModelServerState) -> SetupItem:
+def _model_item(
+    assistant: AssistantSettings, server: ModelServerState, recommended: str
+) -> SetupItem:
     label = f"Modèle {assistant.model}"
     if not server.reachable:
         return SetupItem(
@@ -130,8 +134,8 @@ def _model_item(assistant: AssistantSettings, server: ModelServerState) -> Setup
             id="model",
             label=label,
             status="missing",
-            detail="Pas encore téléchargé (plusieurs Go).",
-            actions=_actions("model.pull"),
+            detail=f"Pas encore téléchargé. Recommandé pour ce poste : {recommended}.",
+            actions=_actions("model.pull", "models.open"),
         )
     return SetupItem(
         id="model",

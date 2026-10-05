@@ -32,6 +32,8 @@ ASSISTANT_ACTIONS = {
     "models": "Modèles disponibles sur le serveur local (JSON).",
     "history-get": "Conversation enregistrée (JSON).",
     "history-save": "Enregistre la conversation en cours (JSON).",
+    "catalog": "Modèles conseillés, installés et recommandé pour ce poste (JSON).",
+    "model-delete": "Supprime un modèle d'Ollama (JSON).",
 }
 
 
@@ -85,6 +87,9 @@ def _build_parser() -> argparse.ArgumentParser:
     assistant_commands = assistant_parser.add_subparsers(dest="assistant_command", required=True)
     for action, help_text in ASSISTANT_ACTIONS.items():
         _add_request_parser(assistant_commands, action, help_text)
+    pull_parser = assistant_commands.add_parser("pull", help="Télécharge un modèle (NDJSON).")
+    pull_parser.add_argument("model")
+    pull_parser.add_argument("--settings", type=Path, required=True)
 
     setup_parser = commands.add_parser("setup", help="Prérequis de l'installation.")
     setup_commands = setup_parser.add_subparsers(dest="setup_command", required=True)
@@ -116,7 +121,7 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
     elif arguments.command == "mcp":
         _serve_mcp(arguments.settings)
     elif arguments.command == "assistant":
-        _assistant(arguments)
+        _assistant(arguments, emit)
     elif arguments.command == "setup":
         _setup(arguments, emit)
     elif arguments.command == "presets":
@@ -156,10 +161,16 @@ def _serve_mcp(settings: Path) -> None:
     serve(settings)
 
 
-def _assistant(arguments: argparse.Namespace) -> None:
-    from engine.assistant import history, service
+def _assistant(arguments: argparse.Namespace, emit: Emit) -> None:
+    from engine.assistant import history, models, service
 
-    if arguments.assistant_command == "models":
+    if arguments.assistant_command == "catalog":
+        _write_json(models.catalog(arguments.settings))
+    elif arguments.assistant_command == "pull":
+        models.pull(arguments.settings, arguments.model, emit)
+    elif arguments.assistant_command == "model-delete":
+        _write_json(models.remove(arguments.settings, _request(arguments)))
+    elif arguments.assistant_command == "models":
         _write_json(service.list_models(arguments.settings))
     elif arguments.assistant_command == "history-get":
         _write_json(history.read_history(arguments.settings))
