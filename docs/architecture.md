@@ -66,7 +66,8 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Modules importés avant la boucle stdio MCP | Sous Windows, un import pendant une lecture bloquante de stdin figeait le serveur | #82 |
 | Sidecar PyInstaller en dossier (`--onedir`), `_internal` livré en ressource à côté de l'exécutable ; pipelines importés à la demande | Un `--onefile` se décompresse à chaque appel (lent sous Windows, Defender) ; lister ou lire les réglages n'a pas besoin d'ezdxf/openpyxl/pdfplumber | #116 |
 | Installations via winget / Homebrew, commandes en liste d'arguments | Sources officielles et intégrité vérifiée, pas d'injection shell | #88 |
-| ODA installé par le MSI du site de l'éditeur (nom sans version), pas par winget | Le manifeste winget pointe vers des versions retirées (404) ; le lien sans version suit toujours la dernière | #98 |
+| ODA et Ollama installés depuis l'installeur officiel (lien sans version), pas par winget | winget pointe vers des versions retirées (404) et n'affiche aucune progression ; le lien sans version suit toujours la dernière | #114, #119 |
+| État des installations et téléchargements de modèles au niveau de l'application | Un traitement de plusieurs minutes survit au changement d'écran | #119 |
 | Pages de téléchargement en liste blanche côté Rust | L'UI ne peut pas ouvrir une URL arbitraire | #90 |
 | Plugin pour Stream Dock (Mirabox), installé par Drawflow dans `%APPDATA%\HotSpot\StreamDock\plugins` | C'est l'appareil de l'utilisateur ; même protocole que le SDK Stream Deck, sans fichier d'installation à double-cliquer | #109 |
 | Délais maximum en CI, tests et requêtes MCP | Un blocage échoue vite au lieu de figer la CI ou l'application | #82 |

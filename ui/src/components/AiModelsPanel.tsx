@@ -26,7 +26,7 @@ function loadCatalog(): Promise<ModelCatalog> {
 
 export function AiModelsPanel() {
   const { id, promise, retry } = useRetryablePromise(loadCatalog);
-  const { run, start } = useSetupRun(retry);
+  const { run, start } = useSetupRun("models", retry);
   const download = (model: string) => {
     start(model, (onMessage) => pullModel(model, onMessage));
   };

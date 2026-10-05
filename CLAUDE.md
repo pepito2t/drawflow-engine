@@ -15,7 +15,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
       cli.py              # list-modules, run
       core/               # contrat de module, événements, registry, config, erreurs
       assistant/          # serveur MCP, client du modèle local, boucle de l'assistant
-      setup/              # analyse du poste et installations (winget, Ollama…)
+      setup/              # analyse du poste et installations (ODA, Ollama, modèles, plugin)
       modules/<id>/       # une fonctionnalité = un dossier
         manifest.py       # id, nom, description, version
         schema.py         # entrées/sorties pydantic

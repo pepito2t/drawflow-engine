@@ -4,6 +4,7 @@ import httpx
 import pytest
 
 from engine.setup.commands import CommandOutcome
+from engine.setup.installer_download import InstallerDownloadError
 from engine.setup.oda_installer import ODA_MSI_URL, OdaInstallError, install_oda
 
 MSI_SIZE = 4000
@@ -52,5 +53,5 @@ def test_offline_download_is_readable() -> None:
     def refuse(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("offline", request=request)
 
-    with pytest.raises(OdaInstallError, match="impossible"):
+    with pytest.raises(InstallerDownloadError, match="impossible"):
         install_oda(lambda _: CommandOutcome(0, ""), lambda _: None, httpx.MockTransport(refuse))

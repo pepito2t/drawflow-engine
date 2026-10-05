@@ -1,5 +1,6 @@
 import { Suspense, use, useCallback, useState } from "react";
 import { RunsProvider, useRunsStore } from "../hooks/runs-context";
+import { SetupRunsProvider } from "../hooks/setup-runs-context";
 import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { CommandProvider } from "../hooks/command-registry";
@@ -85,13 +86,15 @@ function CatalogApp() {
         }
       >
         <RunsProvider>
-          <NotificationProvider>
-            <CommandProvider>
-              <PresetsProvider presetsPromise={presetsPromise}>
-                <CatalogView catalogPromise={promise} />
-              </PresetsProvider>
-            </CommandProvider>
-          </NotificationProvider>
+          <SetupRunsProvider>
+            <NotificationProvider>
+              <CommandProvider>
+                <PresetsProvider presetsPromise={presetsPromise}>
+                  <CatalogView catalogPromise={promise} />
+                </PresetsProvider>
+              </CommandProvider>
+            </NotificationProvider>
+          </SetupRunsProvider>
         </RunsProvider>
       </Suspense>
     </ErrorBoundary>

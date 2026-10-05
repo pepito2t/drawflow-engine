@@ -37,7 +37,8 @@ En cas de souci : [Dépannage](#dépannage).
 | Serveur du modèle local (Ollama ou LM Studio) et un modèle | Faire tourner l'assistant | [Ollama](https://ollama.com/download) |
 | Logiciel Stream Dock *(facultatif)* | Piloter Drawflow depuis un Stream Dock (Mirabox) | [Mirabox](https://mirabox.net/pages/download) |
 
-- ODA s'installe depuis le site de l'éditeur (dernière version), Ollama par winget (Windows) ou Homebrew (macOS). Sans eux, utilisez les liens ci-dessus.
+- Sous Windows, **Installer** télécharge l'installeur officiel (dernière version) avec sa progression, puis l'installe ; Ollama fait environ 1,5 Go. Sous macOS, Ollama s'installe par Homebrew. Sinon, utilisez les liens ci-dessus.
+- Vous pouvez quitter l'écran pendant une installation ou un téléchargement : la progression est toujours là en revenant.
 - Drawflow demande confirmation avant d'installer un logiciel tiers (vous acceptez sa licence) et avant de télécharger un modèle (plusieurs Go).
 - **Analyser à nouveau** après une installation manuelle.
 

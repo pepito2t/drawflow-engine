@@ -30,7 +30,7 @@ function loadReport(): Promise<SetupReport> {
 
 export function SetupPanel({ onOpenTab }: { onOpenTab: (tabId: string) => void }) {
   const { id, promise, retry } = useRetryablePromise(loadReport);
-  const { run, start } = useSetupRun(retry);
+  const { run, start } = useSetupRun("setup", retry);
   return (
     <section className="settings-section">
       <div className="setup-header">

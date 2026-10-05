@@ -4,19 +4,19 @@ from pathlib import Path
 
 import httpx
 import pytest
+from httpx import MockTransport
 
 from engine.assistant.errors import AssistantError
-from engine.core.errors import InvalidInputError
+from engine.core.errors import EngineError, InvalidInputError
 from engine.core.events import Event
 from engine.core.settings import load_general_settings
 from engine.setup.actions import SetupContext, SetupError, run_action
 from engine.setup.commands import CommandOutcome
-from engine.setup.oda_installer import OdaInstallError
+from engine.setup.installer_download import InstallerDownloadError
 from engine.testing.fake_machine import LOCALAPPDATA, PROGRAM_FILES, FakeMachine
 
 ODA = PROGRAM_FILES / "ODA" / "ODAFileConverter 26.4.0" / "ODAFileConverter.exe"
 OLLAMA_APP = LOCALAPPDATA / "Programs" / "Ollama" / "ollama app.exe"
-WINGET_ALREADY_INSTALLED = 0x8A150061
 NO_WAIT = 0.05
 
 
@@ -81,7 +81,7 @@ def test_oda_install_does_not_depend_on_winget(tmp_path: Path) -> None:
 def test_oda_removed_from_the_site_points_to_the_download_page(tmp_path: Path) -> None:
     recorder = Recorder(FakeMachine())
 
-    with pytest.raises(OdaInstallError, match="HTTP 404") as caught:
+    with pytest.raises(InstallerDownloadError, match="HTTP 404") as caught:
         run_action("oda.install", context(tmp_path, recorder, [], _oda_site(404)))
     assert caught.value.hint is not None
     assert "Page de téléchargement" in caught.value.hint
@@ -93,38 +93,33 @@ def test_oda_install_is_windows_only(tmp_path: Path) -> None:
         run_action("oda.install", context(tmp_path, Recorder(FakeMachine(os="macos")), []))
 
 
-def test_already_installed_package_is_not_a_failure(tmp_path: Path) -> None:
-    machine = FakeMachine(programs={"winget", "ollama"})
-    recorder = Recorder(machine, code=WINGET_ALREADY_INSTALLED)
-    ollama_up = httpx.MockTransport(lambda _: httpx.Response(200, json={"version": "0.12.0"}))
+def _ollama_site(request: httpx.Request) -> httpx.Response:
+    if request.url.path.endswith("OllamaSetup.exe"):
+        return httpx.Response(200, content=b"setup")
+    return httpx.Response(200, json={"version": "0.12.0"})
 
-    run_action("ollama.install", context(tmp_path, recorder, [], ollama_up))
 
-    assert recorder.commands[0][:4] == ["winget", "install", "--id", "Ollama.Ollama"]
+def test_windows_installs_ollama_from_its_own_setup_then_starts_it(tmp_path: Path) -> None:
+    recorder = Recorder(FakeMachine(programs={"ollama"}))
+    events: list[Event] = []
+
+    run_action("ollama.install", context(tmp_path, recorder, events, MockTransport(_ollama_site)))
+
+    setup, *flags = recorder.commands[0]
+    assert setup.endswith("OllamaSetup.exe")
+    assert "/VERYSILENT" in flags
+    assert recorder.commands[1] == ["ollama", "serve"]
+    assert any(event.type == "progress" for event in events)
+    assert events[-1].type == "result"
 
 
 def test_failed_install_explains_with_the_end_of_the_installer_output(tmp_path: Path) -> None:
-    recorder = Recorder(FakeMachine(programs={"winget"}), code=1)
+    recorder = Recorder(FakeMachine(), code=1)
 
-    with pytest.raises(SetupError, match="a échoué") as caught:
-        run_action("ollama.install", context(tmp_path, recorder, []))
+    with pytest.raises(EngineError, match="a échoué") as caught:
+        run_action("ollama.install", context(tmp_path, recorder, [], MockTransport(_ollama_site)))
     assert caught.value.hint is not None
     assert "0x80070005" in caught.value.hint
-
-
-def test_removed_download_points_to_the_official_page(tmp_path: Path) -> None:
-    http_not_found = 2149122452
-    recorder = Recorder(FakeMachine(programs={"winget"}), code=http_not_found)
-
-    with pytest.raises(SetupError, match="HTTP 404") as caught:
-        run_action("ollama.install", context(tmp_path, recorder, []))
-    assert caught.value.hint is not None
-    assert "Page de téléchargement" in caught.value.hint
-
-
-def test_install_without_winget_points_to_the_download_page(tmp_path: Path) -> None:
-    with pytest.raises(SetupError, match="winget"):
-        run_action("ollama.install", context(tmp_path, Recorder(FakeMachine()), []))
 
 
 def test_macos_installs_ollama_with_homebrew(tmp_path: Path) -> None:
