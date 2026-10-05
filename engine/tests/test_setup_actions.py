@@ -83,6 +83,16 @@ def test_failed_install_explains_with_the_end_of_the_installer_output(tmp_path: 
     assert "0x80070005" in caught.value.hint
 
 
+def test_removed_download_points_to_the_official_page(tmp_path: Path) -> None:
+    http_not_found = 2149122452
+    recorder = Recorder(FakeMachine(programs={"winget"}), code=http_not_found)
+
+    with pytest.raises(SetupError, match="HTTP 404") as caught:
+        run_action("oda.install", context(tmp_path, recorder, []))
+    assert caught.value.hint is not None
+    assert "Page de téléchargement" in caught.value.hint
+
+
 def test_install_without_winget_points_to_the_download_page(tmp_path: Path) -> None:
     with pytest.raises(SetupError, match="winget"):
         run_action("oda.install", context(tmp_path, Recorder(FakeMachine()), []))
