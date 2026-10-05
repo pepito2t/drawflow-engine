@@ -1,53 +1,55 @@
 # drawflow-engine
 
-Application desktop Windows qui automatise les tâches d'un dessinateur en façade :
+Windows desktop application that automates a façade draftsman's tasks:
 
-- **Liste de pièces** : plans DWG/DXF → liste Excel des pièces et quantités.
-- **Rapport** : plans PDF → rapport Word (cartouche, références).
-- **Soumission** : soumissions XLSX ou PDF avec XLSX joint → tableau normalisé.
+- **Parts list**: DWG/DXF drawings → Excel list of parts and quantities.
+- **Report**: PDF drawings → Word report (title block, references).
+- **Submission**: XLSX submissions, or PDF with an embedded XLSX → normalized table.
 
-S'y ajoutent un **assistant local** (modèle d'IA sur le poste, rien ne sort de la machine), un **écran Installation** qui installe les prérequis en un clic, des **préréglages**, et le pilotage par **Stream Dock** (Mirabox).
+It also ships a **local assistant** (AI model running on the workstation, nothing leaves the machine), a **Setup screen** that installs the prerequisites in one click, **presets**, and control from a **Stream Dock** (Mirabox).
 
-Stack : Tauri 2 · React + TypeScript · moteur Python (sidecar PyInstaller).
+Stack: Tauri 2 · React + TypeScript · Python engine (PyInstaller sidecar).
+
+The application and its user-facing documentation are in French (English UI: #121).
 
 ## Documentation
 
-| Document | Pour qui | Contenu |
+| Document | Audience | Content |
 |---|---|---|
-| [Guide utilisateur](docs/guide.md) | Utilisateur | Installer, utiliser chaque fonctionnalité, assistant, Stream Dock, dépannage |
-| [Architecture](docs/architecture.md) | Développeur | Vue d'ensemble, flux principaux, décisions et leurs raisons, CI/CD |
-| [API locale](docs/api-locale.md) | Intégrations | Protocole WebSocket (Stream Dock, outils tiers) |
-| [Historique des versions](CHANGELOG.md) | Tous | Contenu de chaque version |
-| [CLAUDE.md](CLAUDE.md) | Développeur | Règles de développement et commandes |
+| [User guide](docs/guide.md) (FR) | Users | Install, use each feature, assistant, Stream Dock, troubleshooting |
+| [Architecture](docs/architecture.md) (FR) | Developers | Overview, main flows, decisions and their reasons, CI/CD |
+| [Local API](docs/api-locale.md) (FR) | Integrations | WebSocket protocol (Stream Dock, third-party tools) |
+| [Changelog](CHANGELOG.md) (FR) | Everyone | Content of each version |
+| [CLAUDE.md](CLAUDE.md) (FR) | Developers | Development rules and commands |
 
-Règles de la documentation :
+Documentation rules:
 
-1. Un fichier par public, et une information à un seul endroit ; ailleurs, un lien.
-2. Pas de valeurs que le code connaît déjà (réglages par défaut, listes de champs, versions) : on renvoie à l'application ou au code.
-3. Le pourquoi plutôt que le quoi : chaque choix structurant va dans « Décisions » de l'architecture (une ligne, la raison, la PR).
-4. Taille maximum : README ~80 lignes, guide et architecture ~300 lignes chacun. Au-delà, on coupe ; on ne crée un nouveau fichier que pour un nouveau public ou un contrat externe.
-5. Mise à jour dans la PR qui change le comportement : `CHANGELOG.md` toujours, les autres documents s'ils sont concernés.
+1. One file per audience, and each piece of information in a single place; elsewhere, a link.
+2. No values the code already knows (defaults, field lists, versions): point to the application or the code.
+3. The why rather than the what: every structuring choice goes to "Décisions" in the architecture document (one line, the reason, the PR).
+4. Maximum size: README ~80 lines, guide and architecture ~300 lines each. Beyond that, cut; a new file only for a new audience or an external contract.
+5. Updated in the PR that changes the behavior: `CHANGELOG.md` always, the other documents when affected.
 
-## Démarrer en développement
+## Development
 
-Prérequis : Node 22 + pnpm, Python 3.12 + uv, Rust stable.
+Prerequisites: Node 22 + pnpm, Python 3.12 + uv, Rust stable.
 
 ```bash
 pnpm install
 (cd engine && uv sync)
-pnpm dev            # construit le sidecar puis lance l'application
+pnpm dev            # builds the sidecar, then starts the application
 ```
 
-Tests et vérifications : voir la section « Commandes » de [CLAUDE.md](CLAUDE.md). En développement, le code d'accès et l'updater sont désactivés.
+Tests and checks: see the "Commandes" section of [CLAUDE.md](CLAUDE.md). In development, the access code and the updater are disabled.
 
-## Publier une version
+## Releasing
 
-1. `python scripts/version.py bump X.Y.Z` (UI, Tauri, Rust, moteur, plugin Stream Dock), commit via PR.
-2. Une fois mergé : `git tag vX.Y.Z && git push origin vX.Y.Z`.
-3. Le workflow `Release` construit l'installeur Windows (NSIS), publie la release avec `latest.json` signé et y joint le plugin Stream Dock `ch.drawflow.sdPlugin.zip`.
+1. `python scripts/version.py bump X.Y.Z` (UI, Tauri, Rust, engine, Stream Dock plugin), commit through a PR.
+2. Once merged: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+3. The `Release` workflow builds the Windows installer (NSIS), publishes the release with a signed `latest.json`, and attaches the Stream Dock plugin `ch.drawflow.sdPlugin.zip`.
 
-Prérequis (une fois) :
-- `pnpm tauri signer generate`, puis les secrets `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, et la variable `UPDATER_PUBKEY` (clé publique).
-- Pour publier les releases dans un autre dépôt public : variables `RELEASES_OWNER` et `RELEASES_REPO`, secret `RELEASES_TOKEN` (droit `contents:write` sur ce dépôt).
+One-time prerequisites:
+- `pnpm tauri signer generate`, then the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and the variable `UPDATER_PUBKEY` (public key).
+- To publish releases in another public repository: variables `RELEASES_OWNER` and `RELEASES_REPO`, secret `RELEASES_TOKEN` (`contents:write` on that repository).
 
-L'endpoint de mise à jour (`releases/latest/download/latest.json`) ignore les pré-releases.
+The update endpoint (`releases/latest/download/latest.json`) ignores pre-releases.
