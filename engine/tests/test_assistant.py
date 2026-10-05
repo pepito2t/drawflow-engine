@@ -148,7 +148,7 @@ def test_models_report_whether_the_configured_model_is_installed(tmp_path: Path)
 
     assert models == {
         "server_url": BASE_URL,
-        "model": "qwen2.5:7b",
+        "model": "qwen3.5:9b",
         "available": ["llama3.1:8b"],
         "installed": False,
     }

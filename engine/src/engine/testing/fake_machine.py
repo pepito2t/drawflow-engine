@@ -18,6 +18,7 @@ class FakeMachine:
     programs: set[str] = field(default_factory=set)
     files: set[Path] = field(default_factory=set)
     home: Path = Path("/Users/dessin")
+    memory: int | None = None
 
     def which(self, program: str) -> Path | None:
         return Path(program) if program in self.programs else None
@@ -30,6 +31,10 @@ class FakeMachine:
 
     def glob(self, folder: Path, pattern: str) -> list[Path]:
         return sorted(file for file in self.files if folder in file.parents)
+
+    @property
+    def memory_bytes(self) -> int | None:
+        return self.memory
 
     def folder(self, variable: str) -> Path | None:
         return FOLDERS.get(variable)

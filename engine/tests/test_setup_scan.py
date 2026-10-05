@@ -68,7 +68,8 @@ def test_missing_model_on_ollama_can_be_pulled() -> None:
     items = report(FakeMachine(), server)
 
     assert items["model-server"].status == "ok"
-    assert action_ids(items["model"]) == ["model.pull"]
+    assert action_ids(items["model"]) == ["model.pull", "models.open"]
+    assert "Recommandé pour ce poste" in items["model"].detail
 
 
 def test_missing_model_on_another_server_cannot_be_pulled() -> None:

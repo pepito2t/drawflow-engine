@@ -59,6 +59,7 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | API locale en WebSocket sur 127.0.0.1 avec jeton | Stream Deck et outils tiers, sans exposition réseau | #71 |
 | Assistant via MCP (SDK officiel), modèle local par API compatible OpenAI | Fonctionne avec Ollama, LM Studio, llama.cpp ; outils générés depuis le registre | #78, #79 |
 | L'assistant propose, l'utilisateur lance | Aucun traitement sans confirmation ; le lancement suit le même circuit que l'interface | #95 |
+| Catalogue de modèles choisi + téléchargement par nom, pas de recherche dans la bibliothèque | Ollama n'a pas d'API de recherche publique ; recommandation selon la mémoire du poste | #105 |
 | Adresse du modèle limitée au loopback | Aucune donnée ne quitte le poste | #79 |
 | SDK MCP importé à la demande | ~200 ms de démarrage évités pour les autres commandes | #78 |
 | Modules importés avant la boucle stdio MCP | Sous Windows, un import pendant une lecture bloquante de stdin figeait le serveur | #82 |
