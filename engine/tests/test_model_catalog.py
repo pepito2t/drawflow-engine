@@ -62,6 +62,7 @@ def test_catalog_lists_curated_and_other_installed_models(tmp_path: Path) -> Non
     assert listed["recommended"] == "qwen3.5:9b"
     assert listed["memory_gb"] == 17.0
     assert listed["is_ollama"] is True
+    assert listed["server_url"] == "http://127.0.0.1:11434/v1"
     by_name = {model["name"]: model for model in listed["models"]}
     assert by_name["qwen3.5:9b"]["installed"] is True
     assert by_name["qwen3.5:4b"]["installed"] is False

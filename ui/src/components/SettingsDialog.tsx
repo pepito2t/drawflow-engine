@@ -17,7 +17,8 @@ import { ErrorPanel } from "./ErrorPanel";
 import { AccessCodeForm } from "./AccessCodeForm";
 import { IntegrationsPanel } from "./IntegrationsPanel";
 import { SectionTransfer } from "./SectionTransfer";
-import { SETUP_TAB_ID } from "../lib/setup";
+import { AI_MODELS_TAB_ID, SETUP_TAB_ID } from "../lib/setup";
+import { AiModelsPanel } from "./AiModelsPanel";
 import { SetupPanel } from "./SetupPanel";
 import { TemplatesPanel } from "./TemplatesPanel";
 import { CloseIcon } from "./icons";
@@ -30,6 +31,7 @@ const TEMPLATES_TAB_ID = "templates";
 const INTEGRATIONS_TAB_ID = "integrations";
 const STATIC_TABS = [
   { id: SETUP_TAB_ID, title: "Installation" },
+  { id: AI_MODELS_TAB_ID, title: "Modèles d'IA" },
   { id: TEMPLATES_TAB_ID, title: "Modèles" },
   { id: INTEGRATIONS_TAB_ID, title: "Intégrations" },
   { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
@@ -193,7 +195,8 @@ function SettingsEditor({ sectionsPromise, initialTab }: SettingsEditorProps) {
           ))}
         </nav>
         <div className="settings-panel">
-          {activeId === SETUP_TAB_ID && <SetupPanel />}
+          {activeId === SETUP_TAB_ID && <SetupPanel onOpenTab={setActiveId} />}
+          {activeId === AI_MODELS_TAB_ID && <AiModelsPanel />}
           {activeId === TEMPLATES_TAB_ID && <TemplatesPanel />}
           {activeId === INTEGRATIONS_TAB_ID && <IntegrationsPanel />}
           {activeId === ACCESS_CODE_TAB_ID && <AccessCodeForm />}

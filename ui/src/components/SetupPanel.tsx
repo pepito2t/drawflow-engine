@@ -13,9 +13,11 @@ import {
   type SetupItem,
   type SetupReport,
   type SetupRun,
+  AI_MODELS_TAB_ID,
+  OPEN_MODELS_ACTION,
 } from "../lib/setup";
 import { getAppVersion } from "../lib/tauri/app";
-import { openDownloadPage, scanSetup } from "../lib/tauri/setup";
+import { openDownloadPage, runSetupAction, scanSetup } from "../lib/tauri/setup";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { Loader } from "./Spinner";
@@ -26,7 +28,7 @@ function loadReport(): Promise<SetupReport> {
   return scanSetup().then(parseSetupReport);
 }
 
-export function SetupPanel() {
+export function SetupPanel({ onOpenTab }: { onOpenTab: (tabId: string) => void }) {
   const { id, promise, retry } = useRetryablePromise(loadReport);
   const { run, start } = useSetupRun(retry);
   return (
@@ -47,7 +49,14 @@ export function SetupPanel() {
         }}
       >
         <Suspense fallback={<Loader label="Analyse du poste…" />}>
-          <SetupChecklist reportPromise={promise} run={run} onStart={start} />
+          <SetupChecklist
+            reportPromise={promise}
+            run={run}
+            onStart={(action) => {
+              start(action, (onMessage) => runSetupAction(action, onMessage));
+            }}
+            onOpenTab={onOpenTab}
+          />
         </Suspense>
       </ErrorBoundary>
     </section>
@@ -58,9 +67,10 @@ interface SetupChecklistProps {
   reportPromise: Promise<SetupReport>;
   run: SetupRun;
   onStart: (action: EngineSetupAction) => void;
+  onOpenTab: (tabId: string) => void;
 }
 
-function SetupChecklist({ reportPromise, run, onStart }: SetupChecklistProps) {
+function SetupChecklist({ reportPromise, run, onStart, onOpenTab }: SetupChecklistProps) {
   const report = use(reportPromise);
   const [pending, setPending] = useState<SetupActionSpec | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -68,7 +78,9 @@ function SetupChecklist({ reportPromise, run, onStart }: SetupChecklistProps) {
 
   const trigger = (action: SetupActionSpec) => {
     setPageError(null);
-    if (!isEngineAction(action.id)) {
+    if (action.id === OPEN_MODELS_ACTION) {
+      onOpenTab(AI_MODELS_TAB_ID);
+    } else if (!isEngineAction(action.id)) {
       openPage(action).catch((error: unknown) => {
         setPageError(toReadableError(error).message);
       });

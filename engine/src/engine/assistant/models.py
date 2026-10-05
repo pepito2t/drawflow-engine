@@ -61,6 +61,7 @@ def catalog(
         "memory_gb": None if memory is None else round(memory / BYTES_PER_GB, 1),
         "recommended": recommend(memory),
         "configured": assistant.model,
+        "server_url": assistant.model_server_url,
         "is_ollama": server["is_ollama"],
         "models": listed,
     }
