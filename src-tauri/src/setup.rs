@@ -51,7 +51,7 @@ impl SetupAction {
 }
 
 #[tauri::command]
-pub fn run_setup_action(
+pub async fn run_setup_action(
     app: AppHandle,
     runs: State<'_, EngineRuns>,
     lock: State<'_, AccessLock>,
@@ -59,6 +59,9 @@ pub fn run_setup_action(
     on_event: Channel<EngineMessage>,
 ) -> Result<RunId, BridgeError> {
     lock.ensure_unlocked()?;
+    if action == SetupAction::StreamDockInstallPlugin {
+        crate::integrations::ensure_enabled(&app).await?;
+    }
     let settings = path_argument(settings_file(&app)?);
     let version = app.package_info().version.to_string();
     let run_key = format!("setup:{}", action.id());

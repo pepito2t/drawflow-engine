@@ -149,6 +149,26 @@ pub async fn apply(app: &AppHandle, config: &IntegrationConfig) {
     }
 }
 
+/// The Stream Dock plugin reads Drawflow's API settings itself: installing it must turn the API on.
+pub async fn ensure_enabled(app: &AppHandle) -> Result<(), BridgeError> {
+    let path = config::config_file(app)?;
+    if let Some(enabled) = enabling(config::load(&path)) {
+        config::save(&path, &enabled)?;
+        apply(app, &enabled).await;
+    }
+    Ok(())
+}
+
+fn enabling(config: IntegrationConfig) -> Option<IntegrationConfig> {
+    if config.enabled {
+        return None;
+    }
+    Some(IntegrationConfig {
+        enabled: true,
+        ..config
+    })
+}
+
 pub fn start_at_launch(app: &AppHandle) -> Result<(), BridgeError> {
     let config = config::load(&config::config_file(app)?);
     let handle = app.clone();
@@ -226,4 +246,25 @@ pub fn integration_publish(
     lock.ensure_unlocked()?;
     state.broadcast(&ServerMessage::Event { event });
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn installing_the_plugin_only_turns_a_disabled_api_on() {
+        let disabled = IntegrationConfig {
+            enabled: false,
+            port: 51717,
+            token: "secret".to_owned(),
+        };
+        let enabled = IntegrationConfig {
+            enabled: true,
+            ..disabled.clone()
+        };
+
+        assert_eq!(enabling(disabled), Some(enabled.clone()));
+        assert_eq!(enabling(enabled), None);
+    }
 }

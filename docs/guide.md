@@ -84,14 +84,13 @@ Il peut aussi **proposer un lancement** (« lance la soumission sur C:\Chantier\
 
 Drawflow fonctionne avec le **Stream Dock** de Mirabox (logiciel Stream Dock pour Windows).
 
-1. **Paramètres → Intégrations** : activez l'API locale et copiez le jeton.
-2. **Paramètres → Installation → Plugin Stream Dock → Installer le plugin** : Drawflow installe lui-même le plugin dans Stream Dock.
-3. **Redémarrez Stream Dock** (il ne charge un nouveau plugin qu'au démarrage).
-4. Dans Stream Dock, glissez une action de la catégorie **Drawflow** sur une touche.
-5. Dans les réglages de la touche, saisissez le port (`51717` par défaut) et collez le jeton : une seule fois pour toutes les touches.
-6. Pour une touche **Préréglage** ou **Onglet**, choisissez le préréglage ou l'onglet dans la liste.
+1. **Paramètres → Installation → Plugin Drawflow pour Stream Dock → Installer le plugin** : Drawflow active son API locale et installe le plugin dans Stream Dock.
+2. **Redémarrez Stream Dock** (il ne charge un nouveau plugin qu'au démarrage).
+3. Dans Stream Dock, glissez une action de la catégorie **Drawflow** sur une touche ; pour une touche **Préréglage** ou **Onglet**, choisissez le préréglage ou l'onglet dans la liste.
 
-Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée et « Hors ligne » quand Drawflow est fermée ou que le jeton est faux.
+Le plugin se connecte tout seul à Drawflow installé sur ce poste : il n'y a ni port ni jeton à saisir. Les champs de la touche ne servent que si Drawflow tourne sous un autre compte Windows (port et jeton dans Paramètres → Intégrations).
+
+Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée et « Hors ligne » quand Drawflow est fermée.
 
 **Plugin AutoCAD** : la ligne **Plugin AutoCAD pour Stream Dock** installe de la même façon le plugin [streamdock_autocad](https://github.com/pepito2t/streamdock_autocad) : macros, calques, bascules (ORTHO, accrochages…) et état d'AutoCAD sur les touches. Il faut AutoCAD complet (pas LT), ouvert pendant l'utilisation.
 
