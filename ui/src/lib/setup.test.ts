@@ -6,6 +6,8 @@ import {
   needsConfirmation,
   parseSetupReport,
   setupRunReducer,
+  setupRunsReducer,
+  IDLE_SETUP_RUNS,
   type SetupRun,
   type SetupRunMessage,
 } from "./setup";
@@ -107,5 +109,25 @@ describe("setupRunReducer", () => {
     ]);
 
     expect(state.status).toBe("failed");
+  });
+});
+
+describe("setupRunsReducer", () => {
+  it("follows an installation and a model download independently", () => {
+    const installing = setupRunsReducer(IDLE_SETUP_RUNS, {
+      scope: "setup",
+      message: { kind: "started", action: "ollama.install" },
+    });
+    const both = setupRunsReducer(installing, {
+      scope: "models",
+      message: { kind: "started", action: "qwen3.5:9b" },
+    });
+    const modelDone = setupRunsReducer(both, {
+      scope: "models",
+      message: { kind: "exit", code: 0 },
+    });
+
+    expect(modelDone.setup).toMatchObject({ status: "running", action: "ollama.install" });
+    expect(modelDone.models).toMatchObject({ status: "done", action: "qwen3.5:9b" });
   });
 });

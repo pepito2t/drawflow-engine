@@ -86,6 +86,22 @@ export type SetupRunMessage =
   | { kind: "exit"; code: number | null }
   | { kind: "failed"; error: ReadableError };
 
+export type SetupScope = "setup" | "models";
+export type SetupRuns = Record<SetupScope, SetupRun>;
+export interface ScopedSetupRunMessage {
+  scope: SetupScope;
+  message: SetupRunMessage;
+}
+
+export const IDLE_SETUP_RUNS: SetupRuns = { setup: { status: "idle" }, models: { status: "idle" } };
+
+export function setupRunsReducer(
+  runs: SetupRuns,
+  { scope, message }: ScopedSetupRunMessage,
+): SetupRuns {
+  return { ...runs, [scope]: setupRunReducer(runs[scope], message) };
+}
+
 const PERCENT = 100;
 const UNEXPECTED_EXIT: ReadableError = {
   message: "L'installation s'est arrêtée sans résultat.",
