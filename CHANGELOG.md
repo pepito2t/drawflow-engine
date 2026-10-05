@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+## 0.8.0 — 2026-10-05
+
 - **Aide intégrée** : icône **?** qui affiche le guide, section **Premiers pas** (marche à suivre complète), liens **Marche à suivre** sur l'écran Installation, commande `help.open`. L'assistant lit le même guide (outils `list_help_topics` / `read_help`) pour expliquer comment faire (#112).
 
 ## 0.7.0 — 2026-10-05
