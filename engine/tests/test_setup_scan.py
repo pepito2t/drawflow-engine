@@ -6,6 +6,7 @@ import pytest
 
 from engine.core.settings_models import AssistantSettings
 from engine.setup import service
+from engine.setup.machine import LocalMachine
 from engine.setup.scan import ModelServerState, build_report
 from engine.testing.fake_machine import APPDATA, LOCALAPPDATA, PROGRAM_FILES, FakeMachine
 
@@ -18,9 +19,20 @@ def report(
     machine: FakeMachine,
     server: ModelServerState = SERVER_DOWN,
     oda: Path | None = None,
+    app_version: str | None = None,
+    autocad_latest: str | None = None,
 ) -> dict[str, Any]:
-    built = build_report(machine, oda, AssistantSettings(), server)
+    built = build_report(machine, oda, AssistantSettings(), server, app_version, autocad_latest)
     return {item.id: item for item in built.items}
+
+
+STREAM_DOCK = APPDATA / "HotSpot" / "StreamDock"
+DRAWFLOW_MANIFEST = STREAM_DOCK / "plugins" / "ch.drawflow.sdPlugin" / "manifest.json"
+AUTOCAD_MANIFEST = (
+    STREAM_DOCK / "plugins" / "com.tmbk.streamdock.autocad.sdPlugin" / "manifest.json"
+)
+AUTOCAD_EXE = PROGRAM_FILES / "Autodesk" / "AutoCAD 2025" / "acad.exe"
+AUTOCAD_LT_EXE = PROGRAM_FILES / "Autodesk" / "AutoCAD LT 2025" / "acadlt.exe"
 
 
 def action_ids(item: Any) -> list[str]:
@@ -141,3 +153,57 @@ def test_scan_reports_an_unreachable_server(tmp_path: Path) -> None:
     statuses = {item["id"]: item["status"] for item in scanned["items"]}
     assert statuses["model-server"] == "missing"
     assert scanned["system"] == {"os": "windows", "arch": "amd64", "package_manager": None}
+
+
+def test_drawflow_plugin_reports_an_update_when_its_version_differs_from_the_app() -> None:
+    files = {STREAM_DOCK / "config.json"}
+    outdated = FakeMachine(files=files, contents={DRAWFLOW_MANIFEST: '{"Version": "0.7.0"}'})
+    current = FakeMachine(files=files, contents={DRAWFLOW_MANIFEST: '{"Version": "0.8.1"}'})
+
+    update = report(outdated, app_version="0.8.1")["stream-dock"]
+    ok = report(current, app_version="0.8.1")["stream-dock"]
+
+    assert update.status == "update"
+    assert "0.7.0" in update.detail and "0.8.1" in update.detail
+    assert [(a.id, a.label) for a in update.actions] == [
+        ("streamdock.install-plugin", "Mettre à jour")
+    ]
+    assert ok.status == "ok"
+    assert action_ids(ok) == ["streamdock.install-plugin"]
+
+
+def test_autocad_plugin_item_follows_stream_dock_autocad_and_the_latest_release() -> None:
+    absent = report(FakeMachine())["autocad-plugin"]
+    installable = report(FakeMachine(files={STREAM_DOCK / "config.json", AUTOCAD_LT_EXE}))[
+        "autocad-plugin"
+    ]
+    installed = FakeMachine(
+        files={STREAM_DOCK / "config.json", AUTOCAD_EXE},
+        contents={AUTOCAD_MANIFEST: '{"Version": "1.2.0"}'},
+    )
+
+    up_to_date = report(installed, autocad_latest="1.2.0")["autocad-plugin"]
+    outdated = report(installed, autocad_latest="1.3.0")["autocad-plugin"]
+    unknown = report(installed)["autocad-plugin"]
+
+    assert absent.status == "optional"
+    assert action_ids(absent) == ["autocad-plugin.open-page"]
+    assert installable.status == "optional"
+    assert "non détecté" in installable.detail
+    assert action_ids(installable) == [
+        "streamdock.install-autocad-plugin",
+        "autocad-plugin.open-page",
+    ]
+    assert up_to_date.status == "ok"
+    assert "AutoCAD détecté" in up_to_date.detail
+    assert outdated.status == "update"
+    assert outdated.actions[0].label == "Mettre à jour"
+    assert unknown.status == "ok"
+
+
+def test_local_machine_reads_a_manifest_or_nothing(tmp_path: Path) -> None:
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text('{"Version": "1.0.0"}', encoding="utf-8")
+
+    assert LocalMachine().read_text(manifest) == '{"Version": "1.0.0"}'
+    assert LocalMachine().read_text(tmp_path / "absent.json") is None

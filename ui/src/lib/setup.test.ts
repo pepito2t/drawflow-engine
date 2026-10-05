@@ -63,6 +63,8 @@ describe("setup report", () => {
     expect(isEngineAction("oda.install")).toBe(true);
     expect(isEngineAction("oda.open-page")).toBe(false);
     expect(isEngineAction("streamdock.install-plugin")).toBe(true);
+    expect(isEngineAction("streamdock.install-autocad-plugin")).toBe(true);
+    expect(isEngineAction("autocad-plugin.open-page")).toBe(false);
     expect(needsConfirmation("ollama.install")).toBe(true);
     expect(needsConfirmation("oda.use-detected")).toBe(false);
   });

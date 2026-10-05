@@ -945,13 +945,20 @@ small {
 }
 
 .setup-status.ok {
-  background: var(--color-success-background);
-  color: var(--color-success);
+  background: var(--color-success);
+  color: #0d1a12;
+  font-weight: 600;
 }
 
 .setup-status.missing {
   background: var(--color-error-background);
   color: var(--color-error);
+}
+
+.setup-status.update {
+  background: var(--color-warning);
+  color: #1a1407;
+  font-weight: 600;
 }
 
 .setup-body {

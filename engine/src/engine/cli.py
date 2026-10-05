@@ -118,6 +118,7 @@ def _add_request_parser(
     parser = commands.add_parser(action, help=help_text)
     parser.add_argument("--settings", type=Path, required=True)
     parser.add_argument("--input", type=Path, help="Requête JSON.")
+    parser.add_argument("--app-version", help="Version de Drawflow (plugins Stream Dock).")
 
 
 def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
@@ -196,7 +197,7 @@ def _setup(arguments: argparse.Namespace, emit: Emit) -> None:
         context = actions.SetupContext(arguments.settings, emit, app_version=arguments.app_version)
         actions.run_action(arguments.action, context)
     else:
-        _write_json(service.scan(arguments.settings))
+        _write_json(service.scan(arguments.settings, app_version=arguments.app_version))
 
 
 def _request(arguments: argparse.Namespace) -> dict[str, Any]:

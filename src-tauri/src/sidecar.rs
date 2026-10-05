@@ -146,7 +146,9 @@ pub async fn engine_request(
     let settings = path_argument(settings_file(&app)?);
     let input_file = write_input_file(&payload)?;
     let input = path_argument(input_file.path().to_path_buf());
-    let output = query_engine(&app, request_arguments(request, settings, input)).await;
+    let version = app.package_info().version.to_string();
+    let arguments = request_arguments(request, settings, input, version);
+    let output = query_engine(&app, arguments).await;
     drop(input_file);
     output
 }
@@ -248,7 +250,12 @@ fn settings_arguments(action: &str, settings: String, input: Option<String>) -> 
     arguments
 }
 
-fn request_arguments(request: EngineRequest, settings: String, input: String) -> Vec<String> {
+fn request_arguments(
+    request: EngineRequest,
+    settings: String,
+    input: String,
+    app_version: String,
+) -> Vec<String> {
     let (group, action) = request.command();
     vec![
         group.to_owned(),
@@ -257,6 +264,8 @@ fn request_arguments(request: EngineRequest, settings: String, input: String) ->
         settings,
         "--input".to_owned(),
         input,
+        "--app-version".to_owned(),
+        app_version,
     ]
 }
 
@@ -393,14 +402,21 @@ mod tests {
     fn requests_are_allow_listed_by_name() {
         let request: EngineRequest = serde_json::from_str("\"templates.import\"").unwrap();
         assert_eq!(
-            request_arguments(request, "s.json".to_owned(), "r.json".to_owned()),
+            request_arguments(
+                request,
+                "s.json".to_owned(),
+                "r.json".to_owned(),
+                "0.8.1".to_owned()
+            ),
             [
                 "templates",
                 "import",
                 "--settings",
                 "s.json",
                 "--input",
-                "r.json"
+                "r.json",
+                "--app-version",
+                "0.8.1"
             ]
         );
         assert!(serde_json::from_str::<EngineRequest>("\"run\"").is_err());
