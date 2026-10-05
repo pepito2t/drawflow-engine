@@ -4,9 +4,11 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
-- Correctif : un téléchargement winget impossible (fichier retiré par l'éditeur, comme ODA 27.1) affiche un message clair qui renvoie vers la page officielle ; les accents de la sortie de winget sont lisibles (#99).
+## 0.5.0 — 2026-10-05
+
 - L'assistant peut **proposer** de lancer un préréglage ou une fonctionnalité ; rien ne démarre sans confirmation (#95).
 - Carte de confirmation dans le chat : **Lancer** / **Ignorer** ; nouvelle commande `feature.run` (#96).
+- Correctif : un téléchargement winget impossible (fichier retiré par l'éditeur, comme ODA 27.1) affiche un message clair qui renvoie vers la page officielle ; les accents de la sortie de winget sont lisibles (#99).
 
 ## 0.4.0 — 2026-10-05
 
