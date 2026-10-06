@@ -12,10 +12,22 @@ from engine.core.diagnostics import record_failure
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ErrorEvent, make_stream_emitter
 from engine.core.guide import sections as guide_sections
-from engine.core.history import HISTORY_ACTIONS, HistoryStore, handle_history, run_with_history
+from engine.core.history import (
+    HISTORY_ACTIONS,
+    HistoryStore,
+    UsageCounters,
+    handle_history,
+    run_with_history,
+)
 from engine.core.registry import discover_modules, get_module
 from engine.core.runner import read_input_file, run_module
-from engine.core.settings import describe_settings, load_run_settings, save_settings
+from engine.core.settings import (
+    describe_settings,
+    load_general_settings,
+    load_run_settings,
+    save_settings,
+)
+from engine.core.stats import StatsStore
 from engine.core.templates import TemplateLibrary
 from engine.requests import (
     PRESET_ACTIONS,
@@ -184,7 +196,17 @@ def _run(arguments: argparse.Namespace, emit: Emit) -> None:
         raw_inputs,
         emit,
         lambda observed: run_module(module, raw_inputs, settings, observed, default_template),
+        counters=_usage_counters(arguments.settings),
     )
+
+
+def _usage_counters(settings_file: Path | None) -> UsageCounters | None:
+    if settings_file is None:
+        return None
+    general = load_general_settings(settings_file)
+    if not general.usage_counters:
+        return None
+    return UsageCounters(StatsStore(settings_file), general.minutes_saved_per_file)
 
 
 # The MCP SDK costs ~200 ms to import: only the commands that need it pay for it.

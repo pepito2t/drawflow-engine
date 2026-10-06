@@ -1606,3 +1606,30 @@ small {
     grid-template-columns: 1fr auto;
   }
 }
+
+/* Usage counters */
+
+.stats-table {
+  width: 100%;
+  margin: 8px 0 12px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.stats-table th:not(:first-child),
+.stats-table td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table tfoot td {
+  border-bottom: none;
+  font-weight: 600;
+}
