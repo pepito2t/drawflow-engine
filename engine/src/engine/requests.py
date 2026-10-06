@@ -11,6 +11,7 @@ from engine.core.profile import export_profile, import_profile, read_profile
 from engine.core.registry import discover_modules, get_module
 from engine.core.settings import export_section, read_section_import
 from engine.core.templates import TemplateLibrary, TemplateUser
+from engine.messages import t
 from engine.modules.soumission.headers import add_synonyms
 
 TEMPLATE_ACTIONS = {
@@ -91,7 +92,7 @@ def handle_templates(action: str, settings: Path, raw: dict[str, Any]) -> dict[s
         request = _parse(DefaultTemplateRequest, raw)
         user = next((user for user in users if user.id == request.module), None)
         if user is None:
-            raise InvalidInputError(f"« {request.module} » n'utilise pas de modèle.")
+            raise InvalidInputError(t("requests.no_template", module=request.module))
         library.set_default(user, request.template)
     return library.describe(users)
 
@@ -173,4 +174,4 @@ def _parse[RequestT: _Request](model: type[RequestT], raw: dict[str, Any]) -> Re
     try:
         return model.model_validate(raw)
     except ValidationError as error:
-        raise InvalidInputError("Requête invalide.", hint=str(error)) from error
+        raise InvalidInputError(t("requests.invalid"), hint=str(error)) from error

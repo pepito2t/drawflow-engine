@@ -4,15 +4,16 @@ from pathlib import Path
 from openpyxl.worksheet.worksheet import Worksheet
 
 from engine.core.xlsx import CellValue, fit_columns, open_sheet, save_workbook, write_row
+from engine.modules.dwg_parts.messages import t
 from engine.parts.aggregation import PartLine
 from engine.parts.settings import PartsListSettings
 
-QUANTITY_HEADER = "Quantité"
-SOURCES_HEADER = "Plans"
+QUANTITY_HEADER = t("export.quantity_header")
+SOURCES_HEADER = t("export.sources_header")
 SOURCES_SEPARATOR = ", "
 
 
-TOTAL_SHEET = "Total"
+TOTAL_SHEET = t("export.total_sheet")
 
 
 def export_parts(

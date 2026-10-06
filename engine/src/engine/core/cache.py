@@ -7,6 +7,7 @@ from pathlib import Path
 
 from engine.core.errors import EngineError
 from engine.core.events import Emit, WarningEvent
+from engine.core.messages import t
 from engine.core.settings_models import GeneralSettings
 
 APP_FOLDER_NAME = "drawflow"
@@ -87,7 +88,7 @@ class FileCache:
             size = 0
         if size > 0:
             return True
-        emit(WarningEvent(message="Entrée de cache invalide, nouveau calcul.", file=str(source)))
+        emit(WarningEvent(message=t("cache.invalid_entry"), file=str(source)))
         return False
 
     def _prepare_folder(self, folder: Path) -> None:
@@ -95,7 +96,7 @@ class FileCache:
             folder.mkdir(parents=True, exist_ok=True)
         except OSError as error:
             raise CacheError(
-                "Le dossier de cache est inaccessible.",
+                t("cache.folder_unreachable"),
                 file=folder,
-                hint="Choisissez un autre dossier de cache dans Paramètres.",
+                hint=t("cache.folder_unreachable_hint"),
             ) from error

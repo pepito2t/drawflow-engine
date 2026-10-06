@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from engine.core.errors import EngineError, OutputWriteError
 from engine.core.json_files import write_json_atomically
+from engine.core.messages import t
 
 STATS_FILE = "stats.json"
 
@@ -54,9 +55,7 @@ class StatsStore:
             return UsageStats.model_validate(json.loads(self.path.read_text(encoding="utf-8")))
         except (OSError, json.JSONDecodeError, TypeError, ValidationError) as error:
             raise StatsError(
-                "Le fichier des compteurs est illisible ; il n'a pas été modifié.",
-                file=self.path,
-                hint="Supprimez-le pour repartir de zéro.",
+                t("stats.unreadable"), file=self.path, hint=t("stats.unreadable_hint")
             ) from error
 
     def record(self, module: str, module_name: str, files: int, minutes_per_file: int) -> None:
@@ -73,6 +72,4 @@ class StatsStore:
         try:
             write_json_atomically(self.path, stats.model_dump(mode="json"))
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible d'enregistrer les compteurs.", file=self.path
-            ) from error
+            raise OutputWriteError(t("stats.save_failed"), file=self.path) from error

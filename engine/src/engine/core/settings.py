@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from engine.core.errors import InvalidSettingsError, ModuleContractError, SettingsFileError
 from engine.core.json_files import write_json_atomically
+from engine.core.messages import t
 from engine.core.registry import AnyModule
 from engine.core.settings_models import (
     AssistantSettings,
@@ -18,17 +19,15 @@ from engine.core.settings_models import (
 from engine.core.validation import describe_validation_error
 
 GENERAL_SECTION_ID = "general"
-GENERAL_SECTION_TITLE = "Général"
+GENERAL_SECTION_TITLE = t("settings.general_title")
 ASSISTANT_SECTION_ID = "assistant"
-ASSISTANT_SECTION_TITLE = "Assistant"
+ASSISTANT_SECTION_TITLE = t("settings.assistant_title")
 MAIL_SECTION_ID = "mail"
-MAIL_SECTION_TITLE = "Courriel"
+MAIL_SECTION_TITLE = t("settings.mail_title")
 APP_SECTION_IDS = {GENERAL_SECTION_ID, ASSISTANT_SECTION_ID, MAIL_SECTION_ID}
 MODULES_KEY = "modules"
-FIX_SETTINGS_HINT = "Ouvrez Paramètres pour corriger les valeurs indiquées."
-RESET_SETTINGS_HINT = (
-    "Restaurez une sauvegarde ou supprimez ce fichier pour revenir aux valeurs par défaut."
-)
+FIX_SETTINGS_HINT = t("settings.fix_hint")
+RESET_SETTINGS_HINT = t("settings.reset_hint")
 
 Document = dict[str, Any]
 
@@ -51,7 +50,7 @@ def section_specs(modules: dict[str, AnyModule]) -> list[SectionSpec]:
     specs = [SectionSpec(GENERAL_SECTION_ID, GENERAL_SECTION_TITLE, GeneralSettings)]
     for module_id, module in modules.items():
         if module_id in APP_SECTION_IDS:
-            raise ModuleContractError(f"L'identifiant « {module_id} » est réservé.")
+            raise ModuleContractError(t("settings.reserved_id", module_id=module_id))
         if module.settings_model is not None:
             specs.append(SectionSpec(module_id, module.manifest.name, module.settings_model))
     specs.append(SectionSpec(ASSISTANT_SECTION_ID, ASSISTANT_SECTION_TITLE, AssistantSettings))
@@ -66,12 +65,10 @@ def read_document(path: Path | None) -> Document:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise SettingsFileError(
-            "Le fichier de paramètres est illisible ; il n'a pas été modifié.",
-            file=path,
-            hint=RESET_SETTINGS_HINT,
+            t("settings.unreadable"), file=path, hint=RESET_SETTINGS_HINT
         ) from error
     if not isinstance(document, dict):
-        raise SettingsFileError("Le fichier de paramètres n'a pas le bon format.", file=path)
+        raise SettingsFileError(t("settings.wrong_format"), file=path)
     return document
 
 
@@ -82,7 +79,11 @@ def load_section[SectionT: SettingsSection](
         return model.model_validate(_raw_section(document, section_id))
     except ValidationError as error:
         raise InvalidSettingsError(
-            f"Paramètres « {title} » invalides : {describe_validation_error(model, error)}",
+            t(
+                "settings.section_invalid",
+                title=title,
+                details=describe_validation_error(model, error),
+            ),
             hint=FIX_SETTINGS_HINT,
         ) from error
 
@@ -126,12 +127,18 @@ def save_settings(path: Path, submitted: Document, modules: dict[str, AnyModule]
         try:
             section = spec.model.model_validate(submitted[spec.id])
         except ValidationError as error:
-            errors.append(f"{spec.title} : {describe_validation_error(spec.model, error)}")
+            errors.append(
+                t(
+                    "settings.section_errors",
+                    title=spec.title,
+                    details=describe_validation_error(spec.model, error),
+                )
+            )
             continue
         _store_section(document, spec.id, section.model_dump(mode="json"))
     if errors:
         raise InvalidSettingsError(
-            "Paramètres invalides — " + " ; ".join(errors), hint=FIX_SETTINGS_HINT
+            t("settings.invalid", errors=" ; ".join(errors)), hint=FIX_SETTINGS_HINT
         )
     _write_atomically(path, document)
 
@@ -175,9 +182,7 @@ def _write_atomically(path: Path, document: Document) -> None:
         write_json_atomically(path, document)
     except OSError as error:
         raise SettingsFileError(
-            "Impossible d'enregistrer les paramètres.",
-            file=path,
-            hint="Vérifiez que le dossier de configuration est accessible en écriture.",
+            t("settings.save_failed"), file=path, hint=t("settings.save_failed_hint")
         ) from error
 
 
@@ -201,23 +206,24 @@ def export_section(
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     except OSError as error:
-        raise SettingsFileError("Impossible d'exporter les paramètres.", file=target) from error
+        raise SettingsFileError(t("settings.export_failed"), file=target) from error
 
 
 def read_section_import(source: Path, modules: dict[str, AnyModule]) -> dict[str, Any]:
     """Validates an exported file without saving it, so the user can review it first."""
     payload = read_document(source)
     if payload.get("format") != EXPORT_FORMAT:
-        raise InvalidSettingsError(
-            "Ce fichier n'est pas un export de paramètres Drawflow.", file=source
-        )
+        raise InvalidSettingsError(t("settings.not_an_export"), file=source)
     spec = _spec(str(payload.get("section", "")), modules)
     try:
         values = spec.model.model_validate(payload.get("values", {}))
     except ValidationError as error:
         raise InvalidSettingsError(
-            f"Paramètres « {spec.title} » invalides : "
-            f"{describe_validation_error(spec.model, error)}",
+            t(
+                "settings.section_invalid",
+                title=spec.title,
+                details=describe_validation_error(spec.model, error),
+            ),
             file=source,
         ) from error
     return {"section": spec.id, "title": spec.title, "values": values.model_dump(mode="json")}
@@ -227,6 +233,4 @@ def _spec(section_id: str, modules: dict[str, AnyModule]) -> SectionSpec:
     for spec in section_specs(modules):
         if spec.id == section_id:
             return spec
-    raise InvalidSettingsError(
-        f"La catégorie de paramètres « {section_id} » n'existe pas dans cette version."
-    )
+    raise InvalidSettingsError(t("settings.unknown_section", section_id=section_id))

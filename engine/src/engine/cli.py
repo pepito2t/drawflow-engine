@@ -35,6 +35,7 @@ from engine.core.settings import (
 )
 from engine.core.stats import StatsStore
 from engine.core.templates import TemplateLibrary
+from engine.messages import t
 from engine.requests import (
     MAIL_ACTIONS,
     PRESET_ACTIONS,
@@ -51,8 +52,6 @@ from engine.requests import (
 EXIT_SUCCESS = 0
 EXIT_BUSINESS_ERROR = 1
 EXIT_INTERNAL_ERROR = 2
-INTERNAL_ERROR_MESSAGE = "Erreur interne inattendue."
-INTERNAL_ERROR_HINT = "Réessayez ; si le problème persiste, transmettez le journal au support."
 ASSISTANT_ACTIONS = {
     "chat": "Un tour de conversation (flux NDJSON).",
     "models": "Modèles disponibles sur le serveur local (JSON).",
@@ -82,7 +81,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Boundary of the sidecar: details go to the log and stderr, the user gets a readable event.
         record_failure(settings, command, error)
         traceback.print_exc(file=sys.stderr)
-        emit(ErrorEvent(message=INTERNAL_ERROR_MESSAGE, hint=INTERNAL_ERROR_HINT))
+        emit(ErrorEvent(message=t("cli.internal_error"), hint=t("cli.internal_error.hint")))
         return EXIT_INTERNAL_ERROR
     return EXIT_SUCCESS
 

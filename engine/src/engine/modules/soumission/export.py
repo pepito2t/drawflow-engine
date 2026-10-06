@@ -2,10 +2,11 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from engine.core.xlsx import CellValue, fit_columns, open_sheet, save_workbook, write_row
+from engine.modules.soumission.messages import t
 from engine.modules.soumission.reader import SubmissionTable
 
-SOURCE_HEADER = "Fichier source"
-SHEET_HEADER = "Feuille"
+SOURCE_HEADER = t("export.source_header")
+SHEET_HEADER = t("export.sheet_header")
 HEADER_ROW = 1
 
 

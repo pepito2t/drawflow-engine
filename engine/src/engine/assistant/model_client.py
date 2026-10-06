@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from engine.assistant.errors import SETTINGS_HINT, AssistantError, ModelUnavailableError
+from engine.assistant.messages import t
 
 STREAM_PREFIX = "data:"
 STREAM_END = "[DONE]"
@@ -80,7 +81,7 @@ class ModelClient:
         try:
             return sorted(str(entry["id"]) for entry in response.json()["data"])
         except (ValueError, KeyError, TypeError) as error:
-            raise AssistantError("Réponse illisible du serveur du modèle.") from error
+            raise AssistantError(t("model_client.unreadable_server_reply")) from error
 
     async def complete(
         self, messages: list[JsonObject], tools: list[JsonObject], on_text: OnText
@@ -120,25 +121,29 @@ class ModelClient:
         await response.aclose()
         if response.status_code == HTTP_NOT_FOUND:
             raise ModelUnavailableError(
-                f"Le modèle « {self.model} » est introuvable sur le serveur local.",
-                hint=f"Installez-le (par exemple : ollama pull {self.model}). {SETTINGS_HINT}",
+                t("model_client.model_not_found", model=self.model),
+                hint=t(
+                    "model_client.model_not_found.hint",
+                    model=self.model,
+                    settings_hint=SETTINGS_HINT,
+                ),
             )
         if any(marker in detail.lower() for marker in MEMORY_MARKERS):
             raise AssistantError(
-                f"Le modèle « {self.model} » est trop gros pour la mémoire de ce poste.",
-                hint="Choisissez un modèle plus petit dans Paramètres → Modèles d'IA : le modèle "
-                "recommandé pour ce poste y est indiqué.",
+                t("model_client.out_of_memory", model=self.model),
+                hint=t("model_client.out_of_memory.hint"),
             )
-        suffix = f" : {detail}" if detail else "."
-        raise AssistantError(
-            f"Le serveur du modèle a refusé la demande (HTTP {response.status_code}){suffix}",
-            hint=SETTINGS_HINT,
-        )
+        status = response.status_code
+        if detail:
+            message = t("model_client.refused_with_detail", status=status, detail=detail)
+        else:
+            message = t("model_client.refused", status=status)
+        raise AssistantError(message, hint=SETTINGS_HINT)
 
     def _unreachable(self) -> ModelUnavailableError:
         return ModelUnavailableError(
-            f"Le modèle local ne répond pas à l'adresse {self.base_url}.",
-            hint=f"Lancez Ollama ou LM Studio, puis réessayez. {SETTINGS_HINT}",
+            t("model_client.unreachable", url=self.base_url),
+            hint=t("model_client.unreachable.hint", settings_hint=SETTINGS_HINT),
         )
 
 
@@ -170,7 +175,7 @@ def _deltas(payload: str) -> list[JsonObject]:
         chunk = json.loads(payload)
         return [choice["delta"] for choice in chunk["choices"] if choice.get("delta")]
     except (ValueError, KeyError, TypeError) as error:
-        raise AssistantError("Réponse illisible du modèle local.") from error
+        raise AssistantError(t("model_client.unreadable_model_reply")) from error
 
 
 def _merge_tool_call(pending: dict[int, _PendingCall], raw_call: JsonObject) -> None:

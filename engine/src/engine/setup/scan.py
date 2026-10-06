@@ -16,6 +16,7 @@ from engine.setup.locations import (
     stream_dock_plugin_version,
 )
 from engine.setup.machine import Machine
+from engine.setup.messages import t
 from engine.setup.report import (
     ActionId,
     PackageManager,
@@ -27,21 +28,21 @@ from engine.setup.report import (
 from engine.setup.stream_dock import AUTOCAD_PLUGIN_REPOSITORY
 
 ACTION_LABELS: dict[ActionId, str] = {
-    "oda.install": "Installer",
-    "oda.use-detected": "Utiliser",
-    "oda.open-page": "Page de téléchargement",
-    "ollama.install": "Installer",
-    "ollama.start": "Démarrer",
-    "ollama.open-page": "Page de téléchargement",
-    "model.pull": "Télécharger",
-    "models.open": "Choisir un modèle",
-    "streamdock.install-plugin": "Installer le plugin",
-    "streamdock.install-autocad-plugin": "Installer le plugin",
-    "streamdock.open-page": "Page de téléchargement",
-    "autocad-plugin.open-page": "Page du projet",
+    "oda.install": t("scan.action.install"),
+    "oda.use-detected": t("scan.action.use"),
+    "oda.open-page": t("scan.action.download_page"),
+    "ollama.install": t("scan.action.install"),
+    "ollama.start": t("scan.action.start"),
+    "ollama.open-page": t("scan.action.download_page"),
+    "model.pull": t("scan.action.download"),
+    "models.open": t("scan.action.choose_model"),
+    "streamdock.install-plugin": t("scan.action.install_plugin"),
+    "streamdock.install-autocad-plugin": t("scan.action.install_plugin"),
+    "streamdock.open-page": t("scan.action.download_page"),
+    "autocad-plugin.open-page": t("scan.action.project_page"),
 }
-UPDATE_LABEL = "Mettre à jour"
-REINSTALL_LABEL = "Réinstaller"
+UPDATE_LABEL = t("scan.action.update")
+REINSTALL_LABEL = t("scan.action.reinstall")
 DOWNLOAD_PAGES: dict[ActionId, str] = {
     "oda.open-page": "https://www.opendesign.com/guestfiles/oda_file_converter",
     "ollama.open-page": "https://ollama.com/download",
@@ -93,14 +94,14 @@ def _oda_item(machine: Machine, system: SystemInfo, configured: Path | None) -> 
             id="oda",
             label=label,
             status="missing",
-            detail=f"Installé mais pas configuré : {detected}",
+            detail=t("scan.oda.installed_not_configured", path=detected),
             actions=_actions("oda.use-detected"),
         )
     return SetupItem(
         id="oda",
         label=label,
         status="missing",
-        detail="Nécessaire pour lire les fichiers DWG.",
+        detail=t("scan.oda.needed"),
         actions=_oda_install_actions(machine),
     )
 
@@ -108,9 +109,9 @@ def _oda_item(machine: Machine, system: SystemInfo, configured: Path | None) -> 
 def _model_server_item(
     machine: Machine, system: SystemInfo, assistant: AssistantSettings, server: ModelServerState
 ) -> SetupItem:
-    label = "Serveur du modèle local"
+    label = t("scan.model_server.label")
     if server.reachable:
-        name = "Ollama" if server.is_ollama else "Serveur compatible OpenAI"
+        name = "Ollama" if server.is_ollama else t("scan.model_server.openai_compatible")
         return SetupItem(
             id="model-server",
             label=label,
@@ -122,14 +123,14 @@ def _model_server_item(
             id="model-server",
             label=label,
             status="missing",
-            detail="Ollama est installé mais ne répond pas.",
+            detail=t("scan.model_server.ollama_down"),
             actions=_actions("ollama.start"),
         )
     return SetupItem(
         id="model-server",
         label=label,
         status="missing",
-        detail="Ollama fait tourner l'assistant sur ce poste, sans connexion externe.",
+        detail=t("scan.model_server.ollama_pitch"),
         actions=_ollama_install_actions(system),
     )
 
@@ -137,42 +138,43 @@ def _model_server_item(
 def _model_item(
     assistant: AssistantSettings, server: ModelServerState, recommended: str
 ) -> SetupItem:
-    label = "Modèle d'IA"
+    label = t("scan.model.label")
     model = assistant.model
     if not server.reachable:
         return SetupItem(
             id="model",
             label=label,
             status="missing",
-            detail=f"{model} — démarrez d'abord le serveur.",
+            detail=t("scan.model.server_first", model=model),
         )
     if model in server.available:
-        return SetupItem(id="model", label=label, status="ok", detail=f"{model} disponible.")
+        return SetupItem(
+            id="model", label=label, status="ok", detail=t("scan.model.available", model=model)
+        )
     if server.is_ollama:
         return SetupItem(
             id="model",
             label=label,
             status="missing",
-            detail=f"{model} pas encore téléchargé. Recommandé pour ce poste : {recommended}.",
+            detail=t("scan.model.not_downloaded", model=model, recommended=recommended),
             actions=_actions("model.pull", "models.open"),
         )
     return SetupItem(
         id="model",
         label=label,
         status="missing",
-        detail=f"{model} introuvable sur le serveur : chargez-le dans LM Studio ou changez de "
-        "modèle.",
+        detail=t("scan.model.not_on_server", model=model),
     )
 
 
 def _stream_dock_item(machine: Machine, app_version: str | None) -> SetupItem:
-    label = "Plugin Drawflow pour Stream Dock"
+    label = t("scan.stream_dock.label")
     if stream_dock_folder(machine) is None:
         return SetupItem(
             id="stream-dock",
             label=label,
             status="optional",
-            detail="Logiciel Stream Dock (Mirabox) non installé.",
+            detail=t("scan.stream_dock.not_installed"),
             actions=_actions("streamdock.open-page"),
         )
     if not stream_dock_plugin_installed(machine):
@@ -180,7 +182,7 @@ def _stream_dock_item(machine: Machine, app_version: str | None) -> SetupItem:
             id="stream-dock",
             label=label,
             status="optional",
-            detail="Pilotez Drawflow depuis les touches du Stream Dock.",
+            detail=t("scan.stream_dock.pitch"),
             actions=_actions("streamdock.install-plugin"),
         )
     installed = stream_dock_plugin_version(machine, DRAWFLOW_PLUGIN)
@@ -190,26 +192,26 @@ def _stream_dock_item(machine: Machine, app_version: str | None) -> SetupItem:
 
 
 def _autocad_plugin_item(machine: Machine, latest: str | None) -> SetupItem:
-    label = "Plugin AutoCAD pour Stream Dock"
+    label = t("scan.autocad_plugin.label")
     if stream_dock_folder(machine) is None:
         return SetupItem(
             id="autocad-plugin",
             label=label,
             status="optional",
-            detail="Logiciel Stream Dock (Mirabox) non installé.",
+            detail=t("scan.stream_dock.not_installed"),
             actions=_actions("autocad-plugin.open-page"),
         )
     autocad = (
-        "AutoCAD détecté."
+        t("scan.autocad_plugin.detected")
         if find_autocad(machine) is not None
-        else "AutoCAD (version complète, pas LT) non détecté sur ce poste."
+        else t("scan.autocad_plugin.not_detected")
     )
     if not stream_dock_plugin_installed(machine, AUTOCAD_PLUGIN):
         return SetupItem(
             id="autocad-plugin",
             label=label,
             status="optional",
-            detail=f"Macros, calques et bascules AutoCAD depuis le Stream Dock. {autocad}",
+            detail=t("scan.autocad_plugin.pitch", autocad=autocad),
             actions=_actions("streamdock.install-autocad-plugin", "autocad-plugin.open-page"),
         )
     installed = stream_dock_plugin_version(machine, AUTOCAD_PLUGIN)
@@ -222,20 +224,24 @@ def _autocad_plugin_item(machine: Machine, latest: str | None) -> SetupItem:
 def _installed_plugin_item(
     item_id: str, label: str, install: ActionId, installed: str | None, available: str | None
 ) -> SetupItem:
-    version = f"Version {installed} installée." if installed else "Installé."
+    version = (
+        t("scan.plugin.version_installed", version=installed)
+        if installed
+        else t("scan.plugin.installed")
+    )
     if available is not None and installed != available:
         return SetupItem(
             id=item_id,
             label=label,
             status="update",
-            detail=f"{version} Version {available} disponible.",
+            detail=t("scan.plugin.update_available", version=version, available=available),
             actions=[_action(install, UPDATE_LABEL)],
         )
     return SetupItem(
         id=item_id,
         label=label,
         status="ok",
-        detail=f"{version} Redémarrez Stream Dock après chaque installation.",
+        detail=t("scan.plugin.restart", version=version),
         actions=[_action(install, REINSTALL_LABEL)],
     )
 

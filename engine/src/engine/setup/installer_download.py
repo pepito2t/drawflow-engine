@@ -6,6 +6,7 @@ from pathlib import Path
 import httpx
 
 from engine.core.errors import EngineError
+from engine.setup.messages import t
 
 DOWNLOAD_TIMEOUT = httpx.Timeout(connect=10.0, read=60.0, write=30.0, pool=10.0)
 PERCENT = 100
@@ -33,16 +34,18 @@ async def download_installer(
             async with http.stream("GET", url) as response:
                 if not response.is_success:
                     raise InstallerDownloadError(
-                        f"{name} : l'installeur n'est plus disponible sur le site officiel "
-                        f"(HTTP {response.status_code}).",
-                        hint=f"Cliquez sur « Page de téléchargement », installez {name}, puis "
-                        "sur « Analyser à nouveau » : Drawflow le détectera.",
+                        t(
+                            "installer_download.unavailable",
+                            name=name,
+                            status=response.status_code,
+                        ),
+                        hint=t("installer_download.unavailable.hint", name=name),
                     )
                 await _save(response, target, name, max_bytes, on_progress)
         except httpx.TransportError as error:
             raise InstallerDownloadError(
-                f"{name} : téléchargement impossible.",
-                hint="Vérifiez la connexion Internet, puis réessayez.",
+                t("installer_download.failed", name=name),
+                hint=t("installer_download.failed.hint"),
             ) from error
 
 
@@ -61,9 +64,7 @@ async def _save(
             async for chunk in response.aiter_bytes():
                 received += len(chunk)
                 if received > max_bytes:
-                    raise InstallerDownloadError(
-                        f"{name} : l'installeur téléchargé est anormalement volumineux."
-                    )
+                    raise InstallerDownloadError(t("installer_download.too_large", name=name))
                 file.write(chunk)
                 percent = received * PERCENT // total if total else 0
                 if percent != reported:
@@ -71,7 +72,7 @@ async def _save(
                     on_progress(percent)
     except OSError as error:
         raise InstallerDownloadError(
-            f"{name} : impossible d'enregistrer l'installeur sur le disque.",
+            t("installer_download.save_failed", name=name),
             file=target,
-            hint="Vérifiez l'espace disque et les droits sur le dossier temporaire.",
+            hint=t("installer_download.save_failed.hint"),
         ) from error

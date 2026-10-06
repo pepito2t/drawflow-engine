@@ -8,6 +8,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict
 
 from engine.core.errors import EngineError
+from engine.mail.messages import t
 
 LOGIN_ROOT = "https://login.microsoftonline.com"
 GRAPH_ROOT = "https://graph.microsoft.com/v1.0"
@@ -63,11 +64,11 @@ def start_device_login(
             f"{LOGIN_ROOT}/{tenant}/oauth2/v2.0/devicecode",
             data={"client_id": client_id, "scope": SCOPES},
         )
-    payload = _json_or_error(response, "Microsoft n'a pas fourni de code de connexion.")
+    payload = _json_or_error(response, t("graph.no_device_code"))
     if not response.is_success:
         raise MailError(
-            "Connexion à Microsoft refusée : " + _error_text(payload),
-            hint="Vérifiez l'identifiant d'application et le tenant dans Paramètres → Courriel.",
+            t("graph.login_refused", error=_error_text(payload)),
+            hint=t("graph.login_refused.hint"),
         )
     return DeviceLogin.model_validate(payload)
 
@@ -93,18 +94,16 @@ def finish_device_login(
                     "device_code": login.device_code,
                 },
             )
-            payload = _json_or_error(response, "Réponse de connexion illisible.")
+            payload = _json_or_error(response, t("graph.unreadable_login_reply"))
             if response.is_success:
                 return Tokens.model_validate(payload)
             error = str(payload.get("error", ""))
             if error not in DEVICE_CODE_PENDING:
-                raise MailError("Connexion à Microsoft échouée : " + _error_text(payload))
+                raise MailError(t("graph.login_failed", error=_error_text(payload)))
             if error == "slow_down":
                 interval += SLOW_DOWN_EXTRA_SECONDS
             sleep(interval)
-    raise MailError(
-        "Le code de connexion a expiré.", hint="Relancez la connexion et saisissez le nouveau code."
-    )
+    raise MailError(t("graph.code_expired"), hint=t("graph.code_expired.hint"))
 
 
 def refresh_tokens(
@@ -120,12 +119,9 @@ def refresh_tokens(
                 "scope": SCOPES,
             },
         )
-    payload = _json_or_error(response, "Réponse de connexion illisible.")
+    payload = _json_or_error(response, t("graph.unreadable_login_reply"))
     if not response.is_success:
-        raise MailError(
-            "La session Microsoft n'est plus valable.",
-            hint="Reconnectez la boîte mail dans l'onglet Courriels.",
-        )
+        raise MailError(t("graph.session_expired"), hint=t("graph.session_expired.hint"))
     return Tokens.model_validate(payload)
 
 
@@ -173,19 +169,17 @@ class GraphClient:
     def attachment_content(self, message_id: str, attachment_id: str) -> bytes:
         response = self._http.get(f"/me/messages/{message_id}/attachments/{attachment_id}/$value")
         if not response.is_success:
-            raise MailError("Téléchargement d'une pièce jointe refusé par Microsoft.")
+            raise MailError(t("graph.attachment_refused"))
         return response.content
 
     def _get(self, url: str, params: dict[str, str] | None) -> dict[str, Any]:
         try:
             response = self._http.get(url, params=params)
         except httpx.TransportError as error:
-            raise MailError(
-                "Microsoft 365 est injoignable.", hint="Vérifiez la connexion Internet."
-            ) from error
-        payload = _json_or_error(response, "Réponse de Microsoft 365 illisible.")
+            raise MailError(t("graph.unreachable"), hint=t("graph.unreachable.hint")) from error
+        payload = _json_or_error(response, t("graph.unreadable_reply"))
         if not response.is_success:
-            raise MailError("Microsoft 365 a refusé la lecture : " + _error_text(payload))
+            raise MailError(t("graph.read_refused", error=_error_text(payload)))
         return payload
 
 
@@ -202,6 +196,6 @@ def _json_or_error(response: httpx.Response, message: str) -> dict[str, Any]:
 def _error_text(payload: dict[str, Any]) -> str:
     error = payload.get("error")
     if isinstance(error, dict):
-        return str(error.get("message") or error.get("code") or "erreur inconnue")
+        return str(error.get("message") or error.get("code") or t("graph.unknown_error"))
     description = payload.get("error_description")
-    return str(description or error or "erreur inconnue").splitlines()[0]
+    return str(description or error or t("graph.unknown_error")).splitlines()[0]

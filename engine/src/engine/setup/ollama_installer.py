@@ -9,6 +9,7 @@ import httpx
 from engine.core.errors import EngineError
 from engine.setup.commands import CommandOutcome, CommandRunner
 from engine.setup.installer_download import DownloadProgress, download_installer
+from engine.setup.messages import t
 from engine.setup.signature import verify_signature
 
 OLLAMA_SETUP_URL = "https://ollama.com/download/OllamaSetup.exe"
@@ -53,6 +54,6 @@ async def _download(
 def _check(outcome: CommandOutcome) -> None:
     if outcome.return_code != SETUP_SUCCESS:
         raise OllamaInstallError(
-            f"L'installation d'Ollama a échoué (code {outcome.return_code}).",
-            hint=outcome.tail() or "Réessayez, ou utilisez la page de téléchargement.",
+            t("ollama_installer.failed", code=outcome.return_code),
+            hint=outcome.tail() or t("ollama_installer.failed.hint"),
         )

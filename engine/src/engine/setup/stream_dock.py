@@ -10,6 +10,7 @@ import httpx
 
 from engine.core.errors import EngineError
 from engine.setup.locations import AUTOCAD_PLUGIN, DRAWFLOW_PLUGIN
+from engine.setup.messages import t
 
 DRAWFLOW_PLUGIN_ASSET_URL = (
     "https://github.com/pepito2t/drawflow-engine/releases/download/"
@@ -27,7 +28,6 @@ MAX_PLUGIN_BYTES = 50_000_000
 STAGING_PREFIX = "."
 STAGING_SUFFIX = ".new"
 REPLACED_SUFFIX = ".old"
-RESTART_HINT = "Redémarrez Stream Dock pour l'activer."
 
 
 class StreamDockError(EngineError):
@@ -45,7 +45,7 @@ def install_plugin(
     _remove(staging)
     _unpack(archive, staging, plugin_id)
     _swap_in(staging, plugins / plugin_id, plugin_id)
-    return f"Plugin {plugin_id} installé dans Stream Dock. {RESTART_HINT}"
+    return t("stream_dock.installed", plugin_id=plugin_id)
 
 
 async def latest_release_version(
@@ -73,16 +73,15 @@ async def _download(url: str, transport: httpx.AsyncBaseTransport | None) -> byt
             response = await http.get(url)
         except httpx.TransportError as error:
             raise StreamDockError(
-                "Téléchargement du plugin impossible.",
-                hint="Vérifiez la connexion Internet, puis réessayez.",
+                t("stream_dock.download_failed"), hint=t("stream_dock.download_failed.hint")
             ) from error
     if not response.is_success:
         raise StreamDockError(
-            f"Le plugin est introuvable à cette adresse (HTTP {response.status_code}).",
-            hint="Aucune version publiée, ou Drawflow à mettre à jour ; réessayez plus tard.",
+            t("stream_dock.not_found", status=response.status_code),
+            hint=t("stream_dock.not_found.hint"),
         )
     if len(response.content) > MAX_PLUGIN_BYTES:
-        raise StreamDockError("Le plugin téléchargé est anormalement volumineux.")
+        raise StreamDockError(t("stream_dock.too_large"))
     return response.content
 
 
@@ -98,9 +97,9 @@ def _unpack(archive: bytes, staging: Path, plugin_id: str) -> None:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(plugin_zip.read(member))
     except zipfile.BadZipFile as error:
-        raise StreamDockError("Le plugin téléchargé est illisible.") from error
+        raise StreamDockError(t("stream_dock.unreadable")) from error
     if not (staging / "manifest.json").is_file():
-        raise StreamDockError("Le plugin téléchargé est incomplet (manifest.json absent).")
+        raise StreamDockError(t("stream_dock.incomplete"))
 
 
 def _relative_member(name: str, plugin_id: str) -> PurePosixPath | None:
@@ -122,9 +121,7 @@ def _swap_in(staging: Path, target: Path, plugin_id: str) -> None:
         staging.rename(target)
     except OSError as error:
         raise StreamDockError(
-            "Le plugin n'a pas pu être remplacé : Stream Dock l'utilise encore.",
-            file=target,
-            hint="Quittez Stream Dock, cliquez à nouveau sur Installer, puis relancez Stream Dock.",
+            t("stream_dock.in_use"), file=target, hint=t("stream_dock.in_use.hint")
         ) from error
     _remove(replaced)
 

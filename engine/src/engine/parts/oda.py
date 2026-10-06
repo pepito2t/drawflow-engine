@@ -9,6 +9,7 @@ from engine.core.cache import FileCache
 from engine.core.errors import EngineError
 from engine.core.events import Emit
 from engine.core.settings_models import GeneralSettings
+from engine.parts.messages import t
 
 ODA_OUTPUT_VERSION = "ACAD2018"
 ODA_OUTPUT_TYPE = "DXF"
@@ -19,10 +20,7 @@ CONVERSION_TIMEOUT_SECONDS = 300
 WORK_INPUT_STEM = "plan"
 DXF_SUFFIX = ".dxf"
 DWG_SUFFIX = ".dwg"
-CONFIGURE_ODA_HINT = (
-    "Installez ODA File Converter puis indiquez le chemin de ODAFileConverter.exe "
-    "dans Paramètres → Général."
-)
+CONFIGURE_ODA_HINT = t("oda.configure_hint")
 # Hides the console window ODA would otherwise open on Windows.
 WINDOWS_NO_WINDOW_FLAG = 0x08000000
 
@@ -40,12 +38,10 @@ class DwgConversionError(EngineError):
 def require_oda(general: GeneralSettings) -> Path:
     executable = general.oda_converter_path
     if executable is None:
-        raise OdaNotConfiguredError(
-            "ODA File Converter n'est pas configuré.", hint=CONFIGURE_ODA_HINT
-        )
+        raise OdaNotConfiguredError(t("oda.not_configured"), hint=CONFIGURE_ODA_HINT)
     if not executable.is_file():
         raise OdaNotConfiguredError(
-            "ODA File Converter est introuvable à l'emplacement indiqué.",
+            t("oda.not_found"),
             file=executable,
             hint=CONFIGURE_ODA_HINT,
         )
@@ -81,10 +77,7 @@ class OdaConverter:
             produced = output_folder / f"{WORK_INPUT_STEM}{DXF_SUFFIX}"
             if not produced.is_file():
                 raise DwgConversionError(
-                    "Le plan n'a pas pu être converti "
-                    "(fichier DWG corrompu ou version non prise en charge).",
-                    file=source,
-                    hint="Ouvrez-le dans AutoCAD, faites un AUDIT puis réenregistrez-le.",
+                    t("oda.not_converted"), file=source, hint=t("oda.not_converted_hint")
                 )
             shutil.move(produced, target)
 
@@ -103,15 +96,11 @@ class OdaConverter:
             self._runner(arguments)
         except subprocess.TimeoutExpired as error:
             raise DwgConversionError(
-                "La conversion du plan a pris trop de temps.",
-                file=source,
-                hint="Vérifiez que le fichier n'est pas exceptionnellement lourd.",
+                t("oda.timeout"), file=source, hint=t("oda.timeout_hint")
             ) from error
         except (subprocess.CalledProcessError, OSError) as error:
             raise DwgConversionError(
-                "ODA File Converter a échoué sur ce plan.",
-                file=source,
-                hint=CONFIGURE_ODA_HINT,
+                t("oda.failed"), file=source, hint=CONFIGURE_ODA_HINT
             ) from error
 
 

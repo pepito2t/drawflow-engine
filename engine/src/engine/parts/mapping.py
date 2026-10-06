@@ -5,10 +5,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from engine.core.anomalies import Anomaly
+from engine.parts.messages import t
 from engine.parts.reader import RawPart
 from engine.parts.settings import PartsListSettings
 
-BLOCK_COLUMN_TITLE = "Bloc"
+BLOCK_COLUMN_TITLE = t("mapping.block_column")
 DECIMAL_COMMA = ","
 
 
@@ -79,22 +80,20 @@ def _quantity(part: RawPart, tag: str) -> tuple[float, bool]:
 def _warnings(missing: Counter[str], invalid_quantities: int, quantity_tag: str) -> list[Anomaly]:
     warnings = [
         Anomaly(
-            f"Attribut « {tag} » absent sur {_blocks(count)} (cellule laissée vide).",
-            hint=f"Ajoutez l'attribut {tag} aux blocs dans AutoCAD, ou changez la colonne dans "
-            "Paramètres → Liste de pièces.",
+            t("mapping.missing_attribute", tag=tag, blocks=_blocks(count)),
+            hint=t("mapping.missing_attribute_hint", tag=tag),
         )
         for tag, count in sorted(missing.items())
     ]
     if invalid_quantities:
         warnings.append(
             Anomaly(
-                f"Quantité « {quantity_tag} » illisible sur {invalid_quantities} bloc(s) : "
-                "compté(s) 1.",
-                hint=f"Saisissez un nombre dans l'attribut {quantity_tag} de ces blocs.",
+                t("mapping.invalid_quantity", tag=quantity_tag, count=invalid_quantities),
+                hint=t("mapping.invalid_quantity_hint", tag=quantity_tag),
             )
         )
     return warnings
 
 
 def _blocks(count: int) -> str:
-    return f"{count} bloc{'s' if count > 1 else ''}"
+    return t("mapping.blocks.many" if count > 1 else "mapping.blocks.one", count=count)

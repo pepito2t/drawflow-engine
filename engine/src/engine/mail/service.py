@@ -18,12 +18,11 @@ from engine.mail.graph import (
     refresh_tokens,
     start_device_login,
 )
+from engine.mail.messages import t
 from engine.mail.store import Attachment, ConversationStore, as_message
 from engine.mail.tokens import MailSession, SessionStore
 
 LOCAL_FOLDER_NAME = "mail"
-NOT_CONFIGURED_HINT = "Renseignez l'identifiant d'application Entra ID dans Paramètres → Courriel."
-NOT_CONNECTED_HINT = "Connectez la boîte mail dans l'onglet Courriels."
 SKIPPED_CONTENT_TYPES = ("image/",)
 
 
@@ -54,7 +53,7 @@ def connect_finish(
     try:
         login = DeviceLogin.model_validate(raw_login)
     except ValueError as error:
-        raise InvalidInputError("Code de connexion manquant.") from error
+        raise InvalidInputError(t("service.missing_code")) from error
     tokens = finish_device_login(mail.client_id, mail.tenant, login, transport)
     client = GraphClient(tokens.access_token, transport)
     try:
@@ -79,7 +78,7 @@ def fetch(settings_file: Path, transport: httpx.BaseTransport | None = None) -> 
     sessions = SessionStore(settings_file)
     session = sessions.read()
     if session is None:
-        raise MailError("Aucune boîte mail connectée.", hint=NOT_CONNECTED_HINT)
+        raise MailError(t("service.not_connected"), hint=t("service.not_connected_hint"))
     tokens = refresh_tokens(mail.client_id, mail.tenant, session.refresh_token, transport)
     store = _store(settings_file, mail)
     client = GraphClient(tokens.access_token, transport)
@@ -135,7 +134,7 @@ def remove_conversation(settings_file: Path, conversation_id: str) -> dict[str, 
 def _configured(settings_file: Path) -> MailSettings:
     mail = load_mail_settings(settings_file)
     if not mail.client_id:
-        raise MailError("La boîte mail n'est pas configurée.", hint=NOT_CONFIGURED_HINT)
+        raise MailError(t("service.not_configured"), hint=t("service.not_configured_hint"))
     return mail
 
 
@@ -180,7 +179,7 @@ def _download_attachments(
 ) -> list[Attachment]:
     attachments = []
     for raw in client.attachments(message_id):
-        name = str(raw.get("name") or "pièce jointe")
+        name = str(raw.get("name") or t("service.attachment_default_name"))
         size = int(raw.get("size") or 0)
         content_type = str(raw.get("contentType") or "")
         attachment = Attachment(name=name, size=size, content_type=content_type)

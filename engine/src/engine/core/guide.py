@@ -9,6 +9,7 @@ from pathlib import Path
 
 from engine.core.errors import EngineError, InvalidInputError
 from engine.core.i18n import DEFAULT_LANGUAGE, Language, current_language
+from engine.core.messages import t
 
 GUIDE_FILES: dict[Language, tuple[str, ...]] = {
     "fr": ("docs", "guide.md"),
@@ -48,23 +49,37 @@ def _sections(language: Language) -> tuple[Section, ...]:
         text = guide_file(language).read_text(encoding="utf-8")
     except OSError as error:
         raise GuideUnavailableError(
-            "Le guide utilisateur est introuvable.", hint="Réinstallez Drawflow."
+            t("guide.unavailable"), hint=t("guide.unavailable_hint")
         ) from error
     return tuple(_split(text))
 
 
 def read_section(topic: str) -> Section:
-    wanted = _fold(topic)
-    for section in sections():
-        if section.id == topic or _fold(section.title) == wanted:
-            return section
-    for section in sections():
-        if wanted and wanted in _fold(section.title):
-            return section
+    found = _find(topic, sections())
+    if found is None and current_language() != DEFAULT_LANGUAGE:
+        # Topics are often French ids (setup screen, saved links): same position in both guides.
+        french = _sections(DEFAULT_LANGUAGE)
+        translated = _find(topic, french)
+        if translated is not None and len(french) == len(sections()):
+            found = sections()[french.index(translated)]
+    if found is not None:
+        return found
     available = ", ".join(section.id for section in sections())
     raise InvalidInputError(
-        f"Section « {topic} » absente du guide.", hint=f"Sections : {available}."
+        t("guide.section_missing", topic=topic),
+        hint=t("guide.section_missing_hint", available=available),
     )
+
+
+def _find(topic: str, candidates: tuple[Section, ...]) -> Section | None:
+    wanted = _fold(topic)
+    for section in candidates:
+        if section.id == topic or _fold(section.title) == wanted:
+            return section
+    for section in candidates:
+        if wanted and wanted in _fold(section.title):
+            return section
+    return None
 
 
 def slug(title: str) -> str:

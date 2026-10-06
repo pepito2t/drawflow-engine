@@ -3,15 +3,16 @@ from pydantic import field_validator
 from engine.core.fields import KeyValue, mapping_field, ui_field
 from engine.core.naming import FileNameTemplate, file_name_template_field
 from engine.core.settings_models import ModuleSettings
+from engine.parts.messages import t
 
 DEFAULT_COLUMNS = [
-    KeyValue(key="Référence", value="REF"),
-    KeyValue(key="Désignation", value="DESIGNATION"),
-    KeyValue(key="Longueur", value="LONGUEUR"),
-    KeyValue(key="Matière", value="MATIERE"),
-    KeyValue(key="Finition", value="FINITION"),
+    KeyValue(key=t("settings.column.reference"), value="REF"),
+    KeyValue(key=t("settings.column.designation"), value="DESIGNATION"),
+    KeyValue(key=t("settings.column.length"), value="LONGUEUR"),
+    KeyValue(key=t("settings.column.material"), value="MATIERE"),
+    KeyValue(key=t("settings.column.finish"), value="FINITION"),
 ]
-DEFAULT_FILE_NAME_TEMPLATE = "{projet}_liste-pieces_{date}"
+DEFAULT_FILE_NAME_TEMPLATE = f"{{projet}}_{t('settings.file_name_stem')}_{{date}}"
 BLOCK_PATTERN_SEPARATOR = ";"
 MAX_HEADER_ROW = 1000
 
@@ -19,45 +20,44 @@ MAX_HEADER_ROW = 1000
 class PartsListSettings(ModuleSettings):
     included_blocks: str = ui_field(
         "text",
-        label="Blocs retenus",
+        label=t("settings.included_blocks.label"),
         default="*",
-        description=(
-            "Noms de blocs séparés par « ; », jokers * et ? acceptés (ex. PANNEAU*;EQUERRE). "
-            "* = tous les blocs."
-        ),
+        description=t("settings.included_blocks.description"),
         min_length=1,
     )
     columns: list[KeyValue] = mapping_field(
-        label="Colonnes de la liste",
-        key_label="Colonne",
-        value_label="Attribut du bloc",
+        label=t("settings.columns.label"),
+        key_label=t("settings.columns.key_label"),
+        value_label=t("settings.columns.value_label"),
         default=DEFAULT_COLUMNS,
-        description="Chaque colonne du fichier exporté reprend la valeur d'un attribut AutoCAD.",
+        description=t("settings.columns.description"),
     )
     quantity_attribute: str = ui_field(
         "text",
-        label="Attribut de quantité",
+        label=t("settings.quantity_attribute.label"),
         default="QTE",
-        description="Laisser vide ou absent du bloc : chaque bloc compte pour 1.",
+        description=t("settings.quantity_attribute.description"),
     )
-    include_block_name: bool = ui_field("bool", label="Ajouter une colonne « Bloc »", default=True)
+    include_block_name: bool = ui_field(
+        "bool", label=t("settings.include_block_name.label"), default=True
+    )
     group_identical: bool = ui_field(
         "bool",
-        label="Regrouper les pièces identiques",
+        label=t("settings.group_identical.label"),
         default=True,
-        description="Les pièces dont toutes les colonnes sont égales forment une seule ligne.",
+        description=t("settings.group_identical.description"),
     )
     template_sheet: str = ui_field(
         "text",
-        label="Feuille du modèle Excel",
+        label=t("settings.template_sheet.label"),
         default="",
-        description="Laisser vide pour utiliser la feuille active du modèle.",
+        description=t("settings.template_sheet.description"),
     )
     header_row: int = ui_field(
         "number",
-        label="Ligne d'en-tête",
+        label=t("settings.header_row.label"),
         default=1,
-        description="Les pièces sont écrites à partir de la ligne suivante.",
+        description=t("settings.header_row.description"),
         ge=1,
         le=MAX_HEADER_ROW,
     )

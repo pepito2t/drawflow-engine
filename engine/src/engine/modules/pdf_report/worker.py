@@ -3,12 +3,13 @@ from pathlib import Path
 
 from engine.core.anomalies import Anomaly
 from engine.modules.pdf_report.fields import extract_fields, find_references
+from engine.modules.pdf_report.messages import t
 from engine.modules.pdf_report.reader import TextLine, read_pages
 from engine.modules.pdf_report.report import PlanData
 from engine.modules.pdf_report.settings import PdfReportSettings
 from engine.modules.pdf_report.zone import Zone, lines_in_zone
 
-NO_TEXT_WARNING = "Aucun texte trouvé : le PDF est peut-être une image scannée."
+MISSING_FIELDS_SEPARATOR = ", "
 
 
 @dataclass(frozen=True)
@@ -39,20 +40,13 @@ def extract_plan(path: Path, *, settings: PdfReportSettings) -> PlanExtraction:
 
 def _warnings(lines: list[TextLine], missing: list[str]) -> list[Anomaly]:
     if not lines:
-        return [
-            Anomaly(
-                NO_TEXT_WARNING,
-                hint="Exportez le PDF depuis le logiciel de dessin (texte sélectionnable) "
-                "plutôt qu'un scan.",
-            )
-        ]
+        return [Anomaly(t("worker.no_text"), hint=t("worker.no_text.hint"))]
     if missing:
         return [
             Anomaly(
-                f"Champs introuvables : {', '.join(missing)}.",
-                location="cartouche",
-                hint="Vérifiez la zone du cartouche et les libellés cherchés dans "
-                "Paramètres → Rapport.",
+                t("worker.missing_fields", fields=MISSING_FIELDS_SEPARATOR.join(missing)),
+                location=t("worker.missing_fields.location"),
+                hint=t("worker.missing_fields.hint"),
             )
         ]
     return []

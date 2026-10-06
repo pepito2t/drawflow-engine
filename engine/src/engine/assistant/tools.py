@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from engine.assistant.events import Proposal
+from engine.assistant.messages import t
 from engine.core.errors import InvalidInputError
 from engine.core.guide import read_section, sections
 from engine.core.history import HistoryStore
@@ -55,7 +56,7 @@ def propose_preset_run(settings: Path, preset_id: str) -> dict[str, Any]:
     preset = next((p for p in PresetStore(settings).presets() if p.id == preset_id), None)
     if preset is None:
         raise InvalidInputError(
-            f"Le préréglage « {preset_id} » n'existe pas.", hint="Utilise list_presets."
+            t("tools.preset_not_found", preset_id=preset_id), hint=t("tools.preset_not_found.hint")
         )
     module = get_module(preset.module)
     proposal = Proposal(
@@ -75,9 +76,11 @@ def propose_feature_run(feature_id: str, inputs: dict[str, Any]) -> dict[str, An
         validated = module.inputs_model.model_validate(inputs)
     except ValidationError as error:
         raise InvalidInputError(
-            f"Entrées invalides pour « {module.manifest.name} ».",
-            hint=f"{describe_validation_error(module.inputs_model, error)}. "
-            "Consulte inputs_schema avec list_features.",
+            t("tools.invalid_inputs", feature=module.manifest.name),
+            hint=t(
+                "tools.invalid_inputs.hint",
+                details=describe_validation_error(module.inputs_model, error),
+            ),
         ) from error
     proposal = Proposal(
         kind="feature",
@@ -99,7 +102,7 @@ def propose_column_synonyms(settings: Path, additions: dict[str, list[str]]) -> 
         kind="synonyms",
         feature=SECTION_ID,
         feature_name=SECTION_TITLE,
-        label="En-têtes reconnus",
+        label=t("tools.synonyms_label"),
         inputs={"columns": cleaned},
     )
     return {"proposal": proposal.model_dump(mode="json")}
@@ -120,7 +123,7 @@ def describe_run(settings: Path, run_id: str) -> dict[str, Any]:
     entry = next((e for e in HistoryStore(settings).entries() if e.id == run_id), None)
     if entry is None:
         raise InvalidInputError(
-            f"Aucun traitement « {run_id} » dans l'historique.", hint="Utilise list_runs."
+            t("tools.run_not_found", run_id=run_id), hint=t("tools.run_not_found.hint")
         )
     return {
         **_run_summary(entry),

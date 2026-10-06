@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from engine.core.errors import InvalidSettingsError, SettingsFileError
 from engine.core.json_files import write_json_atomically
+from engine.core.messages import t
 from engine.core.presets import Preset, PresetStore
 from engine.core.registry import AnyModule
 from engine.core.settings import (
@@ -58,7 +59,7 @@ def export_profile(
             if library.defaults():
                 archive.writestr(TEMPLATES_PREFIX + DEFAULTS_FILE, json.dumps(library.defaults()))
     except OSError as error:
-        raise SettingsFileError("Impossible d'exporter le profil.", file=target) from error
+        raise SettingsFileError(t("profile.export_failed"), file=target) from error
     return {
         "exported": str(target),
         "sections": len(sections),
@@ -108,7 +109,7 @@ def import_profile(
             [preset.model_dump(mode="json") for preset in contents.presets],
         )
     except OSError as error:
-        raise SettingsFileError("Impossible d'appliquer le profil.", file=source) from error
+        raise SettingsFileError(t("profile.apply_failed"), file=source) from error
     save_settings(settings_file, contents.document, modules)
     return {
         "imported": str(source),
@@ -148,19 +149,19 @@ def _read_archive(
     source: Path, modules: dict[str, AnyModule], app_version: str | None
 ) -> _Contents:
     if not zipfile.is_zipfile(source):
-        raise InvalidSettingsError("Ce fichier n'est pas un profil Drawflow.", file=source)
+        raise InvalidSettingsError(t("profile.not_a_profile"), file=source)
     with zipfile.ZipFile(source) as archive:
         if PROFILE_FILE not in archive.namelist():
-            raise InvalidSettingsError("Ce fichier n'est pas un profil Drawflow.", file=source)
+            raise InvalidSettingsError(t("profile.not_a_profile"), file=source)
         manifest = _member_json(archive, PROFILE_FILE, source)
         if not isinstance(manifest, dict) or manifest.get("format") != PROFILE_FORMAT:
-            raise InvalidSettingsError("Ce fichier n'est pas un profil Drawflow.", file=source)
+            raise InvalidSettingsError(t("profile.not_a_profile"), file=source)
         exported_by = str(manifest.get("app_version", UNKNOWN_VERSION))
         if _version_key(exported_by) > _version_key(app_version or UNKNOWN_VERSION):
             raise InvalidSettingsError(
-                f"Ce profil vient de Drawflow {exported_by}, plus récent que cette version.",
+                t("profile.newer_version", version=exported_by),
                 file=source,
-                hint="Mettez Drawflow à jour, puis réimportez le profil.",
+                hint=t("profile.newer_version_hint"),
             )
         sections, document = _validated_sections(manifest.get("sections"), modules, source)
         presets = _validated_presets(_member_json(archive, PRESETS_MEMBER, source), source)
@@ -174,7 +175,7 @@ def _read_archive(
         for template in templates:
             if archive.getinfo(template.member).file_size > MAX_MEMBER_BYTES:
                 raise InvalidSettingsError(
-                    f"Le modèle « {template.name} » du profil est trop volumineux.", file=source
+                    t("profile.template_too_large", name=template.name), file=source
                 )
         defaults = None
         if TEMPLATES_PREFIX + DEFAULTS_FILE in archive.namelist():
@@ -198,7 +199,7 @@ def _member_json(archive: zipfile.ZipFile, member: str, source: Path) -> Any:
         return json.loads(archive.read(member).decode("utf-8"))
     except (KeyError, ValueError) as error:
         raise InvalidSettingsError(
-            f"Le profil est incomplet ou illisible ({member}).", file=source
+            t("profile.member_unreadable", member=member), file=source
         ) from error
 
 
@@ -206,7 +207,7 @@ def _validated_sections(
     raw: Any, modules: dict[str, AnyModule], source: Path
 ) -> tuple[list[Any], Document]:
     if not isinstance(raw, dict):
-        raise InvalidSettingsError("Le profil ne contient aucun paramètre.", file=source)
+        raise InvalidSettingsError(t("profile.no_settings"), file=source)
     known = {spec.id: spec for spec in section_specs(modules)}
     sections = []
     document: Document = {}
@@ -219,7 +220,7 @@ def _validated_sections(
             document[spec.id] = spec.model.model_validate(values).model_dump(mode="json")
         except ValidationError as error:
             raise InvalidSettingsError(
-                f"Paramètres « {spec.title} » invalides dans le profil.",
+                t("profile.section_invalid", title=spec.title),
                 file=source,
                 hint=str(error.errors()[0].get("msg", "")),
             ) from error
@@ -229,13 +230,11 @@ def _validated_sections(
 
 def _validated_presets(raw: Any, source: Path) -> list[Preset]:
     if not isinstance(raw, list):
-        raise InvalidSettingsError("Les préréglages du profil sont illisibles.", file=source)
+        raise InvalidSettingsError(t("profile.presets_unreadable"), file=source)
     try:
         return [Preset.model_validate(item) for item in raw]
     except ValidationError as error:
-        raise InvalidSettingsError(
-            "Les préréglages du profil sont invalides.", file=source
-        ) from error
+        raise InvalidSettingsError(t("profile.presets_invalid"), file=source) from error
 
 
 def _version_key(version: str) -> tuple[int, ...]:

@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from engine.core.xlsx import CellValue, fit_columns, open_sheet, save_workbook, write_row
+from engine.modules.dwg_diff.messages import t
 from engine.modules.dwg_diff.service import (
     DELTA_HEADER,
     PLANS_AFTER_HEADER,
@@ -15,14 +16,14 @@ from engine.modules.dwg_diff.service import (
 )
 
 SHEETS = (
-    ("Ajouts", "added"),
-    ("Suppressions", "removed"),
-    ("Modifications", "changed"),
-    ("Inchangés", "unchanged"),
+    (t("export.sheet.added"), "added"),
+    (t("export.sheet.removed"), "removed"),
+    (t("export.sheet.changed"), "changed"),
+    (t("export.sheet.unchanged"), "unchanged"),
 )
-PLANS_SHEET = "Plans"
-PLAN_HEADERS = ("Plan", "Indice A", "Indice B")
-PRESENT, ABSENT = "oui", "non"
+PLANS_SHEET = t("export.sheet.plans")
+PLAN_HEADERS = (t("export.plan_header"), t("export.before_header"), t("export.after_header"))
+PRESENT, ABSENT = t("export.present"), t("export.absent")
 HEADER_ROW = 1
 
 

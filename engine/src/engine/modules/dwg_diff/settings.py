@@ -5,6 +5,7 @@ from pydantic import field_validator
 from engine.core.fields import ui_field
 from engine.core.naming import FileNameTemplate, file_name_template_field
 from engine.core.settings_models import ModuleSettings
+from engine.modules.dwg_diff.messages import t
 
 DEFAULT_KEY_COLUMNS = "Référence"
 # "01_facade-nord" and "facade-nord_02" are the same plan at two indices.
@@ -16,17 +17,15 @@ KEY_SEPARATOR = ";"
 class DwgDiffSettings(ModuleSettings):
     key_columns: str = ui_field(
         "text",
-        label="Colonnes qui identifient une pièce",
+        label=t("settings.key_columns.label"),
         default=DEFAULT_KEY_COLUMNS,
-        description="Noms de colonnes de la liste de pièces, séparés par « ; ». Vide : toutes "
-        "les colonnes sauf la quantité.",
+        description=t("settings.key_columns.description"),
     )
     increment_pattern: str = ui_field(
         "text",
-        label="Incrément dans les noms de plans",
+        label=t("settings.increment_pattern.label"),
         default=DEFAULT_INCREMENT_PATTERN,
-        description="Expression régulière retirée du nom des plans pour reconnaître le même plan "
-        "d'un indice à l'autre (préfixe « 01_ » ou suffixe « _02 » par défaut).",
+        description=t("settings.increment_pattern.description"),
     )
     file_name_template: FileNameTemplate = file_name_template_field(DEFAULT_FILE_NAME_TEMPLATE)
 
@@ -36,7 +35,7 @@ class DwgDiffSettings(ModuleSettings):
         try:
             re.compile(pattern)
         except re.error as error:
-            raise ValueError(f"expression régulière invalide ({error})") from error
+            raise ValueError(t("settings.invalid_pattern", error=error)) from error
         return pattern
 
     def key_column_names(self) -> list[str]:

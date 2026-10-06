@@ -4,10 +4,10 @@ from collections.abc import Collection, Sequence
 
 from engine.core.events import TableEvent, TableRow
 from engine.modules.soumission.export import SHEET_HEADER, SOURCE_HEADER
+from engine.modules.soumission.messages import t
 from engine.modules.soumission.reader import SubmissionTable
 
 PREVIEW_MAX_ROWS = 500
-TEXT_AMOUNT_ISSUE = "Montant illisible : colonne « {column} »"
 
 
 def preview_table(
@@ -23,7 +23,7 @@ def preview_table(
                 continue
             cells = [str(row.get(column, "")) for column in columns]
             issues = [
-                TEXT_AMOUNT_ISSUE.format(column=column)
+                t("preview.text_amount_issue", column=column)
                 for column in columns
                 if column in numeric_columns and isinstance(row.get(column), str) and row[column]
             ]

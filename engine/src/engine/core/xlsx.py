@@ -10,6 +10,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl.worksheet.worksheet import Worksheet
 
 from engine.core.errors import EngineError, OutputWriteError
+from engine.core.messages import t
 
 FORMULA_PREFIX = "="
 MAX_COLUMN_WIDTH = 60
@@ -34,9 +35,9 @@ def open_sheet(template: Path | None, sheet_name: str | None) -> tuple[Workbook,
     if sheet_name not in workbook.sheetnames:
         available = ", ".join(workbook.sheetnames)
         raise TemplateError(
-            f"La feuille « {sheet_name} » n'existe pas dans le modèle.",
+            t("xlsx.sheet_missing", sheet=sheet_name),
             file=template,
-            hint=f"Feuilles disponibles : {available}. Corrigez le nom dans Paramètres.",
+            hint=t("xlsx.sheet_missing_hint", available=available),
         )
     return workbook, workbook[sheet_name]
 
@@ -64,9 +65,7 @@ def save_workbook(workbook: Workbook, target: Path) -> None:
         workbook.save(target)
     except OSError as error:
         raise OutputWriteError(
-            "Impossible d'enregistrer le classeur.",
-            file=target,
-            hint="Fermez le fichier s'il est ouvert dans Excel et vérifiez le dossier de sortie.",
+            t("xlsx.save_failed"), file=target, hint=t("xlsx.save_failed_hint")
         ) from error
 
 
@@ -81,14 +80,12 @@ def _load_template(template: Path) -> Workbook:
         return load_workbook(template)
     except (OSError, BadZipFile, InvalidFileException, KeyError) as error:
         raise TemplateError(
-            "Le modèle Excel est illisible.",
-            file=template,
-            hint="Choisissez un fichier .xlsx valide (pas .xls ni .xlsm).",
+            t("xlsx.template_unreadable"), file=template, hint=t("xlsx.template_unreadable_hint")
         ) from error
 
 
 def _active_sheet(workbook: Workbook) -> Worksheet:
     sheet = workbook.active
     if not isinstance(sheet, Worksheet):
-        raise TemplateError("Le modèle Excel ne contient pas de feuille de calcul.")
+        raise TemplateError(t("xlsx.no_sheet"))
     return sheet

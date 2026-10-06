@@ -8,6 +8,7 @@ from pdfminer.pdfparser import PDFSyntaxError
 from pdfplumber.utils.exceptions import PdfminerException
 
 from engine.core.errors import EngineError
+from engine.modules.pdf_report.messages import t
 
 LINE_TOLERANCE_POINTS = 3
 WORD_SEPARATOR = " "
@@ -45,7 +46,7 @@ def read_pages(path: Path) -> Iterator[PageText]:
     except (PdfminerException, PDFSyntaxError, PDFPasswordIncorrect) as error:
         raise _readable_error(path, error) from error
     except OSError as error:
-        raise PdfReadError("Le PDF est inaccessible.", file=path) from error
+        raise PdfReadError(t("reader.inaccessible"), file=path) from error
 
 
 def _group_lines(words: list[dict[str, object]]) -> list[TextLine]:
@@ -75,13 +76,5 @@ def _number(word: dict[str, object], key: str) -> float:
 def _readable_error(path: Path, error: Exception) -> PdfReadError:
     cause = error.args[0] if isinstance(error, PdfminerException) and error.args else error
     if isinstance(cause, PDFPasswordIncorrect):
-        return PdfReadError(
-            "Le PDF est protégé par un mot de passe.",
-            file=path,
-            hint="Enregistrez une copie sans protection puis relancez.",
-        )
-    return PdfReadError(
-        "Le PDF est illisible ou endommagé.",
-        file=path,
-        hint="Ré-exportez le plan en PDF depuis le logiciel d'origine.",
-    )
+        return PdfReadError(t("reader.protected"), file=path, hint=t("reader.protected.hint"))
+    return PdfReadError(t("reader.unreadable"), file=path, hint=t("reader.unreadable.hint"))

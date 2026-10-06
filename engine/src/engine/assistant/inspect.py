@@ -5,6 +5,7 @@ from itertools import islice
 from pathlib import Path
 from typing import Any
 
+from engine.assistant.messages import t
 from engine.core.cache import resolve_cache_root
 from engine.core.errors import InvalidInputError
 from engine.core.settings import load_general_settings
@@ -29,9 +30,11 @@ SUGGESTED_FEATURE = {
 def inspect_file(settings: Path, raw_path: str) -> dict[str, Any]:
     path = Path(raw_path)
     if not path.is_absolute() or not path.is_file():
-        raise InvalidInputError("Fichier introuvable.", file=path, hint="Donne le chemin complet.")
+        raise InvalidInputError(
+            t("inspect.file_not_found"), file=path, hint=t("inspect.file_not_found.hint")
+        )
     if path.stat().st_size > MAX_FILE_BYTES:
-        raise InvalidInputError("Fichier trop volumineux pour être inspecté.", file=path)
+        raise InvalidInputError(t("inspect.file_too_large"), file=path)
     suffix = path.suffix.lower()
     base = {
         "file": str(path),
@@ -49,9 +52,7 @@ def inspect_file(settings: Path, raw_path: str) -> dict[str, Any]:
     if suffix == ".docx":
         return {**base, **_document(path)}
     raise InvalidInputError(
-        "Type de fichier non pris en charge.",
-        file=path,
-        hint="Drawflow lit les DWG, DXF, PDF, XLSX et DOCX.",
+        t("inspect.unsupported_type"), file=path, hint=t("inspect.unsupported_type.hint")
     )
 
 

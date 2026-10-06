@@ -5,6 +5,7 @@ from pydantic import field_validator
 from engine.core.fields import KeyValue, mapping_field, ui_field
 from engine.core.naming import FileNameTemplate, file_name_template_field
 from engine.core.settings_models import ModuleSettings
+from engine.modules.pdf_report.messages import t
 
 PERCENT_MAX = 100
 REGEX_PREFIX = "re:"
@@ -27,26 +28,22 @@ def _zone_field(label: str, default: float) -> float:
 
 
 class PdfReportSettings(ModuleSettings):
-    title_block_left: float = _zone_field("Cartouche : bord gauche (% de la largeur)", 55)
-    title_block_top: float = _zone_field("Cartouche : bord haut (% de la hauteur)", 70)
-    title_block_right: float = _zone_field("Cartouche : bord droit (% de la largeur)", 100)
-    title_block_bottom: float = _zone_field("Cartouche : bord bas (% de la hauteur)", 100)
+    title_block_left: float = _zone_field(t("settings.title_block_left.label"), 55)
+    title_block_top: float = _zone_field(t("settings.title_block_top.label"), 70)
+    title_block_right: float = _zone_field(t("settings.title_block_right.label"), 100)
+    title_block_bottom: float = _zone_field(t("settings.title_block_bottom.label"), 100)
     fields: list[KeyValue] = mapping_field(
-        label="Champs du cartouche",
-        key_label="Balise Word",
-        value_label="Libellé dans le cartouche",
+        label=t("settings.fields.label"),
+        key_label=t("settings.fields.key_label"),
+        value_label=t("settings.fields.value_label"),
         default=DEFAULT_FIELDS,
-        description=(
-            "La valeur est le texte qui suit le libellé (ou la ligne suivante). "
-            "Préfixe « re: » pour une expression régulière avec un groupe, "
-            "ex. re:Ind\\.?\\s*(\\w+)."
-        ),
+        description=t("settings.fields.description"),
     )
     reference_pattern: str = ui_field(
         "text",
-        label="Format des références",
+        label=t("settings.reference_pattern.label"),
         default=DEFAULT_REFERENCE_PATTERN,
-        description="Expression régulière des références relevées sur tout le plan.",
+        description=t("settings.reference_pattern.description"),
     )
 
     file_name_template: FileNameTemplate = file_name_template_field(DEFAULT_FILE_NAME_TEMPLATE)
@@ -56,9 +53,7 @@ class PdfReportSettings(ModuleSettings):
     def validate_fields(cls, fields: list[KeyValue]) -> list[KeyValue]:
         for field in fields:
             if not TAG_PATTERN.match(field.key):
-                raise ValueError(
-                    f"balise « {field.key} » invalide : minuscules, chiffres et _ uniquement"
-                )
+                raise ValueError(t("settings.invalid_tag", tag=field.key))
             if field.value.startswith(REGEX_PREFIX):
                 _compile(field.value.removeprefix(REGEX_PREFIX), field.key)
         return fields
@@ -66,7 +61,7 @@ class PdfReportSettings(ModuleSettings):
     @field_validator("reference_pattern")
     @classmethod
     def validate_reference_pattern(cls, pattern: str) -> str:
-        _compile(pattern, "références")
+        _compile(pattern, t("settings.references_owner"))
         return pattern
 
 
@@ -74,4 +69,4 @@ def _compile(pattern: str, owner: str) -> re.Pattern[str]:
     try:
         return re.compile(pattern)
     except re.error as error:
-        raise ValueError(f"expression régulière invalide pour « {owner} » : {error}") from error
+        raise ValueError(t("settings.invalid_regex", owner=owner, error=error)) from error

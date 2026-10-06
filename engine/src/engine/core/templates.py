@@ -7,6 +7,7 @@ from typing import Any
 
 from engine.core.contract import TemplateKind
 from engine.core.errors import EngineError, OutputWriteError
+from engine.core.messages import t
 from engine.core.naming import unique_output_path
 
 TEMPLATES_FOLDER = "templates"
@@ -52,19 +53,17 @@ class TemplateLibrary:
     def import_file(self, source: Path) -> TemplateInfo:
         kind = SUFFIX_KINDS.get(source.suffix.lower())
         if kind is None:
-            raise TemplateError(
-                "Seuls les modèles Excel (.xlsx) et Word (.docx) sont acceptés.", file=source
-            )
+            raise TemplateError(t("templates.unsupported"), file=source)
         if not zipfile.is_zipfile(source):
             raise TemplateError(
-                "Le modèle est illisible.", file=source, hint="Vérifiez qu'il s'ouvre normalement."
+                t("templates.unreadable"), file=source, hint=t("templates.unreadable_hint")
             )
         target = unique_output_path(self.folder, source.name)
         try:
             self.folder.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
         except OSError as error:
-            raise OutputWriteError("Impossible d'importer le modèle.", file=source) from error
+            raise OutputWriteError(t("templates.import_failed"), file=source) from error
         return TemplateInfo(target.name, kind)
 
     def remove(self, template_id: str) -> None:
@@ -72,7 +71,7 @@ class TemplateLibrary:
         try:
             path.unlink()
         except OSError as error:
-            raise TemplateError("Impossible de supprimer le modèle.", file=path) from error
+            raise TemplateError(t("templates.remove_failed"), file=path) from error
         defaults = {
             module: chosen for module, chosen in self.defaults().items() if chosen != template_id
         }
@@ -100,8 +99,12 @@ class TemplateLibrary:
             path = self._path(template_id)
             if SUFFIX_KINDS.get(path.suffix.lower()) != user.kind:
                 raise TemplateError(
-                    f"« {template_id} » n'est pas un modèle {user.kind.upper()} "
-                    f"adapté à « {user.name} »."
+                    t(
+                        "templates.wrong_kind",
+                        template_id=template_id,
+                        kind=user.kind.upper(),
+                        module_name=user.name,
+                    )
                 )
             defaults[user.id] = template_id
         self._write_defaults(defaults)
@@ -132,10 +135,10 @@ class TemplateLibrary:
 
     def _path(self, template_id: str) -> Path:
         if Path(template_id).name != template_id:
-            raise TemplateError("Identifiant de modèle invalide.")
+            raise TemplateError(t("templates.invalid_id"))
         path = self.folder / template_id
         if not path.is_file():
-            raise TemplateError(f"Le modèle « {template_id} » n'existe plus.")
+            raise TemplateError(t("templates.missing", template_id=template_id))
         return path
 
     def _write_defaults(self, defaults: dict[str, str]) -> None:
@@ -145,6 +148,4 @@ class TemplateLibrary:
                 json.dumps(defaults, ensure_ascii=False), encoding="utf-8"
             )
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible d'enregistrer le modèle par défaut.", file=self.folder
-            ) from error
+            raise OutputWriteError(t("templates.default_save_failed"), file=self.folder) from error

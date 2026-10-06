@@ -11,6 +11,7 @@ from engine.core.events import LogEvent
 from engine.core.naming import naming_values, output_target, writing_output
 from engine.core.settings import load_section
 from engine.modules.dwg_diff.export import export_diff
+from engine.modules.dwg_diff.messages import t
 from engine.modules.dwg_diff.schema import DwgDiffInputs
 from engine.modules.dwg_diff.service import (
     DOCUMENT_TYPE,
@@ -28,9 +29,9 @@ from engine.parts.settings import PartsListSettings
 from engine.parts.worker import FileExtraction, extract_file
 
 OUTPUT_EXTENSION = "xlsx"
-PARTS_LIST_SECTION = ("dwg-parts", "Liste de pièces")
-BEFORE_LABEL = "Indice A"
-AFTER_LABEL = "Indice B"
+PARTS_LIST_SECTION = ("dwg-parts", t("pipeline.parts_list_section"))
+BEFORE_SIDE = "A"
+AFTER_SIDE = "B"
 
 
 def run_diff(inputs: DwgDiffInputs, context: RunContext, moment: datetime) -> ModuleResult:
@@ -44,14 +45,16 @@ def run_diff(inputs: DwgDiffInputs, context: RunContext, moment: datetime) -> Mo
         inputs.after_files, inputs.after_folders, recursive=inputs.recursive, emit=emit
     )
     worker = _worker(context, [*before_plans, *after_plans])
-    before = _parts_list(before_plans, worker, context, norm, BEFORE_LABEL)
-    after = _parts_list(after_plans, worker, context, norm, AFTER_LABEL)
+    before = _parts_list(before_plans, worker, context, norm, BEFORE_SIDE)
+    after = _parts_list(after_plans, worker, context, norm, AFTER_SIDE)
     report = compare(before, after, settings.key_column_names(), settings.increment())
     emit(preview_table(report))
     if inputs.preview:
-        return ModuleResult(summary=f"Aperçu : {describe_result(report)}", preview=True)
+        return ModuleResult(
+            summary=t("pipeline.preview_summary", summary=describe_result(report)), preview=True
+        )
     target = _target(inputs, settings, moment)
-    emit(LogEvent(message=f"Écriture de {target.name}"))
+    emit(LogEvent(message=t("pipeline.writing", name=target.name)))
     with writing_output(target):
         export_diff(report, target)
     return ModuleResult(summary=describe_result(report), outputs=[target])
@@ -71,16 +74,14 @@ def _parts_list(
     worker: partial[FileExtraction],
     context: RunContext,
     norm: PartsListSettings,
-    label: str,
+    side: str,
 ) -> PartsList:
+    label = t("pipeline.side_label", side=side)
     outcome = process_batch(
         plans, worker, batch_size=context.general.batch_size, emit=context.emit, label=label
     )
     if not outcome.results:
-        raise EngineError(
-            f"Aucun plan de l'{label.lower()} n'a pu être lu.",
-            hint="Consultez les avertissements.",
-        )
+        raise EngineError(t("pipeline.no_file", side=side), hint=t("pipeline.no_file_hint"))
     parts: list[RawPart] = []
     for path, extraction in outcome.results:
         emit_anomalies(context.emit, extraction.warnings, path)

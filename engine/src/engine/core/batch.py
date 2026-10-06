@@ -7,8 +7,10 @@ from pathlib import Path
 
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ProgressEvent, WarningEvent
+from engine.core.i18n import current_language, set_language
+from engine.core.messages import t
 
-UNEXPECTED_ITEM_ERROR = "Fichier non traité : erreur inattendue."
+UNEXPECTED_ITEM_ERROR = t("batch.unexpected_item_error")
 INLINE_BATCH_SIZE = 1
 
 type Completed[ResultT] = Iterator[tuple[Path, ResultT | Exception]]
@@ -58,7 +60,10 @@ def _run_inline[ResultT](
 def _run_in_pool[ResultT](
     paths: Sequence[Path], worker: Callable[[Path], ResultT], batch_size: int
 ) -> Completed[ResultT]:
-    with ProcessPoolExecutor(max_workers=batch_size) as pool:
+    # Spawned workers import everything afresh: they must inherit the language of this run.
+    with ProcessPoolExecutor(
+        max_workers=batch_size, initializer=set_language, initargs=(current_language(),)
+    ) as pool:
         futures: dict[Future[ResultT], Path] = {pool.submit(worker, path): path for path in paths}
         for future in as_completed(futures):
             error = future.exception()
@@ -79,7 +84,8 @@ def _collect[ResultT](
             failures.append(_report_failure(path, value, emit))
         else:
             by_path[path] = value
-        emit(ProgressEvent(current=done, total=total, message=f"{label} : {path.name}"))
+        message = t("batch.progress", label=label, name=path.name)
+        emit(ProgressEvent(current=done, total=total, message=message))
     results = [(path, by_path[path]) for path in paths if path in by_path]
     return BatchOutcome(results=results, failures=failures)
 
@@ -89,6 +95,6 @@ def _report_failure(path: Path, error: Exception, emit: Emit) -> BatchFailure:
         message, hint = error.message, error.hint
     else:
         traceback.print_exception(error, file=sys.stderr)
-        message, hint = UNEXPECTED_ITEM_ERROR, "Consultez les journaux (Paramètres → Installation)."
+        message, hint = UNEXPECTED_ITEM_ERROR, t("batch.unexpected_item_hint")
     emit(WarningEvent(message=message, file=str(path), hint=hint))
     return BatchFailure(path=path, message=message)
