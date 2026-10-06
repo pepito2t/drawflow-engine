@@ -35,7 +35,7 @@ class ToolResultEvent(_BaseEvent):
 class Proposal(_BaseEvent):
     """A run the assistant suggests; nothing starts until the user confirms it."""
 
-    kind: Literal["preset", "feature"]
+    kind: Literal["preset", "feature", "synonyms"]
     feature: str
     feature_name: str
     label: str
