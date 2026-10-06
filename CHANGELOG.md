@@ -6,7 +6,15 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 - **Liste de pièces multi-projets** : option « Un projet par dossier » — colonne Projet et onglet Total toutes origines confondues (#168).
 
+## 0.14.0 — 2026-10-06
+
 - **Comparaison d'indices** : nouvelle fonctionnalité qui compare deux indices d'un jeu de plans DWG/DXF (ajouts, suppressions, quantités modifiées, plans présents dans chaque indice), avec aperçu avant export et fichier Excel à onglets. Les noms de plans incrémentés (`01_`, `_02`) sont rapprochés automatiquement (#166).
+
+## 0.13.0 — 2026-10-06
+
+- **Écran Aujourd'hui** à l'ouverture : prérequis à configurer, préréglages lançables en un clic, derniers traitements (ouvrir, relancer). Commande `today.open` ; outil `read_today` pour l'assistant (#165).
+
+## 0.12.0 — 2026-10-06
 
 - **Aperçu avant export** (liste de pièces, soumission) : le tableau s'affiche avant l'écriture du fichier Excel, lignes à vérifier surlignées avec leur raison, filtre « Anomalies seulement », puis **Exporter** ou **Annuler**. Case « Aperçu avant export » dans le formulaire, mémorisée par les préréglages (#164).
 

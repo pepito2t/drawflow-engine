@@ -18,6 +18,7 @@ interface AppCommandTargets {
   toggleAssistant: () => void;
   openHelp: (topic?: string) => void;
   openHistory: () => void;
+  openToday: () => void;
 }
 
 /** Registers the app-level commands shared by the UI, the Stream Dock and future integrations. */
@@ -28,6 +29,7 @@ export function useAppCommands({
   toggleAssistant,
   openHelp,
   openHistory,
+  openToday,
 }: AppCommandTargets): void {
   const { state, dispatch } = useRunsStore();
   const { presets } = usePresets();
@@ -105,6 +107,7 @@ export function useAppCommands({
   useCommand(COMMANDS.openLastResult, openLastResult);
 
   useCommand(COMMANDS.openHistory, openHistory);
+  useCommand(COMMANDS.openToday, openToday);
 
   const rerunHistory = useCallback(
     async ({ entryId }: { entryId: string }) => {

@@ -14,6 +14,7 @@ export interface ExtraTab {
 
 interface ModuleTabsProps {
   modules: CatalogModule[];
+  leadingTabs: ExtraTab[];
   extraTabs: ExtraTab[];
   selectedId: string | null;
   onSelect: (tabId: string) => void;
@@ -22,7 +23,14 @@ interface ModuleTabsProps {
 
 export const tabPanelId = (moduleId: string) => `panel-${moduleId}`;
 
-export function ModuleTabs({ modules, extraTabs, selectedId, onSelect, footer }: ModuleTabsProps) {
+export function ModuleTabs({
+  modules,
+  leadingTabs,
+  extraTabs,
+  selectedId,
+  onSelect,
+  footer,
+}: ModuleTabsProps) {
   const { state } = useRunsStore();
 
   return (
@@ -33,6 +41,14 @@ export function ModuleTabs({ modules, extraTabs, selectedId, onSelect, footer }:
         aria-orientation="vertical"
         aria-label="Fonctionnalités"
       >
+        {leadingTabs.map((tab) => (
+          <ExtraTabButton
+            key={tab.id}
+            tab={tab}
+            selected={tab.id === selectedId}
+            onSelect={onSelect}
+          />
+        ))}
         {modules.map(({ manifest }) => {
           const entry = entryFor(state, manifest.id);
           const isSelected = manifest.id === selectedId;
@@ -57,28 +73,45 @@ export function ModuleTabs({ modules, extraTabs, selectedId, onSelect, footer }:
           );
         })}
         {extraTabs.map((tab) => (
-          <button
+          <ExtraTabButton
             key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={tab.id === selectedId}
-            aria-controls={tabPanelId(tab.id)}
-            className={
-              tab.id === selectedId ? "side-tab selected side-tab-extra" : "side-tab side-tab-extra"
-            }
-            onClick={() => {
-              onSelect(tab.id);
-            }}
-          >
-            <span className="side-tab-label">
-              {tab.icon}
-              {tab.label}
-            </span>
-          </button>
+            tab={tab}
+            selected={tab.id === selectedId}
+            onSelect={onSelect}
+            separated
+          />
         ))}
       </nav>
       <div className="sidebar-footer">{footer}</div>
     </aside>
+  );
+}
+
+interface ExtraTabButtonProps {
+  tab: ExtraTab;
+  selected: boolean;
+  onSelect: (tabId: string) => void;
+  separated?: boolean;
+}
+
+function ExtraTabButton({ tab, selected, onSelect, separated = false }: ExtraTabButtonProps) {
+  const classes = ["side-tab", selected ? "selected" : "", separated ? "side-tab-extra" : ""];
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={selected}
+      aria-controls={tabPanelId(tab.id)}
+      className={classes.filter(Boolean).join(" ")}
+      onClick={() => {
+        onSelect(tab.id);
+      }}
+    >
+      <span className="side-tab-label">
+        {tab.icon}
+        {tab.label}
+      </span>
+    </button>
   );
 }
 

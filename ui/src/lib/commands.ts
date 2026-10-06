@@ -18,6 +18,7 @@ export const COMMAND_ARGUMENTS = {
   "update.install": z.object({}),
   "app.state": z.object({}),
   "history.open": z.object({}),
+  "today.open": z.object({}),
   "history.rerun": z.object({ entryId: z.string().min(1) }),
 } as const;
 
@@ -39,6 +40,7 @@ export const COMMANDS = {
   installUpdate: "update.install",
   appState: "app.state",
   openHistory: "history.open",
+  openToday: "today.open",
   rerunHistory: "history.rerun",
 } as const satisfies Record<string, CommandId>;
 

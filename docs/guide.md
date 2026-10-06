@@ -20,6 +20,10 @@ La marche à suivre complète, dans l'ordre. Chaque étape renvoie à sa section
 
 En cas de souci : [Dépannage](#dépannage).
 
+## L'écran Aujourd'hui
+
+Drawflow s'ouvre sur **Aujourd'hui** : les prérequis manquants (bouton **Configurer**), les préréglages lançables en un clic, et les derniers traitements avec **Ouvrir le résultat** et **Relancer**. Commande `today.open` pour le Stream Dock ; l'assistant lit le même écran (« qu'est-ce qui m'attend ? »).
+
 ## Installer Drawflow
 
 1. Téléchargez `Drawflow_X.Y.Z_x64-setup.exe` depuis la [dernière release](https://github.com/pepito2t/drawflow-engine/releases/latest) et lancez-le (installation pour l'utilisateur courant, sans droits administrateur).
