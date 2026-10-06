@@ -4,7 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
-
+- **Moteur en français ou en anglais** : messages, avertissements, étiquettes de formulaires, noms des fonctionnalités, feuilles Excel, écran d'installation et assistant suivent la langue réglée ; aide intégrée servie depuis le guide traduit ; `engine --lang en` en ligne de commande (#121).
 
 ## 0.19.0 — 2026-10-06
 
