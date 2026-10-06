@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { useEffect } from "react";
 import { shouldNotify } from "../lib/notification-rule";
 import { readNotificationThreshold } from "../lib/settings";
@@ -19,8 +20,8 @@ export function useSystemNotifications(): void {
         }
         const title =
           event.outcome === "succeeded"
-            ? `${event.moduleName} terminé`
-            : `${event.moduleName} : échec`;
+            ? t("run.succeededTitle", { module: event.moduleName })
+            : t("run.failedTitle", { module: event.moduleName });
         notifyWhenRelevant(event.durationMs, title, event.message);
       }),
     [subscribe],

@@ -4,6 +4,7 @@ import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { describePresetTarget, newAutomation, validateAutomations } from "../lib/automations";
 import type { CatalogModule } from "../lib/catalog";
 import { toReadableError, type ReadableError } from "../lib/error-message";
+import { t } from "../i18n/settings";
 import {
   getAutomationStatus,
   saveAutomations,
@@ -24,7 +25,7 @@ export function AutomationsPanel({ modules }: { modules: CatalogModule[] }) {
         const { message, hint } = toReadableError(error);
         return (
           <ErrorPanel
-            title="Automatisations indisponibles"
+            title={t("automations.unavailable")}
             message={message}
             hint={hint}
             onRetry={retry}
@@ -32,7 +33,7 @@ export function AutomationsPanel({ modules }: { modules: CatalogModule[] }) {
         );
       }}
     >
-      <Suspense fallback={<Loader label="Chargement…" />}>
+      <Suspense fallback={<Loader label={t("automations.loading")} />}>
         <AutomationsEditor statusPromise={promise} modules={modules} />
       </Suspense>
     </ErrorBoundary>
@@ -64,7 +65,7 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
   };
 
   const browse = (id: string) => {
-    pickPaths({ directory: true, multiple: false, title: "Dossier à surveiller" })
+    pickPaths({ directory: true, multiple: false, title: t("automations.folderTitle") })
       .then(([folder]) => {
         if (folder) {
           update(id, { folder });
@@ -94,17 +95,9 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
 
   return (
     <section className="settings-section">
-      <h3>Automatisations</h3>
-      <p className="muted">
-        Dès qu'un plan, un PDF ou un fichier Excel arrive dans un dossier surveillé, le préréglage
-        choisi se lance avec ce fichier. Chaque fichier n'est traité qu'une fois ; l'application
-        doit être ouverte et déverrouillée.
-      </p>
-      {presets.length === 0 && (
-        <p className="muted">
-          Créez d'abord un préréglage depuis le formulaire d'une fonctionnalité.
-        </p>
-      )}
+      <h3>{t("automations.title")}</h3>
+      <p className="muted">{t("automations.intro")}</p>
+      {presets.length === 0 && <p className="muted">{t("automations.noPresets")}</p>}
       <ul className="automation-list">
         {automations.map((automation) => (
           <li key={automation.id} className="automation-item">
@@ -117,11 +110,11 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
                   update(automation.id, { enabled: event.target.checked });
                 }}
               />
-              Active
+              {t("automations.enabled")}
             </label>
             <div className="automation-folder">
               <span className="path" title={automation.folder}>
-                {automation.folder || "Aucun dossier choisi"}
+                {automation.folder || t("automations.noFolder")}
               </span>
               <button
                 type="button"
@@ -130,18 +123,18 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
                   browse(automation.id);
                 }}
               >
-                Parcourir
+                {t("automations.browse")}
               </button>
             </div>
             <select
-              aria-label="Préréglage à lancer"
+              aria-label={t("automations.presetLabel")}
               value={automation.presetId}
               disabled={isSaving}
               onChange={(event) => {
                 update(automation.id, { presetId: event.target.value });
               }}
             >
-              <option value="">Préréglage…</option>
+              <option value="">{t("automations.presetPlaceholder")}</option>
               {presets.map((preset) => (
                 <option key={preset.id} value={preset.id}>
                   {describePresetTarget(preset, modules)}
@@ -151,7 +144,7 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
             <button
               type="button"
               className="icon-button"
-              aria-label="Retirer cette automatisation"
+              aria-label={t("automations.remove")}
               disabled={isSaving}
               onClick={() => {
                 setSaved(false);
@@ -164,9 +157,9 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
         ))}
       </ul>
       {watchErrors.map((message) => (
-        <ErrorPanel key={message} title="Dossier non surveillé" message={message} />
+        <ErrorPanel key={message} title={t("automations.watchError")} message={message} />
       ))}
-      {error && <ErrorPanel title="Automatisations non enregistrées" message={error.message} />}
+      {error && <ErrorPanel title={t("automations.notSaved")} message={error.message} />}
       <div className="run-controls">
         <button
           type="button"
@@ -176,18 +169,18 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
             setAutomations((current) => [...current, newAutomation()]);
           }}
         >
-          Ajouter un dossier
+          {t("automations.addFolder")}
         </button>
         {validation && automations.length > 0 && <span className="muted">{validation}</span>}
-        {saved && <span className="run-status succeeded">Automatisations enregistrées</span>}
-        {isSaving && <Spinner label="Enregistrement" />}
+        {saved && <span className="run-status succeeded">{t("automations.saved")}</span>}
+        {isSaving && <Spinner label={t("automations.saving")} />}
         <button
           type="button"
           className="primary"
           disabled={isSaving || validation !== null}
           onClick={save}
         >
-          Enregistrer
+          {t("automations.save")}
         </button>
       </div>
     </section>

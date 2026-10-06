@@ -1,9 +1,8 @@
 import { z } from "zod";
+import { t } from "../i18n/shell";
 import { parseEventLine } from "./events";
 
 const engineOutputSchema = z.object({ success: z.boolean(), stdout: z.string() });
-
-const ENGINE_FAILURE_MESSAGE = "Le moteur a renvoyé une erreur sans explication.";
 
 export class EngineCommandError extends Error {
   override name = "EngineCommandError";
@@ -31,5 +30,5 @@ function toCommandError(stdout: string): EngineCommandError {
   if (event?.type === "error") {
     return new EngineCommandError(event.message, event.hint, event.file);
   }
-  return new EngineCommandError(ENGINE_FAILURE_MESSAGE, null, null);
+  return new EngineCommandError(t("engineOutput.failure"), null, null);
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useAssistantChat } from "../hooks/use-assistant-chat";
 import { dropFieldProps, useFileDrop } from "../hooks/use-file-drop";
+import { t } from "../i18n/panels";
 import { addAttachments, fileName, withAttachments } from "../lib/attachments";
 import type { CatalogModule } from "../lib/catalog";
 import { AssistantConnection } from "./AssistantConnection";
@@ -11,10 +12,10 @@ const ASSISTANT_DROP_NAMESPACE = "assistant";
 const ATTACHMENTS_FIELD = "attachments";
 
 const SUGGESTIONS = [
-  "Quelles fonctionnalités propose Drawflow ?",
-  "Quels préréglages sont enregistrés ?",
-  "Lance la liste de pièces sur un dossier de plans",
-];
+  "assistant.suggestion.features",
+  "assistant.suggestion.presets",
+  "assistant.suggestion.parts",
+] as const;
 
 interface AssistantPanelProps {
   modules: CatalogModule[];
@@ -62,15 +63,15 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
   };
 
   return (
-    <aside className="assistant-panel" aria-label="Assistant" hidden={!isOpen}>
+    <aside className="assistant-panel" aria-label={t("assistant.title")} hidden={!isOpen}>
       <header className="assistant-header">
-        <strong>Assistant</strong>
+        <strong>{t("assistant.title")}</strong>
         <div className="assistant-actions">
           <button
             type="button"
             className="icon-button"
-            aria-label="Nouvelle conversation"
-            title="Nouvelle conversation"
+            aria-label={t("assistant.new_conversation")}
+            title={t("assistant.new_conversation")}
             disabled={state.entries.length === 0}
             onClick={clear}
           >
@@ -79,8 +80,8 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
           <button
             type="button"
             className="icon-button"
-            aria-label="Fermer l'assistant"
-            title="Fermer"
+            aria-label={t("assistant.close")}
+            title={t("assistant.close_short")}
             onClick={onClose}
           >
             <CloseIcon />
@@ -91,20 +92,17 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
       <div className="assistant-messages" ref={messagesRef} aria-live="polite">
         {state.entries.length === 0 && (
           <div className="assistant-empty">
-            <p className="muted">
-              Posez une question sur Drawflow. L'assistant tourne sur un modèle local : rien ne
-              quitte ce poste.
-            </p>
+            <p className="muted">{t("assistant.intro")}</p>
             {SUGGESTIONS.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
                 className="assistant-suggestion"
                 onClick={() => {
-                  submit(suggestion);
+                  submit(t(suggestion));
                 }}
               >
-                {suggestion}
+                {t(suggestion)}
               </button>
             ))}
           </div>
@@ -127,14 +125,14 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
         }}
       >
         {attachments.length > 0 && (
-          <ul className="assistant-attachments" aria-label="Fichiers joints">
+          <ul className="assistant-attachments" aria-label={t("assistant.attachments")}>
             {attachments.map((path) => (
               <li key={path} title={path}>
                 <span>{fileName(path)}</span>
                 <button
                   type="button"
                   className="icon-button"
-                  aria-label={`Retirer ${fileName(path)}`}
+                  aria-label={t("assistant.remove_attachment", { name: fileName(path) })}
                   onClick={() => {
                     setAttachments((current) => current.filter((item) => item !== path));
                   }}
@@ -149,8 +147,8 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
           ref={inputRef}
           value={draft}
           rows={3}
-          placeholder="Votre question, ou glissez des fichiers ici… (Maj+Entrée : retour à la ligne)"
-          aria-label="Question pour l'assistant"
+          placeholder={t("assistant.placeholder")}
+          aria-label={t("assistant.question")}
           onChange={(event) => {
             setDraft(event.target.value);
           }}
@@ -160,8 +158,8 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
           <button
             type="button"
             className="icon-button"
-            aria-label="Arrêter"
-            title="Arrêter"
+            aria-label={t("assistant.stop")}
+            title={t("assistant.stop")}
             onClick={stop}
           >
             <StopIcon />
@@ -170,8 +168,8 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
           <button
             type="submit"
             className="icon-button primary-icon"
-            aria-label="Envoyer"
-            title="Envoyer"
+            aria-label={t("assistant.send")}
+            title={t("assistant.send")}
             disabled={!draft.trim() && attachments.length === 0}
           >
             <SendIcon />

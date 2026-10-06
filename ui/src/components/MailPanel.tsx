@@ -1,6 +1,8 @@
 import { Suspense, use, useState } from "react";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { plural } from "../i18n";
+import { t } from "../i18n/panels";
 import { toReadableError, type ReadableError } from "../lib/error-message";
 import {
   describeFetch,
@@ -46,11 +48,8 @@ export function MailPanel({ onOpenSettings }: { onOpenSettings: () => void }) {
   return (
     <section className="module-workspace">
       <header>
-        <h1>Courriels</h1>
-        <p>
-          Vos conversations Exchange, conservées sur ce poste : lire, exporter vers un dossier de
-          chantier, retirer. La boîte mail n'est jamais modifiée.
-        </p>
+        <h1>{t("mail.title")}</h1>
+        <p>{t("mail.subtitle")}</p>
       </header>
       <ErrorBoundary
         key={id}
@@ -58,7 +57,7 @@ export function MailPanel({ onOpenSettings }: { onOpenSettings: () => void }) {
           const { message, hint } = toReadableError(error);
           return (
             <ErrorPanel
-              title="Courriels indisponibles"
+              title={t("mail.unavailable")}
               message={message}
               hint={hint}
               onRetry={retry}
@@ -66,7 +65,7 @@ export function MailPanel({ onOpenSettings }: { onOpenSettings: () => void }) {
           );
         }}
       >
-        <Suspense fallback={<Loader label="Chargement des courriels…" />}>
+        <Suspense fallback={<Loader label={t("mail.loading")} />}>
           <MailContent dataPromise={promise} onChanged={retry} onOpenSettings={onOpenSettings} />
         </Suspense>
       </ErrorBoundary>
@@ -112,7 +111,7 @@ function MailContent({ dataPromise, onChanged, onOpenSettings }: MailContentProp
       setLogin(started);
       await finishMailLogin(started);
       setLogin(null);
-      return "Boîte mail connectée.";
+      return t("mail.connected");
     });
   };
   const fetch = () => {
@@ -127,12 +126,12 @@ function MailContent({ dataPromise, onChanged, onOpenSettings }: MailContentProp
     readConversation(conversation.id).then(setSelected).catch(fail);
   };
   const exportSelected = (detail: MailDetail) => {
-    pickPaths({ directory: true, multiple: false, title: "Dossier de destination" })
+    pickPaths({ directory: true, multiple: false, title: t("mail.pick_folder") })
       .then(([target]) => {
         if (target) {
           run(async () => {
             await exportConversation(detail.conversation.id, target);
-            return `Conversation exportée dans ${target}.`;
+            return t("mail.exported", { target });
           });
         }
       })
@@ -142,16 +141,16 @@ function MailContent({ dataPromise, onChanged, onOpenSettings }: MailContentProp
     run(async () => {
       await removeConversation(detail.conversation.id);
       setSelected(null);
-      return "Conversation retirée de Drawflow.";
+      return t("mail.removed");
     });
   };
 
   if (!status.configured) {
     return (
       <div className="mail-setup">
-        <p>Renseignez d'abord l'identifiant d'application Entra ID dans Paramètres → Courriel.</p>
+        <p>{t("mail.setup_hint")}</p>
         <button type="button" className="primary" onClick={onOpenSettings}>
-          Ouvrir les paramètres
+          {t("mail.open_settings")}
         </button>
       </div>
     );
@@ -164,7 +163,7 @@ function MailContent({ dataPromise, onChanged, onOpenSettings }: MailContentProp
           <>
             <span className="muted">{status.account}</span>
             <button type="button" className="primary" disabled={isBusy} onClick={fetch}>
-              Récupérer les nouveaux messages
+              {t("mail.fetch")}
             </button>
             <button
               type="button"
@@ -172,31 +171,33 @@ function MailContent({ dataPromise, onChanged, onOpenSettings }: MailContentProp
               onClick={() => {
                 run(async () => {
                   await disconnectMail();
-                  return "Boîte mail déconnectée.";
+                  return t("mail.disconnected");
                 });
               }}
             >
-              Déconnecter
+              {t("mail.disconnect")}
             </button>
           </>
         ) : (
           <button type="button" className="primary" disabled={isBusy} onClick={connect}>
-            Connecter la boîte mail
+            {t("mail.connect")}
           </button>
         )}
-        {isBusy && <Spinner label="Courriels en cours" />}
+        {isBusy && <Spinner label={t("mail.busy")} />}
         {notice && <span className="run-status succeeded">{notice}</span>}
       </div>
       {login && (
         <div className="mail-login">
           <p>
-            Ouvrez <strong>{login.verification_uri}</strong> et saisissez le code{" "}
-            <code className="mail-code">{login.user_code}</code>, puis connectez-vous avec le compte
-            de la boîte mail. Drawflow attend la fin de la connexion.
+            {t("mail.login.before_uri")} <strong>{login.verification_uri}</strong>{" "}
+            {t("mail.login.before_code")} <code className="mail-code">{login.user_code}</code>
+            {t("mail.login.after_code")}
           </p>
         </div>
       )}
-      {error && <ErrorPanel title="Action impossible" message={error.message} hint={error.hint} />}
+      {error && (
+        <ErrorPanel title={t("common.action_failed")} message={error.message} hint={error.hint} />
+      )}
       <div className="mail-columns">
         <ConversationList conversations={conversations} selected={selected} onOpen={open} />
         {selected && (
@@ -220,10 +221,10 @@ interface ConversationListProps {
 
 function ConversationList({ conversations, selected, onOpen }: ConversationListProps) {
   if (conversations.length === 0) {
-    return <p className="muted">Aucune conversation pour l'instant : récupérez les messages.</p>;
+    return <p className="muted">{t("mail.empty")}</p>;
   }
   return (
-    <ul className="mail-list" aria-label="Conversations">
+    <ul className="mail-list" aria-label={t("mail.conversations")}>
       {conversations.map((conversation) => (
         <li key={conversation.id}>
           <button
@@ -239,10 +240,9 @@ function ConversationList({ conversations, selected, onOpen }: ConversationListP
             <span className="muted">{participantsSummary(conversation)}</span>
             <span className="muted">
               {describeReceived(conversation.last_received_at)} ·{" "}
-              {String(conversation.message_count)} message
-              {conversation.message_count > 1 ? "s" : ""}
+              {plural(conversation.message_count, t("mail.messages.one"), t("mail.messages.other"))}
               {conversation.attachment_count > 0 &&
-                ` · ${String(conversation.attachment_count)} pièce${conversation.attachment_count > 1 ? "s" : ""} jointe${conversation.attachment_count > 1 ? "s" : ""}`}
+                ` · ${plural(conversation.attachment_count, t("mail.attachments.one"), t("mail.attachments.other"))}`}
             </span>
           </button>
         </li>
@@ -272,7 +272,7 @@ function ConversationView({ detail, disabled, onExport, onRemove }: Conversation
               onExport(detail);
             }}
           >
-            Exporter vers un dossier…
+            {t("mail.export")}
           </button>
           {confirmRemove ? (
             <>
@@ -285,7 +285,7 @@ function ConversationView({ detail, disabled, onExport, onRemove }: Conversation
                   onRemove(detail);
                 }}
               >
-                Confirmer le retrait
+                {t("mail.confirm_remove")}
               </button>
               <button
                 type="button"
@@ -293,7 +293,7 @@ function ConversationView({ detail, disabled, onExport, onRemove }: Conversation
                   setConfirmRemove(false);
                 }}
               >
-                Annuler
+                {t("common.cancel")}
               </button>
             </>
           ) : (
@@ -304,7 +304,7 @@ function ConversationView({ detail, disabled, onExport, onRemove }: Conversation
                 setConfirmRemove(true);
               }}
             >
-              Retirer de Drawflow
+              {t("mail.remove")}
             </button>
           )}
         </div>
@@ -316,7 +316,9 @@ function ConversationView({ detail, disabled, onExport, onRemove }: Conversation
             <span className="muted">{describeReceived(message.received_at)}</span>
           </div>
           <span className="muted">
-            À : {message.recipients.map(describeParticipant).join(", ") || "—"}
+            {t("mail.to", {
+              recipients: message.recipients.map(describeParticipant).join(", ") || "—",
+            })}
           </span>
           <pre className="mail-body">{message.body || message.preview}</pre>
           {message.attachments.length > 0 && (
@@ -334,7 +336,9 @@ function ConversationView({ detail, disabled, onExport, onRemove }: Conversation
                       {attachment.name}
                     </button>
                   ) : (
-                    <span className="muted">{attachment.name} (non téléchargée)</span>
+                    <span className="muted">
+                      {t("mail.not_downloaded", { name: attachment.name })}
+                    </span>
                   )}
                 </li>
               ))}

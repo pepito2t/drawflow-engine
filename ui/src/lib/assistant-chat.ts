@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { t, type PanelKey } from "../i18n/panels";
 import type { AssistantEvent } from "./assistant-events";
 import { parseJsonOrNull } from "./json";
 import type { ReadableError } from "./error-message";
@@ -72,16 +73,19 @@ const savedHistorySchema = z.object({
 export const INITIAL_CHAT: ChatState = { entries: [], nextId: 1 };
 
 const SUCCESS_EXIT_CODE = 0;
-const UNEXPECTED_EXIT: ReadableError = {
-  message: "L'assistant s'est arrêté sans terminer sa réponse.",
-  hint: "Réessayez ; si le problème persiste, vérifiez Paramètres → Assistant.",
-  file: null,
+const TOOL_LABEL_KEYS: Record<string, PanelKey> = {
+  list_features: "assistant.tool.list_features",
+  list_presets: "assistant.tool.list_presets",
+  list_templates: "assistant.tool.list_templates",
 };
-const TOOL_LABELS: Record<string, string> = {
-  list_features: "Consulte les fonctionnalités",
-  list_presets: "Consulte les préréglages",
-  list_templates: "Consulte les modèles",
-};
+
+function unexpectedExit(): ReadableError {
+  return {
+    message: t("assistant.unexpected_exit"),
+    hint: t("assistant.unexpected_exit_hint"),
+    file: null,
+  };
+}
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
@@ -93,7 +97,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return updateAnswer(state, action.answerId, (answer) =>
         action.code === SUCCESS_EXIT_CODE
           ? { ...answer, status: "done" }
-          : { ...answer, status: "failed", error: answer.error ?? UNEXPECTED_EXIT },
+          : { ...answer, status: "failed", error: answer.error ?? unexpectedExit() },
       );
     case "failed":
       return updateAnswer(state, action.answerId, (answer) => ({
@@ -155,7 +159,8 @@ export function conversationWith(state: ChatState, question: string): Conversati
 }
 
 export function toolLabel(name: string): string {
-  return TOOL_LABELS[name] ?? `Outil ${name}`;
+  const key = TOOL_LABEL_KEYS[name];
+  return key ? t(key) : t("assistant.tool.other", { name });
 }
 
 function startAnswer(state: ChatState, text: string): ChatState {

@@ -1,3 +1,4 @@
+import { t } from "../i18n/settings";
 import { z } from "zod";
 import { CatalogError } from "./catalog";
 import type { ReadableError } from "./error-message";
@@ -53,7 +54,7 @@ const OS_LABELS = { windows: "Windows", macos: "macOS", linux: "Linux" } as cons
 export function parseSetupReport(rawJson: string): SetupReport {
   const parsed = setupReportSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new CatalogError("L'analyse de l'installation reçue du moteur est invalide.");
+    throw new CatalogError(t("setup.invalidReport"));
   }
   return parsed.data;
 }
@@ -72,7 +73,7 @@ export function missingCount(report: SetupReport): number {
 
 export function describeSystem(report: SetupReport): string {
   const { os, arch, package_manager: manager } = report.system;
-  return `${OS_LABELS[os]} · ${arch} · ${manager ?? "sans gestionnaire de paquets"}`;
+  return `${OS_LABELS[os]} · ${arch} · ${manager ?? t("setup.noPackageManager")}`;
 }
 
 export type SetupRun =
@@ -104,11 +105,9 @@ export function setupRunsReducer(
 }
 
 const PERCENT = 100;
-const UNEXPECTED_EXIT: ReadableError = {
-  message: "L'installation s'est arrêtée sans résultat.",
-  hint: "Analysez à nouveau, puis réessayez.",
-  file: null,
-};
+function unexpectedExit(): ReadableError {
+  return { message: t("setup.unexpectedExit"), hint: t("setup.unexpectedExitHint"), file: null };
+}
 
 export function setupRunReducer(run: SetupRun, message: SetupRunMessage): SetupRun {
   if (message.kind === "started") {
@@ -123,7 +122,7 @@ export function setupRunReducer(run: SetupRun, message: SetupRunMessage): SetupR
     case "exit":
       return message.code === 0
         ? { status: "done", action: run.action, message: run.message }
-        : { status: "failed", action: run.action, error: UNEXPECTED_EXIT };
+        : { status: "failed", action: run.action, error: unexpectedExit() };
     case "line":
       return applyLine(run, message.line);
   }

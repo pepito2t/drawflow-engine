@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 interface ErrorPanelProps {
   title: string;
   message: string;
@@ -17,13 +18,13 @@ export function ErrorPanel({ title, message, hint, file, onRetry }: ErrorPanelPr
         <p>{message}</p>
         {file && (
           <p className="error-file">
-            Fichier : <code>{file}</code>
+            {t("errorPanel.file")} <code>{file}</code>
           </p>
         )}
         {hint && <p className="error-hint">{hint}</p>}
         {onRetry && (
           <button type="button" onClick={onRetry}>
-            Réessayer
+            {t("errorPanel.retry")}
           </button>
         )}
       </div>

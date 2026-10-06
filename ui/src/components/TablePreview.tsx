@@ -1,3 +1,5 @@
+import { plural } from "../i18n";
+import { t } from "../i18n/shell";
 import { useState } from "react";
 import type { TableEvent } from "../lib/events";
 
@@ -15,11 +17,11 @@ export function TablePreview({ table, onExport, onDismiss }: TablePreviewProps) 
   const truncated = table.total - table.rows.length;
 
   return (
-    <section className="table-preview" aria-label="Aperçu avant export">
+    <section className="table-preview" aria-label={t("tablePreview.title")}>
       <div className="table-preview-header">
         <strong>
-          Aperçu : {String(table.total)} ligne{table.total > 1 ? "s" : ""}
-          {flagged > 0 && ` · ${String(flagged)} à vérifier`}
+          {plural(table.total, t("tablePreview.rows.one"), t("tablePreview.rows.other"))}
+          {flagged > 0 && ` · ${t("tablePreview.flagged", { count: flagged })}`}
         </strong>
         {flagged > 0 && (
           <label className="checkbox-row">
@@ -30,7 +32,7 @@ export function TablePreview({ table, onExport, onDismiss }: TablePreviewProps) 
                 setOnlyIssues(event.target.checked);
               }}
             />
-            Anomalies seulement
+            {t("tablePreview.onlyIssues")}
           </label>
         )}
       </div>
@@ -60,15 +62,15 @@ export function TablePreview({ table, onExport, onDismiss }: TablePreviewProps) 
       </div>
       {truncated > 0 && (
         <span className="muted">
-          {String(truncated)} ligne{truncated > 1 ? "s" : ""} de plus dans le fichier exporté.
+          {plural(truncated, t("tablePreview.truncated.one"), t("tablePreview.truncated.other"))}
         </span>
       )}
       <div className="run-controls">
         <button type="button" className="primary" onClick={onExport}>
-          Exporter
+          {t("tablePreview.export")}
         </button>
         <button type="button" onClick={onDismiss}>
-          Annuler
+          {t("tablePreview.cancel")}
         </button>
       </div>
     </section>

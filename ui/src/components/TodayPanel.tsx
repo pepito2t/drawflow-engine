@@ -3,6 +3,8 @@ import { useCommands } from "../hooks/command-registry";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { usePresets } from "../hooks/presets-context";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { plural } from "../i18n";
+import { t } from "../i18n/panels";
 import type { CatalogModule } from "../lib/catalog";
 import { COMMANDS } from "../lib/commands";
 import { toReadableError } from "../lib/error-message";
@@ -37,18 +39,18 @@ export function TodayPanel({ modules }: TodayPanelProps) {
   return (
     <section className="module-workspace today">
       <header>
-        <h1>Aujourd'hui</h1>
-        <p>Ce qui vous attend, ce qui vient d'être fait, ce qui se lance en un clic.</p>
+        <h1>{t("today.title")}</h1>
+        <p>{t("today.subtitle")}</p>
       </header>
       {missingSetup > 0 && <SetupReminder missing={missingSetup} />}
       <PresetsBlock modules={modules} />
       <ErrorBoundary
         key={id}
         fallback={(error) => (
-          <ErrorPanel title="Historique indisponible" message={toReadableError(error).message} />
+          <ErrorPanel title={t("history.unavailable")} message={toReadableError(error).message} />
         )}
       >
-        <Suspense fallback={<Loader label="Derniers traitements…" />}>
+        <Suspense fallback={<Loader label={t("today.recent_loading")} />}>
           <RecentRuns entriesPromise={promise} onChanged={retry} />
         </Suspense>
       </ErrorBoundary>
@@ -60,9 +62,7 @@ function SetupReminder({ missing }: { missing: number }) {
   const { execute } = useCommands();
   return (
     <div className="today-block today-setup">
-      <strong>
-        {String(missing)} élément{missing > 1 ? "s" : ""} à installer ou à configurer
-      </strong>
+      <strong>{plural(missing, t("today.setup.one"), t("today.setup.other"))}</strong>
       <button
         type="button"
         className="primary"
@@ -70,7 +70,7 @@ function SetupReminder({ missing }: { missing: number }) {
           execute(COMMANDS.openSetup, {}).catch(console.error);
         }}
       >
-        Configurer
+        {t("today.configure")}
       </button>
     </div>
   );
@@ -93,12 +93,9 @@ function PresetsBlock({ modules }: { modules: CatalogModule[] }) {
   };
   return (
     <div className="today-block">
-      <h2>Lancer en un clic</h2>
+      <h2>{t("today.presets")}</h2>
       {presets.length === 0 ? (
-        <p className="muted">
-          Aucun préréglage. Dans une fonctionnalité, remplissez le formulaire puis « Enregistrer
-          comme préréglage ».
-        </p>
+        <p className="muted">{t("today.no_presets")}</p>
       ) : (
         <ul className="today-presets">
           {presets.map((preset) => (
@@ -114,13 +111,13 @@ function PresetsBlock({ modules }: { modules: CatalogModule[] }) {
                   run(preset.id);
                 }}
               >
-                Lancer
+                {t("today.run")}
               </button>
             </li>
           ))}
         </ul>
       )}
-      {error && <ErrorPanel title="Lancement impossible" message={error} />}
+      {error && <ErrorPanel title={t("today.launch_failed")} message={error} />}
     </div>
   );
 }
@@ -141,7 +138,7 @@ function RecentRuns({
   return (
     <div className="today-block">
       <div className="today-block-header">
-        <h2>Derniers traitements</h2>
+        <h2>{t("today.recent")}</h2>
         <button
           type="button"
           className="link-button"
@@ -149,13 +146,11 @@ function RecentRuns({
             execute(COMMANDS.openHistory, {}).catch(console.error);
           }}
         >
-          Tout l'historique
+          {t("today.all_history")}
         </button>
       </div>
       {entries.length === 0 ? (
-        <p className="muted">
-          Rien encore aujourd'hui. Lancez une fonctionnalité ou un préréglage.
-        </p>
+        <p className="muted">{t("today.no_runs")}</p>
       ) : (
         <ul className="history-list">
           {entries.map((entry) => (
@@ -179,7 +174,7 @@ function RecentRuns({
           ))}
         </ul>
       )}
-      {error && <ErrorPanel title="Action impossible" message={error} />}
+      {error && <ErrorPanel title={t("common.action_failed")} message={error} />}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { useEffect } from "react";
 import { useCommands } from "../hooks/command-registry";
 import { useNotificationCenter } from "../hooks/notification-center";
@@ -79,7 +80,7 @@ function ToastItem({ toast, onDismiss, onOpenModule }: ToastItemProps) {
       <button
         type="button"
         className="icon-button"
-        aria-label="Fermer la notification"
+        aria-label={t("toaster.close")}
         onClick={() => {
           onDismiss(toast.id);
         }}

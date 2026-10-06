@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { z } from "zod";
 import { parseJsonOrNull } from "./json";
 
@@ -54,12 +55,14 @@ export type ProgressEvent = z.infer<typeof progressEventSchema>;
 export type TableEvent = z.infer<typeof tableEventSchema>;
 export type TableRow = z.infer<typeof tableRowSchema>;
 
-export const UNREADABLE_EVENT_MESSAGE = "Message illisible reçu du moteur.";
+export function unreadableEventMessage(): string {
+  return t("events.unreadable");
+}
 
 export function parseEventLine(line: string): EngineEvent {
   const parsed = engineEventSchema.safeParse(parseJsonOrNull(line));
   if (parsed.success) {
     return parsed.data;
   }
-  return { type: "error", message: UNREADABLE_EVENT_MESSAGE, file: null, hint: line };
+  return { type: "error", message: unreadableEventMessage(), file: null, hint: line };
 }

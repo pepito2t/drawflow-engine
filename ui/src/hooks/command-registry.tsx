@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { createContext, use, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import {
   parseCommandArguments,
@@ -35,7 +36,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
     }
     const handler = handlers.current.get(parsed.id);
     if (!handler) {
-      return { ok: false, error: `Commande indisponible pour le moment : ${parsed.id}` };
+      return { ok: false, error: t("commands.unavailable", { id: parsed.id }) };
     }
     try {
       const data: unknown = await handler(parsed.args);

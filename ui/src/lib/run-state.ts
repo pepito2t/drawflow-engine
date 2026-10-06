@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import type { EngineMessage } from "./engine-message";
 import { parseEventLine, type EngineEvent, type ProgressEvent, type TableEvent } from "./events";
 
@@ -95,7 +96,7 @@ function applyEvent(state: RunState, event: EngineEvent): RunState {
 
 function finish(state: RunState, exitCode: number | null): RunState {
   if (state.cancelRequested) {
-    return appendLog({ ...state, status: "cancelled" }, "warning", "Traitement annulé.");
+    return appendLog({ ...state, status: "cancelled" }, "warning", t("run.cancelled"));
   }
   if (exitCode === SUCCESS_EXIT_CODE && !hasErrors(state)) {
     return { ...state, status: "succeeded" };
@@ -104,11 +105,7 @@ function finish(state: RunState, exitCode: number | null): RunState {
   if (hasErrors(state)) {
     return failed;
   }
-  return appendLog(
-    failed,
-    "error",
-    `Le moteur s'est arrêté de façon inattendue (code ${String(exitCode)}).`,
-  );
+  return appendLog(failed, "error", t("runState.unexpectedExit", { code: String(exitCode) }));
 }
 
 function appendLog(

@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { Suspense, use, useState } from "react";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError } from "../lib/error-message";
@@ -35,11 +36,11 @@ export function HelpDialog({ topic, onClose }: HelpDialogProps) {
     >
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="help-title">
         <header className="dialog-header">
-          <h2 id="help-title">Aide</h2>
+          <h2 id="help-title">{t("helpDialog.title")}</h2>
           <button
             type="button"
             className="icon-button"
-            aria-label="Fermer"
+            aria-label={t("helpDialog.close")}
             autoFocus
             onClick={onClose}
           >
@@ -53,7 +54,7 @@ export function HelpDialog({ topic, onClose }: HelpDialogProps) {
             return (
               <div className="dialog-body centered">
                 <ErrorPanel
-                  title="Guide indisponible"
+                  title={t("helpDialog.unavailable")}
                   message={message}
                   hint={hint}
                   onRetry={retry}
@@ -65,7 +66,7 @@ export function HelpDialog({ topic, onClose }: HelpDialogProps) {
           <Suspense
             fallback={
               <div className="dialog-body">
-                <Loader label="Chargement du guide…" />
+                <Loader label={t("helpDialog.loading")} />
               </div>
             }
           >
@@ -107,7 +108,12 @@ function GuideView({
 
   return (
     <div className="dialog-body settings-layout">
-      <nav className="side-tabs" role="tablist" aria-orientation="vertical" aria-label="Sections">
+      <nav
+        className="side-tabs"
+        role="tablist"
+        aria-orientation="vertical"
+        aria-label={t("helpDialog.sections")}
+      >
         {sections.map((section) => (
           <button
             key={section.id}

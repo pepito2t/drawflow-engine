@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { z } from "zod";
 
 /** Every UI action reachable from outside (Stream Dock, local LLM) is declared here. */
@@ -63,11 +64,11 @@ export function parseCommandArguments(
   raw: unknown,
 ): { ok: true; id: CommandId; args: unknown } | { ok: false; error: string } {
   if (!isCommandId(id)) {
-    return { ok: false, error: `Commande inconnue : ${id}` };
+    return { ok: false, error: t("commands.unknown", { id }) };
   }
   const parsed = COMMAND_ARGUMENTS[id].safeParse(raw ?? {});
   if (!parsed.success) {
-    return { ok: false, error: `Arguments invalides pour ${id}.` };
+    return { ok: false, error: t("commands.invalidArguments", { id }) };
   }
   return { ok: true, id, args: parsed.data };
 }

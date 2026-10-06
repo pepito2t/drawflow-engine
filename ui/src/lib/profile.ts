@@ -1,3 +1,4 @@
+import { t } from "../i18n/settings";
 import { z } from "zod";
 import { parseJsonOrNull } from "./json";
 
@@ -17,13 +18,15 @@ export class ProfileError extends Error {
   override name = "ProfileError";
 }
 
-export const PROFILE_FILE_FILTERS = [{ name: "Profil Drawflow", extensions: ["zip"] }];
+export function profileFileFilters(): { name: string; extensions: string[] }[] {
+  return [{ name: t("profile.filter"), extensions: ["zip"] }];
+}
 export const PROFILE_FILE_SUFFIX = ".drawflow-profil.zip";
 
 export function parseProfilePreview(rawJson: string): ProfilePreview {
   const parsed = profilePreviewSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new ProfileError("Réponse du moteur invalide pour le profil.");
+    throw new ProfileError(t("profile.invalidResponse"));
   }
   return parsed.data;
 }
@@ -31,19 +34,23 @@ export function parseProfilePreview(rawJson: string): ProfilePreview {
 /** One sentence per thing the import touches, so the user knows what is overwritten. */
 export function describeProfileChanges(preview: ProfilePreview): string[] {
   const lines = [
-    `${String(preview.sections.length)} catégories de paramètres remplacées : ${preview.sections
-      .map((section) => section.title)
-      .join(", ")}.`,
+    t("profile.sectionsReplaced", {
+      count: preview.sections.length,
+      titles: preview.sections.map((section) => section.title).join(", "),
+    }),
   ];
   const presetsLine =
     preview.replaced_presets > 0
-      ? `${String(preview.presets.length)} préréglages importés ; les ${String(preview.replaced_presets)} préréglages actuels sont supprimés.`
-      : `${String(preview.presets.length)} préréglages importés.`;
+      ? t("profile.presetsReplacing", {
+          count: preview.presets.length,
+          replaced: preview.replaced_presets,
+        })
+      : t("profile.presetsImported", { count: preview.presets.length });
   lines.push(presetsLine);
   const replaced =
     preview.replaced_templates.length > 0
-      ? ` (${preview.replaced_templates.join(", ")} remplacés)`
+      ? t("profile.templatesReplaced", { names: preview.replaced_templates.join(", ") })
       : "";
-  lines.push(`${String(preview.templates.length)} modèles importés${replaced}.`);
+  lines.push(t("profile.templatesImported", { count: preview.templates.length, replaced }));
   return lines;
 }

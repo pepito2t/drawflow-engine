@@ -3,10 +3,11 @@ import { useFileDrop, dropFieldProps } from "../hooks/use-file-drop";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError, type ReadableError } from "../lib/error-message";
+import { t } from "../i18n/settings";
 import {
   fileName,
   parseTemplateLibrary,
-  TEMPLATE_FILTERS,
+  templateFileFilters,
   templatesOfKind,
   type TemplateLibrary,
 } from "../lib/templates";
@@ -33,11 +34,16 @@ export function TemplatesPanel() {
       fallback={(error) => {
         const { message, hint } = toReadableError(error);
         return (
-          <ErrorPanel title="Modèles indisponibles" message={message} hint={hint} onRetry={retry} />
+          <ErrorPanel
+            title={t("templates.unavailable")}
+            message={message}
+            hint={hint}
+            onRetry={retry}
+          />
         );
       }}
     >
-      <Suspense fallback={<Loader label="Chargement des modèles…" />}>
+      <Suspense fallback={<Loader label={t("templates.loading")} />}>
         <TemplatesEditor libraryPromise={promise} />
       </Suspense>
     </ErrorBoundary>
@@ -90,8 +96,8 @@ function TemplatesEditor({ libraryPromise }: { libraryPromise: Promise<TemplateL
     pickPaths({
       directory: false,
       multiple: true,
-      title: "Importer des modèles",
-      filters: TEMPLATE_FILTERS,
+      title: t("templates.importTitle"),
+      filters: templateFileFilters(),
     })
       .then(importFiles)
       .catch((reason: unknown) => {
@@ -101,17 +107,12 @@ function TemplatesEditor({ libraryPromise }: { libraryPromise: Promise<TemplateL
 
   return (
     <section className="settings-section">
-      <h3>Modèles</h3>
-      <p className="muted">
-        Importez vos modèles Excel (liste de pièces) et Word (rapport), puis choisissez le modèle
-        utilisé par défaut. Un modèle choisi dans l'onglet reste prioritaire.
-      </p>
+      <h3>{t("templates.title")}</h3>
+      <p className="muted">{t("templates.intro")}</p>
       <div className="path-field" {...dropFieldProps(DROP_NAMESPACE, DROP_FIELD)}>
         <ul className="path-list">
           {library.templates.length === 0 && (
-            <li className="placeholder">
-              Glisser-déposer des fichiers .xlsx / .docx ici ou Importer…
-            </li>
+            <li className="placeholder">{t("templates.dropHint")}</li>
           )}
           {library.templates.map((template) => (
             <li key={template.id} className="template-row">
@@ -120,7 +121,7 @@ function TemplatesEditor({ libraryPromise }: { libraryPromise: Promise<TemplateL
               <button
                 type="button"
                 className="icon-button"
-                aria-label={`Supprimer ${template.id}`}
+                aria-label={t("templates.remove", { name: template.id })}
                 disabled={isBusy}
                 onClick={() => {
                   run(() => request("templates.remove", { id: template.id }));
@@ -133,13 +134,15 @@ function TemplatesEditor({ libraryPromise }: { libraryPromise: Promise<TemplateL
         </ul>
         <div className="path-actions">
           <button type="button" disabled={isBusy} onClick={browse}>
-            Importer…
+            {t("templates.import")}
           </button>
         </div>
       </div>
       {library.modules.map((module) => (
         <div key={module.id} className="form-field">
-          <label htmlFor={`default-${module.id}`}>Modèle par défaut — {module.name}</label>
+          <label htmlFor={`default-${module.id}`}>
+            {t("templates.defaultFor", { module: module.name })}
+          </label>
           <select
             id={`default-${module.id}`}
             value={module.default ?? NO_DEFAULT}
@@ -149,7 +152,7 @@ function TemplatesEditor({ libraryPromise }: { libraryPromise: Promise<TemplateL
               run(() => request("templates.set-default", { module: module.id, template }));
             }}
           >
-            <option value={NO_DEFAULT}>Aucun (mise en page standard)</option>
+            <option value={NO_DEFAULT}>{t("templates.noDefault")}</option>
             {templatesOfKind(library, module.kind).map((id) => (
               <option key={id} value={id}>
                 {id}
@@ -158,10 +161,10 @@ function TemplatesEditor({ libraryPromise }: { libraryPromise: Promise<TemplateL
           </select>
         </div>
       ))}
-      {isBusy && <Spinner label="Traitement" />}
+      {isBusy && <Spinner label={t("templates.busy")} />}
       {error && (
         <ErrorPanel
-          title="Opération impossible"
+          title={t("templates.operationError")}
           message={error.message}
           hint={error.hint}
           file={error.file}

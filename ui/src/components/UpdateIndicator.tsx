@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { useUpdateCenter } from "../hooks/update-center";
 import { describeUpdate } from "../lib/update-state";
 
@@ -13,10 +14,10 @@ export function UpdateIndicator() {
       <button
         type="button"
         className="status-update"
-        title="Télécharger et installer"
+        title={t("updateIndicator.installTitle")}
         onClick={install}
       >
-        {label} — Installer
+        {t("updateIndicator.install", { label })}
       </button>
     );
   }

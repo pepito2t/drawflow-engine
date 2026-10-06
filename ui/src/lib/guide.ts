@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { z } from "zod";
 import { CatalogError } from "./catalog";
 import { parseJsonOrNull } from "./json";
@@ -12,7 +13,7 @@ export type GuideSection = z.infer<typeof guideSchema>["sections"][number];
 export function parseGuide(rawJson: string): GuideSection[] {
   const parsed = guideSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success || parsed.data.sections.length === 0) {
-    throw new CatalogError("Le guide reçu du moteur est invalide.");
+    throw new CatalogError(t("guide.invalid"));
   }
   return parsed.data.sections;
 }

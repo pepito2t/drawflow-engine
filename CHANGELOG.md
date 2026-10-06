@@ -4,6 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Interface en français ou en anglais** : réglage Paramètres → Général → Langue, appliqué immédiatement ; catalogue de messages typé (mêmes clés dans les deux langues) ; guide utilisateur traduit (`docs/guide.en.md`). Les messages du moteur restent en français pour l'instant (#121).
 ## 0.18.0 — 2026-10-06
 
 - **Courriels Exchange / Microsoft 365** : connexion par code (OAuth, sans mot de passe stocké), récupération des messages rangés par conversation avec pièces jointes, lecture, export vers un dossier de chantier, retrait local ; commandes `mail.open` et `mail.fetch` (#134).

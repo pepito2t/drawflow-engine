@@ -1,6 +1,7 @@
 import { Suspense, use, useEffect, useState } from "react";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { t } from "../i18n/panels";
 import {
   parseAssistantStatus,
   selectableModels,
@@ -43,8 +44,8 @@ export function AssistantConnection({ onOpenSettings }: { onOpenSettings: () => 
       <Suspense
         fallback={
           <div className="assistant-connection">
-            <Spinner label="Connexion au modèle" />
-            <span className="muted">Connexion au modèle…</span>
+            <Spinner label={t("assistant.connecting")} />
+            <span className="muted">{t("assistant.connecting_notice")}</span>
           </div>
         }
       >
@@ -84,7 +85,7 @@ function ConnectionStatus({ statusPromise, onRetry, onOpenSettings }: Connection
       <span className={`status-dot ${status.installed ? "ready" : "failed"}`} aria-hidden="true" />
       <select
         className="assistant-model"
-        aria-label="Modèle de l'assistant"
+        aria-label={t("assistant.model")}
         value={status.model}
         disabled={isSaving}
         onChange={(event) => {
@@ -93,19 +94,21 @@ function ConnectionStatus({ statusPromise, onRetry, onOpenSettings }: Connection
       >
         {selectableModels(status).map((model) => (
           <option key={model} value={model}>
-            {model === status.model && !status.installed ? `${model} (non installé)` : model}
+            {model === status.model && !status.installed
+              ? t("assistant.model_not_installed", { model })
+              : model}
           </option>
         ))}
       </select>
-      {isSaving && <Spinner label="Changement de modèle" />}
+      {isSaving && <Spinner label={t("assistant.switching_model")} />}
       {saveError && <span className="assistant-connection-label assistant-error">{saveError}</span>}
       {!status.installed && (
         <button type="button" className="link-button" onClick={onRetry}>
-          Réessayer
+          {t("common.retry")}
         </button>
       )}
       <button type="button" className="link-button" onClick={onOpenSettings}>
-        Réglages
+        {t("assistant.settings")}
       </button>
     </div>
   );
@@ -123,10 +126,10 @@ function ConnectionFailure({ label, onRetry, onOpenSettings }: ConnectionFailure
       <span className="status-dot failed" aria-hidden="true" />
       <span className="assistant-connection-label">{label}</span>
       <button type="button" className="link-button" onClick={onRetry}>
-        Réessayer
+        {t("common.retry")}
       </button>
       <button type="button" className="link-button" onClick={onOpenSettings}>
-        Réglages
+        {t("assistant.settings")}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { t } from "../i18n/panels";
 import { CatalogError } from "./catalog";
 import { parseJsonOrNull } from "./json";
 
@@ -14,7 +15,7 @@ export type AssistantStatus = z.infer<typeof assistantStatusSchema>;
 export function parseAssistantStatus(rawJson: string): AssistantStatus {
   const parsed = assistantStatusSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new CatalogError("L'état de l'assistant reçu du moteur est invalide.");
+    throw new CatalogError(t("assistant.invalid_status"));
   }
   return parsed.data;
 }

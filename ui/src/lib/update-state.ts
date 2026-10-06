@@ -1,3 +1,5 @@
+import { t } from "../i18n/shell";
+
 export type UpdateState =
   | { status: "checking" }
   | { status: "unconfigured" }
@@ -43,20 +45,20 @@ const PERCENT = 100;
 export function describeUpdate(state: UpdateState): string {
   switch (state.status) {
     case "checking":
-      return "Recherche de mises à jour…";
+      return t("updateState.checking");
     case "unconfigured":
-      return "Mises à jour : non configurées";
+      return t("updateState.unconfigured");
     case "upToDate":
-      return "À jour";
+      return t("updateState.upToDate");
     case "available":
-      return `Version ${state.version} disponible`;
+      return t("updateState.available", { version: state.version });
     case "downloading":
       return state.progress === null
-        ? `Téléchargement de ${state.version}…`
-        : `Téléchargement ${String(Math.round(state.progress * PERCENT))} %`;
+        ? t("updateState.downloading", { version: state.version })
+        : t("updateState.downloadProgress", { percent: Math.round(state.progress * PERCENT) });
     case "installing":
-      return `Installation de ${state.version}…`;
+      return t("updateState.installing", { version: state.version });
     case "error":
-      return "Mise à jour impossible";
+      return t("updateState.error");
   }
 }

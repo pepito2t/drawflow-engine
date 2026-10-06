@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { useState, type SyntheticEvent } from "react";
 import { describeBridgeError } from "../lib/tauri/engine";
 import { unlock } from "../lib/tauri/access";
@@ -27,7 +28,7 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
     <div className="centered">
       <form className="lock-card" onSubmit={submit}>
         <h1>Drawflow</h1>
-        <label htmlFor="access-code">Code d'accès</label>
+        <label htmlFor="access-code">{t("lock.title")}</label>
         <input
           id="access-code"
           type="password"
@@ -46,7 +47,7 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
           </p>
         )}
         <button type="submit" className="primary" disabled={isChecking || code === ""}>
-          {isChecking ? <Spinner label="Vérification" /> : "Déverrouiller"}
+          {isChecking ? <Spinner label={t("lock.checking")} /> : t("lock.unlock")}
         </button>
       </form>
     </div>

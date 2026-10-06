@@ -1,9 +1,6 @@
+import { t } from "../i18n/shell";
 import type { RunStatus } from "./run-state";
 
-export const STATUS_LABELS: Record<RunStatus, string> = {
-  idle: "Prêt",
-  running: "En cours",
-  succeeded: "Terminé",
-  failed: "Échec",
-  cancelled: "Annulé",
-};
+export function statusLabel(status: RunStatus): string {
+  return t(`runStatus.${status}`);
+}

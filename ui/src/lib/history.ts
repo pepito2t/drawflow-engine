@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateLocale, t } from "../i18n/panels";
 import { CatalogError } from "./catalog";
 import { parseJsonOrNull } from "./json";
 
@@ -56,21 +57,24 @@ const OTHER_DAY_FORMAT: Intl.DateTimeFormatOptions = {
 export function parseHistory(rawJson: string): HistoryEntry[] {
   const parsed = historyResponseSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new CatalogError("L'historique reçu du moteur est invalide.");
+    throw new CatalogError(t("history.invalid"));
   }
   return parsed.data.entries;
 }
 
 export function describeDuration(durationMs: number): string {
   if (durationMs < SECOND_MS) {
-    return "< 1 s";
+    return t("history.duration.under_second");
   }
   if (durationMs < MINUTE_MS) {
-    return `${String(Math.round(durationMs / SECOND_MS))} s`;
+    return t("history.duration.seconds", { seconds: Math.round(durationMs / SECOND_MS) });
   }
   const minutes = Math.floor(durationMs / MINUTE_MS);
   const seconds = Math.round((durationMs - minutes * MINUTE_MS) / SECOND_MS);
-  return `${String(minutes)} min ${String(seconds).padStart(2, "0")} s`;
+  return t("history.duration.minutes", {
+    minutes,
+    seconds: String(seconds).padStart(2, "0"),
+  });
 }
 
 /** Time only for today's runs, date and time otherwise. */
@@ -80,7 +84,7 @@ export function describeStart(startedAt: string, now: Date = new Date()): string
     return startedAt;
   }
   const sameDay = started.toDateString() === now.toDateString();
-  return started.toLocaleString("fr-CH", sameDay ? SAME_DAY_FORMAT : OTHER_DAY_FORMAT);
+  return started.toLocaleString(dateLocale(), sameDay ? SAME_DAY_FORMAT : OTHER_DAY_FORMAT);
 }
 
 export function lastOutput(entry: HistoryEntry): string | null {

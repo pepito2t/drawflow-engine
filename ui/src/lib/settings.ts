@@ -1,4 +1,6 @@
+import { t } from "../i18n/settings";
 import { z } from "zod";
+import { DEFAULT_LANGUAGE, isLanguage, type Language } from "../i18n";
 import { CatalogError, parseFormFields } from "./catalog";
 import { toEngineInputs, toFormValue, type FieldDescriptor, type FormValues } from "./form-schema";
 import { parseJsonOrNull } from "./json";
@@ -28,10 +30,13 @@ export type SettingsValues = Record<string, FormValues>;
 export function parseSettings(rawJson: string): SettingsSection[] {
   const parsed = settingsResponseSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new CatalogError("Les paramètres reçus du moteur sont invalides.");
+    throw new CatalogError(t("settings.invalidResponse"));
   }
   return parsed.data.sections.map((section) => {
-    const fields = parseFormFields(`paramètre « ${section.title} »`, section.schema);
+    const fields = parseFormFields(
+      t("settings.sectionLabel", { title: section.title }),
+      section.schema,
+    );
     return {
       id: section.id,
       title: section.title,
@@ -61,8 +66,15 @@ export function toSettingsPayload(
 }
 
 const GENERAL_SECTION_ID = "general";
+const LANGUAGE_FIELD = "language";
 const NOTIFICATION_THRESHOLD_FIELD = "notification_threshold_seconds";
 const DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10;
+
+export function readLanguage(rawJson: string): Language {
+  const general = parseSettings(rawJson).find((section) => section.id === GENERAL_SECTION_ID);
+  const value = general?.values[LANGUAGE_FIELD];
+  return isLanguage(value) ? value : DEFAULT_LANGUAGE;
+}
 
 export function readNotificationThreshold(rawJson: string): number {
   const general = parseSettings(rawJson).find((section) => section.id === GENERAL_SECTION_ID);
