@@ -1,7 +1,12 @@
+from collections.abc import Sequence
+
 from engine.core.events import TableEvent, TableRow
+from engine.parts.aggregation import PartLine
 from engine.parts.listing import PartsList
 
 DOCUMENT_TYPE = "liste-pieces"
+PROJECT_HEADER = "Projet"
+FILES_PROJECT = "Fichiers"
 QUANTITY_HEADER = "Quantité"
 SOURCES_HEADER = "Plans"
 PREVIEW_MAX_ROWS = 500
@@ -33,3 +38,31 @@ def describe_result(parts_list: PartsList, read: int, total: int) -> str:
     quantity = parts_list.total_quantity
     pieces = int(quantity) if float(quantity).is_integer() else round(quantity, 2)
     return f"{len(parts_list.lines)} ligne(s), {pieces} pièce(s), {read}/{total} plan(s) lu(s)"
+
+
+def merge_projects(lists: Sequence[tuple[str, PartsList]]) -> PartsList:
+    """One list for several projects: a « Projet » column first, lines kept per project."""
+    headers = lists[0][1].headers if lists else ()
+    lines = [
+        PartLine((project, *line.values), line.quantity, line.sources)
+        for project, parts_list in lists
+        for line in parts_list.lines
+    ]
+    warnings = [warning for _, parts_list in lists for warning in parts_list.warnings]
+    return PartsList(headers=(PROJECT_HEADER, *headers), lines=lines, warnings=warnings)
+
+
+def total_of(lists: Sequence[tuple[str, PartsList]]) -> PartsList:
+    """The same parts summed across projects, for one order to the supplier."""
+    quantities: dict[tuple[str, ...], float] = {}
+    sources: dict[tuple[str, ...], set[str]] = {}
+    for _, parts_list in lists:
+        for line in parts_list.lines:
+            quantities[line.values] = quantities.get(line.values, 0.0) + line.quantity
+            sources.setdefault(line.values, set()).update(line.sources)
+    lines = [
+        PartLine(values, quantity, tuple(sorted(sources[values])))
+        for values, quantity in quantities.items()
+    ]
+    headers = lists[0][1].headers if lists else ()
+    return PartsList(headers=headers, lines=lines, warnings=[])
