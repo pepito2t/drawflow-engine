@@ -47,7 +47,7 @@ En cas de souci : [Dépannage](#dépannage).
 1. Ouvrez l'onglet de la fonctionnalité ; son mode d'emploi est dans « Comment ça marche ».
 2. Ajoutez les fichiers ou les dossiers (**Parcourir** ou glisser-déposer).
 3. Renseignez le nom du projet et le dossier de sortie. Drawflow n'écrit **jamais** dans les fichiers d'origine.
-4. Cliquez sur **Lancer**.
+4. Cliquez sur **Lancer**. Pour la liste de pièces et la soumission, l'**aperçu avant export** (coché par défaut) affiche d'abord le tableau : lignes à vérifier surlignées (cellule vide, montant illisible), filtre **Anomalies seulement**. **Exporter** écrit le fichier Excel ; **Annuler** n'écrit rien. Décochez l'aperçu dans un préréglage destiné au Stream Dock pour exporter directement.
 
 À la fin, le bloc **avertissements à vérifier** liste, fichier par fichier, ce qui n'a pas pu être traité comme prévu : où (feuille, cartouche, bloc) et quoi faire. **Copier** met le rapport dans le presse-papiers pour l'envoyer. Les avertissements restent consultables dans l'Historique.
 

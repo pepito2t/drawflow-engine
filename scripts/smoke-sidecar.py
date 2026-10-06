@@ -116,7 +116,9 @@ def smoke_parts_list(binary: Path, workdir: Path) -> list[dict[str, object]]:
     )
     input_file = workdir / "parts.json"
     input_file.write_text(
-        json.dumps({"folders": [str(plans)], "output_folder": str(workdir / "Sortie")}),
+        json.dumps(
+            {"folders": [str(plans)], "output_folder": str(workdir / "Sortie"), "preview": False}
+        ),
         encoding="utf-8",
     )
     stdout = run_binary(
@@ -156,7 +158,7 @@ def smoke_report(binary: Path, workdir: Path) -> list[dict[str, object]]:
         binary,
         workdir,
         "pdf-report",
-        {"files": [str(plan)], "output_folder": str(workdir / "Sortie")},
+        {"files": [str(plan)], "output_folder": str(workdir / "Sortie"), "preview": False},
     )
 
 

@@ -14,6 +14,12 @@ class SoumissionInputs(ModuleInputs):
     recursive: bool = ui_field("bool", label="Inclure les sous-dossiers", default=True)
     project: str = ui_field("text", label="Nom du projet", default="")
     output_folder: Path = ui_field("output_folder", label="Dossier de sortie")
+    preview: bool = ui_field(
+        "bool",
+        label="Aperçu avant export",
+        default=True,
+        description="Affiche le tableau et ses anomalies avant d'écrire le fichier Excel.",
+    )
 
     @model_validator(mode="after")
     def require_sources(self) -> "SoumissionInputs":
