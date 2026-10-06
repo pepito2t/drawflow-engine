@@ -1278,6 +1278,7 @@ small {
   gap: 8px;
   padding: 12px;
   border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
 }
 
 .assistant-composer textarea {
@@ -1523,6 +1524,37 @@ small {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+/* Files dropped into the assistant */
+
+.assistant-composer .assistant-attachments {
+  flex-basis: 100%;
+}
+
+.assistant-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.assistant-attachments li {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-raised);
+  font-size: 12px;
+}
+
+.assistant-attachments .icon-button {
+  width: 20px;
+  height: 20px;
 }
 
 /* Watched folders */

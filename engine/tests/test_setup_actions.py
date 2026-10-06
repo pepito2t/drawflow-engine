@@ -2,6 +2,7 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+import anyio
 import httpx
 import pytest
 from httpx import MockTransport
@@ -13,6 +14,7 @@ from engine.core.settings import load_general_settings
 from engine.setup.actions import SetupContext, SetupError, run_action
 from engine.setup.commands import CommandOutcome
 from engine.setup.installer_download import InstallerDownloadError
+from engine.setup.ollama import delete_model, pull_model
 from engine.testing.fake_machine import LOCALAPPDATA, PROGRAM_FILES, FakeMachine
 
 ODA = PROGRAM_FILES / "ODA" / "ODAFileConverter 26.4.0" / "ODAFileConverter.exe"
@@ -201,3 +203,20 @@ def test_model_pull_error_is_readable(tmp_path: Path) -> None:
 def test_unknown_action_is_refused(tmp_path: Path) -> None:
     with pytest.raises(InvalidInputError):
         run_action("rm -rf", context(tmp_path, Recorder(FakeMachine()), []))
+
+
+def test_unreadable_pull_progress_is_a_readable_error() -> None:
+    garbage = httpx.MockTransport(lambda _: httpx.Response(200, content=b"not json\n"))
+
+    with pytest.raises(AssistantError, match="illisible"):
+        anyio.run(pull_model, "http://127.0.0.1:11434/v1", "qwen3:4b", lambda *_: None, garbage)
+
+
+def test_deleting_a_model_while_ollama_is_down_is_a_readable_error() -> None:
+    def refuse(_: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused")
+
+    with pytest.raises(AssistantError, match="ne répond pas"):
+        anyio.run(
+            delete_model, "http://127.0.0.1:11434/v1", "qwen3:4b", httpx.MockTransport(refuse)
+        )

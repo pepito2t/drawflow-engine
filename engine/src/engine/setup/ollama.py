@@ -71,7 +71,18 @@ async def pull_model(
             )
         async for line in response.aiter_lines():
             if line.strip():
-                _report(json.loads(line), model, on_percent)
+                _report(_parse_update(line, model), model, on_percent)
+
+
+def _parse_update(line: str, model: str) -> dict[str, object]:
+    try:
+        update = json.loads(line)
+    except ValueError as error:
+        raise AssistantError(
+            f"Ollama a envoyé une progression illisible pour « {model} ».",
+            hint="Relancez le téléchargement ; si cela persiste, redémarrez Ollama.",
+        ) from error
+    return update if isinstance(update, dict) else {}
 
 
 def _report(update: dict[str, object], model: str, on_percent: OnPercent) -> None:
@@ -102,9 +113,15 @@ async def delete_model(
     base_url: str, model: str, transport: httpx.AsyncBaseTransport | None = None
 ) -> None:
     async with httpx.AsyncClient(timeout=PROBE_TIMEOUT, transport=transport) as http:
-        response = await http.request(
-            "DELETE", api_root(base_url) + DELETE_PATH, json={"model": model}
-        )
+        try:
+            response = await http.request(
+                "DELETE", api_root(base_url) + DELETE_PATH, json={"model": model}
+            )
+        except httpx.TransportError as error:
+            raise AssistantError(
+                f"Ollama ne répond pas : impossible de supprimer « {model} ».",
+                hint="Vérifiez qu'Ollama est démarré.",
+            ) from error
     if not response.is_success:
         raise AssistantError(
             f"Ollama n'a pas pu supprimer « {model} » (HTTP {response.status_code})."
