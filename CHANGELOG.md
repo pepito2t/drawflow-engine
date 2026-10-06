@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+## 0.15.0 — 2026-10-06
+
 - **Liste de pièces multi-projets** : option « Un projet par dossier » — colonne Projet et onglet Total toutes origines confondues (#168).
 
 ## 0.14.0 — 2026-10-06
