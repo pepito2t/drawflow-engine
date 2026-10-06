@@ -1,4 +1,6 @@
+import importlib
 import json
+import pkgutil
 import subprocess
 import sys
 from pathlib import Path
@@ -31,8 +33,19 @@ def test_messages_follow_the_current_language() -> None:
         CATALOGS.remove({"fr": {"hello": "Bonjour {name}"}, "en": {"hello": "Hello {name}"}})
 
 
+def _import_every_catalog() -> int:
+    import engine
+
+    count = 0
+    for info in pkgutil.walk_packages(engine.__path__, prefix="engine."):
+        if info.name.endswith(".messages"):
+            importlib.import_module(info.name)
+            count += 1
+    return count
+
+
 def test_every_catalog_has_the_same_keys_and_placeholders() -> None:
-    assert CATALOGS, "aucun catalogue chargé"
+    assert _import_every_catalog() >= 10
     assert [issue for catalog in CATALOGS for issue in catalog_issues(catalog)] == []
 
 
