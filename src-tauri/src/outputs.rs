@@ -25,6 +25,24 @@ struct ResultLine {
 }
 
 #[derive(Deserialize)]
+struct MailDetail {
+    #[serde(default)]
+    messages: Vec<MailMessage>,
+}
+
+#[derive(Deserialize)]
+struct MailMessage {
+    #[serde(default)]
+    attachments: Vec<MailAttachment>,
+}
+
+#[derive(Deserialize)]
+struct MailAttachment {
+    #[serde(default)]
+    file: Option<String>,
+}
+
+#[derive(Deserialize)]
 struct HistoryListing {
     entries: Vec<HistoryOutputs>,
 }
@@ -58,6 +76,22 @@ impl KnownOutputs {
         };
         if let Ok(mut known) = self.0.lock() {
             known.extend(listing.entries.into_iter().flat_map(|entry| entry.outputs));
+        }
+    }
+
+    /// Attachments of a conversation shown in the Mail tab may be opened too.
+    pub fn remember_from_mail(&self, json: &str) {
+        let Ok(detail) = serde_json::from_str::<MailDetail>(json) else {
+            return;
+        };
+        if let Ok(mut known) = self.0.lock() {
+            known.extend(
+                detail
+                    .messages
+                    .into_iter()
+                    .flat_map(|message| message.attachments)
+                    .filter_map(|attachment| attachment.file),
+            );
         }
     }
 

@@ -109,6 +109,17 @@ Il peut aussi **proposer un lancement** (« lance la soumission sur C:\Chantier\
 - **Soumission non reconnue** : demandez à l'assistant d'associer les en-têtes du fichier aux colonnes ; il lit le fichier, propose les correspondances dans une carte, et **Appliquer** les enregistre dans Paramètres → Soumission. Rien n'est modifié sans ce clic.
 - La liste en haut du panneau change de modèle. **Arrêter** interrompt une réponse, **+** démarre une nouvelle conversation. La conversation en cours est conservée sur le poste entre deux lancements (sans les cartes de lancement).
 
+## Courriels (Exchange / Microsoft 365)
+
+L'onglet **Courriels** conserve vos conversations sur ce poste, en lecture seule : Drawflow ne déplace, ne marque et ne supprime rien dans la boîte mail.
+
+1. Paramètres → **Courriel** : collez l'identifiant d'application Entra ID (fourni par la personne qui administre Drawflow) ; le tenant reste `common` pour un compte professionnel.
+2. Onglet Courriels → **Connecter la boîte mail** : ouvrez la page indiquée, saisissez le code affiché, connectez-vous avec le compte de la boîte. La session reste valable d'un lancement à l'autre.
+3. **Récupérer les nouveaux messages** (ou la touche `mail.fetch` du Stream Dock) : les messages des derniers jours (réglable) sont rangés par conversation, pièces jointes comprises (sauf images et fichiers de plus de 25 Mo).
+4. Ouvrez une conversation pour la lire ; **Exporter vers un dossier…** copie les messages lisibles et les pièces jointes dans un dossier de chantier ; **Retirer de Drawflow** efface la copie locale, jamais le courriel d'origine.
+
+Les conversations sont dans `%APPDATA%\ch.drawflow.desktop\mail\` (dossier modifiable) ; au-delà du nombre réglé, les plus anciennes sont retirées.
+
 ## Piloter avec un Stream Dock
 
 Drawflow fonctionne avec le **Stream Dock** de Mirabox (logiciel Stream Dock pour Windows).

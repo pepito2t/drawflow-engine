@@ -22,6 +22,8 @@ export const COMMAND_ARGUMENTS = {
   "today.open": z.object({}),
   "history.rerun": z.object({ entryId: z.string().min(1) }),
   "automation.run": z.object({ automationId: z.string().min(1), path: z.string().min(1) }),
+  "mail.open": z.object({}),
+  "mail.fetch": z.object({}),
 } as const;
 
 export type CommandId = keyof typeof COMMAND_ARGUMENTS;
@@ -46,6 +48,8 @@ export const COMMANDS = {
   openToday: "today.open",
   rerunHistory: "history.rerun",
   runAutomation: "automation.run",
+  openMail: "mail.open",
+  fetchMail: "mail.fetch",
 } as const satisfies Record<string, CommandId>;
 
 export type CommandResult = { ok: true; data?: unknown } | { ok: false; error: string };

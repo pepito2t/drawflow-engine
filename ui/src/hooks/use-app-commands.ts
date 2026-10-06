@@ -4,6 +4,7 @@ import { COMMANDS } from "../lib/commands";
 import { entryFor, runningModuleIds } from "../lib/runs-store";
 import { cancelRun, engineRequest } from "../lib/tauri/engine";
 import { listHistory } from "../lib/tauri/history";
+import { fetchMail } from "../lib/tauri/mail";
 import { getAutomationStatus } from "../lib/tauri/automations";
 import { inputsForNewFile } from "../lib/automations";
 import { bringToFront, openOutput } from "../lib/tauri/window";
@@ -21,6 +22,7 @@ interface AppCommandTargets {
   openHelp: (topic?: string) => void;
   openHistory: () => void;
   openToday: () => void;
+  openMail: () => void;
 }
 
 /** Registers the app-level commands shared by the UI, the Stream Dock and future integrations. */
@@ -32,6 +34,7 @@ export function useAppCommands({
   openHelp,
   openHistory,
   openToday,
+  openMail,
 }: AppCommandTargets): void {
   const { state, dispatch } = useRunsStore();
   const { presets } = usePresets();
@@ -119,6 +122,14 @@ export function useAppCommands({
 
   useCommand(COMMANDS.openHistory, openHistory);
   useCommand(COMMANDS.openToday, openToday);
+  useCommand(COMMANDS.openMail, openMail);
+
+  const fetchMailbox = useCallback(async () => {
+    const result = await fetchMail();
+    publish({ type: "mailFetched", added: result.added });
+    return result;
+  }, [publish]);
+  useCommand(COMMANDS.fetchMail, fetchMailbox);
 
   const rerunHistory = useCallback(
     async ({ entryId }: { entryId: string }) => {

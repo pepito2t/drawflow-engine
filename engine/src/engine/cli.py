@@ -30,10 +30,12 @@ from engine.core.settings import (
 from engine.core.stats import StatsStore
 from engine.core.templates import TemplateLibrary
 from engine.requests import (
+    MAIL_ACTIONS,
     PRESET_ACTIONS,
     PROFILE_ACTIONS,
     SETTINGS_FILE_ACTIONS,
     TEMPLATE_ACTIONS,
+    handle_mail,
     handle_presets,
     handle_profile,
     handle_settings_file,
@@ -101,6 +103,11 @@ def _build_parser() -> argparse.ArgumentParser:
     profile_commands = profile_parser.add_subparsers(dest="profile_command", required=True)
     for action, help_text in PROFILE_ACTIONS.items():
         _add_request_parser(profile_commands, action, help_text)
+
+    mail_parser = commands.add_parser("mail", help="Courriels : boîte Microsoft 365 en lecture.")
+    mail_commands = mail_parser.add_subparsers(dest="mail_command", required=True)
+    for action, help_text in MAIL_ACTIONS.items():
+        _add_request_parser(mail_commands, action, help_text)
 
     presets_parser = commands.add_parser("presets", help="Préréglages des fonctionnalités.")
     presets_commands = presets_parser.add_subparsers(dest="presets_command", required=True)
@@ -177,6 +184,8 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
                 arguments.app_version,
             )
         )
+    elif arguments.command == "mail":
+        _write_json(handle_mail(arguments.mail_command, arguments.settings, _request(arguments)))
     elif arguments.command == "presets":
         _write_json(
             handle_presets(arguments.presets_command, arguments.settings, _request(arguments))

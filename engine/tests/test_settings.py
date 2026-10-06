@@ -145,7 +145,12 @@ def test_describe_lists_general_then_module_sections_then_assistant(
 ) -> None:
     sections = describe_settings(settings_file, modules)
 
-    assert [section["id"] for section in sections] == ["general", "sample", "assistant"]
+    assert [section["id"] for section in sections] == [
+        "general",
+        "sample",
+        "assistant",
+        "mail",
+    ]
     general: dict[str, Any] = sections[0]
     assert general["values"]["batch_size"] == DEFAULT_BATCH_SIZE
     assert general["schema"]["properties"]["batch_size"]["x-ui"] == "number"

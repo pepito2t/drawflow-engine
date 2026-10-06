@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from engine.core.errors import InvalidInputError
 from engine.core.presets import PresetStore
@@ -23,6 +23,17 @@ PROFILE_ACTIONS = {
     "export": "Exporte le profil complet (paramètres, préréglages, modèles) en zip.",
     "read-import": "Décrit un profil sans l'appliquer (JSON).",
     "import": "Applique un profil : paramètres, préréglages et modèles sont remplacés.",
+}
+MAIL_ACTIONS = {
+    "status": "État de la boîte mail connectée et du dossier local (JSON).",
+    "connect-start": "Démarre la connexion Microsoft : code à saisir sur la page indiquée (JSON).",
+    "connect-finish": "Attend la fin de la connexion Microsoft et enregistre la session (JSON).",
+    "disconnect": "Oublie la session Microsoft ; les conversations locales restent.",
+    "fetch": "Récupère les nouveaux messages et les range par conversation (JSON).",
+    "list": "Liste les conversations conservées (JSON).",
+    "read": "Messages d'une conversation (JSON).",
+    "export": "Copie une conversation lisible dans un dossier.",
+    "remove": "Retire une conversation du dossier local, jamais de la boîte mail.",
 }
 PRESET_ACTIONS = {
     "list": "Liste les préréglages (JSON).",
@@ -117,6 +128,37 @@ def handle_profile(
     if action == "read-import":
         return read_profile(source, settings, modules, app_version)
     return import_profile(source, settings, modules, app_version)
+
+
+class ConversationRequest(_Request):
+    id: str = Field(min_length=1)
+
+
+class ConversationExportRequest(ConversationRequest):
+    target: Path
+
+
+def handle_mail(action: str, settings: Path, raw: dict[str, Any]) -> dict[str, Any]:
+    from engine.mail import service
+
+    if action == "status":
+        return service.status(settings)
+    if action == "connect-start":
+        return service.connect_start(settings)
+    if action == "connect-finish":
+        return service.connect_finish(settings, raw)
+    if action == "disconnect":
+        return service.disconnect(settings)
+    if action == "fetch":
+        return service.fetch(settings)
+    if action == "list":
+        return service.list_conversations(settings)
+    if action == "read":
+        return service.read_conversation(settings, _parse(ConversationRequest, raw).id)
+    if action == "export":
+        request = _parse(ConversationExportRequest, raw)
+        return service.export_conversation(settings, request.id, request.target)
+    return service.remove_conversation(settings, _parse(ConversationRequest, raw).id)
 
 
 def template_users() -> list[TemplateUser]:

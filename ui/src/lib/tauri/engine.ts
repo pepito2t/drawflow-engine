@@ -39,7 +39,16 @@ export type EngineRequestName =
   | "history.list"
   | "history.remove"
   | "history.clear"
-  | "history.stats";
+  | "history.stats"
+  | "mail.status"
+  | "mail.connect-start"
+  | "mail.connect-finish"
+  | "mail.disconnect"
+  | "mail.fetch"
+  | "mail.list"
+  | "mail.read"
+  | "mail.export"
+  | "mail.remove";
 
 export async function engineRequest(
   request: EngineRequestName,

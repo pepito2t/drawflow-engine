@@ -15,6 +15,11 @@ MAX_NOTIFICATION_THRESHOLD_SECONDS = 3600
 DEFAULT_MODEL_SERVER_URL = "http://127.0.0.1:11434/v1"
 DEFAULT_MODEL_NAME = "qwen3.5:9b"
 LOCAL_HOST_NAMES = {"localhost"}
+DEFAULT_MAIL_TENANT = "common"
+DEFAULT_MAIL_LOOKBACK_DAYS = 90
+MAX_MAIL_LOOKBACK_DAYS = 3650
+DEFAULT_MAX_CONVERSATIONS = 500
+MAX_CONVERSATIONS = 20000
 WEB_SCHEMES = {"http", "https"}
 
 
@@ -116,3 +121,45 @@ def _is_loopback(host: str | None) -> bool:
         return ip_address(host).is_loopback
     except ValueError:
         return False
+
+
+class MailSettings(SettingsSection):
+    client_id: str = ui_field(
+        "text",
+        label="Identifiant d'application (Entra ID)",
+        default="",
+        description=(
+            "Client ID de l'application inscrite dans Microsoft Entra ID pour lire la boîte "
+            "Exchange / Microsoft 365. Vide : la fonctionnalité Courriels est désactivée."
+        ),
+    )
+    tenant: str = ui_field(
+        "text",
+        label="Tenant",
+        default=DEFAULT_MAIL_TENANT,
+        description="« common » pour tout compte professionnel, ou l'identifiant du tenant.",
+        min_length=1,
+    )
+    local_folder: Path | None = ui_field(
+        "folder",
+        label="Dossier des conversations",
+        default=None,
+        description=(
+            "Laisser vide pour conserver les conversations dans le dossier de l'application."
+        ),
+    )
+    lookback_days: int = ui_field(
+        "number",
+        label="Récupérer les messages des derniers (jours)",
+        default=DEFAULT_MAIL_LOOKBACK_DAYS,
+        ge=1,
+        le=MAX_MAIL_LOOKBACK_DAYS,
+    )
+    max_conversations: int = ui_field(
+        "number",
+        label="Conversations conservées au maximum",
+        default=DEFAULT_MAX_CONVERSATIONS,
+        description="Au-delà, les conversations les plus anciennes sont retirées du dossier local.",
+        ge=1,
+        le=MAX_CONVERSATIONS,
+    )
