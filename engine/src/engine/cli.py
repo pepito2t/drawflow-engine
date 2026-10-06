@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from engine.assistant.events import make_assistant_emitter
+from engine.core.diagnostics import record_failure
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ErrorEvent, make_stream_emitter
 from engine.core.guide import sections as guide_sections
@@ -43,14 +44,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     _force_utf8_output()
     arguments = _build_parser().parse_args(argv)
     emit = make_stream_emitter(sys.stdout)
+    settings = getattr(arguments, "settings", None)
+    command = list(argv) if argv is not None else sys.argv[1:]
     try:
         _dispatch(arguments, emit)
     except EngineError as error:
+        record_failure(settings, command, error)
         file = str(error.file) if error.file else None
         emit(ErrorEvent(message=error.message, file=file, hint=error.hint))
         return EXIT_BUSINESS_ERROR
-    except Exception:
-        # Boundary of the sidecar: details go to stderr, the user gets a readable event.
+    except Exception as error:
+        # Boundary of the sidecar: details go to the log and stderr, the user gets a readable event.
+        record_failure(settings, command, error)
         traceback.print_exc(file=sys.stderr)
         emit(ErrorEvent(message=INTERNAL_ERROR_MESSAGE, hint=INTERNAL_ERROR_HINT))
         return EXIT_INTERNAL_ERROR

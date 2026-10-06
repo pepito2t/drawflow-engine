@@ -111,6 +111,7 @@ Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **
 | Contenu | Emplacement (Windows) |
 |---|---|
 | Paramètres, préréglages, modèles importés, code d'accès, intégrations | `%APPDATA%\ch.drawflow.desktop\` |
+| Journaux de diagnostic (`engine.log`) | `%APPDATA%\ch.drawflow.desktop\logs\` |
 | Cache des plans DWG convertis | `%LOCALAPPDATA%\drawflow\cache\` (modifiable dans Paramètres → Général) |
 
 ## Dépannage
@@ -122,4 +123,5 @@ Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **
 | « Le modèle local ne répond pas » | Paramètres → Installation → **Démarrer**, ou lancez LM Studio |
 | « Le modèle … est introuvable » | Paramètres → Installation → **Télécharger**, ou choisissez un modèle installé dans le panneau |
 | « Le fichier de paramètres est illisible » | Il n'est jamais écrasé : restaurez une sauvegarde ou supprimez `settings.json` |
+| Autre erreur, ou erreur qui se répète | Paramètres → Installation → **Journaux** : envoyez `engine.log` (chaque échec y est noté avec la cause exacte, par exemple la réponse d'Ollama) |
 | Touches Stream Dock « Hors ligne » | Lancez Drawflow, vérifiez l'API locale et le jeton |
