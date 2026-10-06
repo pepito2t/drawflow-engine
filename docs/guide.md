@@ -84,6 +84,10 @@ Chaque fonctionnalité a sa catégorie dans les Paramètres :
 
 **Paramètres → Modèles** : importez vos modèles et choisissez celui par défaut de chaque fonctionnalité. Un modèle choisi dans le formulaire est prioritaire. Les balises utilisables dans un modèle Word sont rappelées dans le mode d'emploi de l'onglet Rapport.
 
+### Profil complet
+
+Paramètres → **Profil** exporte en un zip toutes les normes, les modèles Excel et Word importés et les préréglages, sans le code d'accès ni le jeton de l'API locale. Sur un autre poste, **Importer un profil** affiche ce qui sera remplacé avant d'appliquer. Un profil venant d'une version plus récente de Drawflow est refusé : mettez d'abord l'application à jour.
+
 ### Préréglages
 
 **Enregistrer comme préréglage** (en haut de l'onglet) mémorise le formulaire sous un nom, pour le recharger ou le lancer depuis le Stream Dock.

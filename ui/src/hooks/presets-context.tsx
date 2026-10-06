@@ -7,6 +7,7 @@ interface PresetsStore {
   presets: Preset[];
   save: (moduleId: string, name: string, inputs: FormValues, presetId?: string) => Promise<void>;
   remove: (presetId: string) => Promise<void>;
+  reload: () => Promise<void>;
 }
 
 const PresetsContext = createContext<PresetsStore | null>(null);
@@ -36,7 +37,11 @@ export function PresetsProvider({
     setPresets(parsePresets(await engineRequest("presets.remove", { id: presetId })));
   }, []);
 
-  const store = useMemo(() => ({ presets, save, remove }), [presets, save, remove]);
+  const reload = useCallback(async () => {
+    setPresets(await loadPresets());
+  }, []);
+
+  const store = useMemo(() => ({ presets, save, remove, reload }), [presets, save, remove, reload]);
   return <PresetsContext value={store}>{children}</PresetsContext>;
 }
 

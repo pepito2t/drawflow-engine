@@ -19,6 +19,7 @@ import { ErrorPanel } from "./ErrorPanel";
 import { AboutPanel } from "./AboutPanel";
 import { AccessCodeForm } from "./AccessCodeForm";
 import { IntegrationsPanel } from "./IntegrationsPanel";
+import { ProfilePanel } from "./ProfilePanel";
 import { SectionTransfer } from "./SectionTransfer";
 import { AI_MODELS_TAB_ID, SETUP_TAB_ID } from "../lib/setup";
 import { AiModelsPanel } from "./AiModelsPanel";
@@ -32,6 +33,7 @@ const ACCESS_CODE_TAB_ID = "access-code";
 const GENERAL_SECTION_ID = "general";
 const TEMPLATES_TAB_ID = "templates";
 const INTEGRATIONS_TAB_ID = "integrations";
+const PROFILE_TAB_ID = "profile";
 const ABOUT_TAB_ID = "about";
 const AUTOMATIONS_TAB_ID = "automations";
 const STATIC_TABS = [
@@ -41,6 +43,7 @@ const STATIC_TABS = [
   { id: AUTOMATIONS_TAB_ID, title: "Automatisations" },
   { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
   { id: INTEGRATIONS_TAB_ID, title: "API locale" },
+  { id: PROFILE_TAB_ID, title: "Profil" },
   { id: ABOUT_TAB_ID, title: "À propos" },
 ];
 
@@ -131,7 +134,12 @@ function SettingsContent({ attemptId, promise, retry, initialTab, modules }: Set
           </div>
         }
       >
-        <SettingsEditor sectionsPromise={promise} initialTab={initialTab} modules={modules} />
+        <SettingsEditor
+          sectionsPromise={promise}
+          initialTab={initialTab}
+          modules={modules}
+          onReload={retry}
+        />
       </Suspense>
     </ErrorBoundary>
   );
@@ -140,10 +148,11 @@ function SettingsContent({ attemptId, promise, retry, initialTab, modules }: Set
 interface SettingsEditorProps {
   sectionsPromise: Promise<SettingsSection[]>;
   modules: CatalogModule[];
+  onReload: () => void;
   initialTab: string | undefined;
 }
 
-function SettingsEditor({ sectionsPromise, initialTab, modules }: SettingsEditorProps) {
+function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: SettingsEditorProps) {
   const [sections, setSections] = useState(use(sectionsPromise));
   const [values, setValues] = useState<SettingsValues>(() => valuesBySection(sections));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
@@ -215,6 +224,7 @@ function SettingsEditor({ sectionsPromise, initialTab, modules }: SettingsEditor
           {activeId === AI_MODELS_TAB_ID && <AiModelsPanel />}
           {activeId === TEMPLATES_TAB_ID && <TemplatesPanel />}
           {activeId === INTEGRATIONS_TAB_ID && <IntegrationsPanel />}
+          {activeId === PROFILE_TAB_ID && <ProfilePanel onImported={onReload} />}
           {activeId === ABOUT_TAB_ID && (
             <AboutPanel
               onOpenGeneral={() => {
