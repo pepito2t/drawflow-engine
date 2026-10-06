@@ -4,12 +4,12 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
-- Écran Installation plus lisible : boutons sous le texte quand la fenêtre est étroite, aide par icône, libellés sans redite, accent bleu-cyan propre à Drawflow ; l'onglet Intégrations devient **API locale** (en bas des Paramètres) ; l'indicateur de mise à jour n'apparaît plus quand l'updater n'est pas configuré (#151).
+## 0.9.0 — 2026-10-06
 
+- Écran Installation plus lisible : boutons sous le texte quand la fenêtre est étroite, aide par icône, libellés sans redite, accent bleu-cyan propre à Drawflow ; l'onglet Intégrations devient **API locale** (en bas des Paramètres) ; l'indicateur de mise à jour n'apparaît plus quand l'updater n'est pas configuré (#152).
 - **Plugin Drawflow pour Stream Dock sans configuration** : Installer le plugin active l'API locale, et le plugin lit lui-même le port et le jeton de Drawflow sur ce poste. Plus rien à copier dans les touches (#148).
-
 - **Plugin AutoCAD pour Stream Dock** installable en un clic depuis Paramètres → Installation (dernière version publiée du projet streamdock_autocad). L'écran Installation signale les mises à jour disponibles des deux plugins Stream Dock (**Mettre à jour**) et affiche un badge vert quand un prérequis est prêt (#146).
-- Assistant plus réactif : le raisonnement interne des modèles « pensants » (Qwen 3.x) est désactivé, et les rubriques du guide sont connues d'avance, ce qui évite un aller-retour avec le modèle pour chaque question d'aide (#144).
+
 ## 0.8.2 — 2026-10-05
 
 - Correctifs issus de l'audit (suite) : deux traitements lancés en même temps ne peuvent plus écrire le même fichier de sortie ; un échec d'export ne laisse plus de fichier vide ; les blocs imbriqués au-delà de 8 niveaux sont signalés par un avertissement au lieu d'être ignorés en silence ; erreurs disque lisibles pendant le téléchargement d'un installeur (#143).
