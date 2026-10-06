@@ -11,6 +11,7 @@ from engine.core.registry import AnyModule
 from engine.core.settings_models import (
     AssistantSettings,
     GeneralSettings,
+    MailSettings,
     ModuleSettings,
     SettingsSection,
 )
@@ -20,7 +21,9 @@ GENERAL_SECTION_ID = "general"
 GENERAL_SECTION_TITLE = "Général"
 ASSISTANT_SECTION_ID = "assistant"
 ASSISTANT_SECTION_TITLE = "Assistant"
-APP_SECTION_IDS = {GENERAL_SECTION_ID, ASSISTANT_SECTION_ID}
+MAIL_SECTION_ID = "mail"
+MAIL_SECTION_TITLE = "Courriel"
+APP_SECTION_IDS = {GENERAL_SECTION_ID, ASSISTANT_SECTION_ID, MAIL_SECTION_ID}
 MODULES_KEY = "modules"
 FIX_SETTINGS_HINT = "Ouvrez Paramètres pour corriger les valeurs indiquées."
 RESET_SETTINGS_HINT = (
@@ -52,6 +55,7 @@ def section_specs(modules: dict[str, AnyModule]) -> list[SectionSpec]:
         if module.settings_model is not None:
             specs.append(SectionSpec(module_id, module.manifest.name, module.settings_model))
     specs.append(SectionSpec(ASSISTANT_SECTION_ID, ASSISTANT_SECTION_TITLE, AssistantSettings))
+    specs.append(SectionSpec(MAIL_SECTION_ID, MAIL_SECTION_TITLE, MailSettings))
     return specs
 
 
@@ -102,6 +106,10 @@ def load_general_settings(path: Path | None) -> GeneralSettings:
 def load_assistant_settings(path: Path | None) -> AssistantSettings:
     document = read_document(path)
     return load_section(AssistantSettings, ASSISTANT_SECTION_ID, ASSISTANT_SECTION_TITLE, document)
+
+
+def load_mail_settings(path: Path | None) -> MailSettings:
+    return load_section(MailSettings, MAIL_SECTION_ID, MAIL_SECTION_TITLE, read_document(path))
 
 
 def describe_settings(path: Path | None, modules: dict[str, AnyModule]) -> list[dict[str, Any]]:

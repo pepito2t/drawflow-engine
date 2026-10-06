@@ -126,6 +126,24 @@ pub enum EngineRequest {
     HistoryClear,
     #[serde(rename = "history.stats")]
     HistoryStats,
+    #[serde(rename = "mail.status")]
+    MailStatus,
+    #[serde(rename = "mail.connect-start")]
+    MailConnectStart,
+    #[serde(rename = "mail.connect-finish")]
+    MailConnectFinish,
+    #[serde(rename = "mail.disconnect")]
+    MailDisconnect,
+    #[serde(rename = "mail.fetch")]
+    MailFetch,
+    #[serde(rename = "mail.list")]
+    MailList,
+    #[serde(rename = "mail.read")]
+    MailRead,
+    #[serde(rename = "mail.export")]
+    MailExport,
+    #[serde(rename = "mail.remove")]
+    MailRemove,
 }
 
 impl EngineRequest {
@@ -155,6 +173,15 @@ impl EngineRequest {
             Self::HistoryRemove => ("history", "remove"),
             Self::HistoryClear => ("history", "clear"),
             Self::HistoryStats => ("history", "stats"),
+            Self::MailStatus => ("mail", "status"),
+            Self::MailConnectStart => ("mail", "connect-start"),
+            Self::MailConnectFinish => ("mail", "connect-finish"),
+            Self::MailDisconnect => ("mail", "disconnect"),
+            Self::MailFetch => ("mail", "fetch"),
+            Self::MailList => ("mail", "list"),
+            Self::MailRead => ("mail", "read"),
+            Self::MailExport => ("mail", "export"),
+            Self::MailRemove => ("mail", "remove"),
         }
     }
 }
@@ -178,6 +205,12 @@ pub async fn engine_request(
         if let Ok(listed) = &output {
             app.state::<KnownOutputs>()
                 .remember_from_history(&listed.stdout);
+        }
+    }
+    if request == EngineRequest::MailRead {
+        if let Ok(detail) = &output {
+            app.state::<KnownOutputs>()
+                .remember_from_mail(&detail.stdout);
         }
     }
     output

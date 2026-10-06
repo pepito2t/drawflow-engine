@@ -57,6 +57,8 @@ Réponse (même `id`) :
 | `models.open` | — | Ouvre Paramètres → Modèles d'IA |
 | `help.open` | `topic` (facultatif) | Ouvre l'aide, sur une section du guide si `topic` est donné |
 | `update.install` | — | Installe la mise à jour disponible |
+| `mail.open` | — | Ouvre l'onglet Courriels |
+| `mail.fetch` | — | Récupère les nouveaux messages de la boîte connectée (résultat dans `data`) |
 | `automation.run` | `automationId`, `path` | Lance le préréglage d'un dossier surveillé avec ce fichier (émis par l'application elle-même) |
 
 ## Événements diffusés

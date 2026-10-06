@@ -21,11 +21,12 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { AssistantPanel } from "./AssistantPanel";
 import { HelpDialog } from "./HelpDialog";
-import { ChatIcon, GearIcon, HelpIcon, ClockIcon, SunIcon } from "./icons";
+import { ChatIcon, GearIcon, HelpIcon, ClockIcon, MailIcon, SunIcon } from "./icons";
 import { LockScreen } from "./LockScreen";
 import { ModuleTabs, tabPanelId } from "./ModuleTabs";
 import { SettingsDialog } from "./SettingsDialog";
 import { HistoryPanel } from "./HistoryPanel";
+import { MailPanel } from "./MailPanel";
 import { TodayPanel } from "./TodayPanel";
 import { ModuleWorkspace } from "./ModuleWorkspace";
 import { RunsIndicator } from "./RunsIndicator";
@@ -35,7 +36,9 @@ import { Loader } from "./Spinner";
 
 export const HISTORY_TAB_ID = "history";
 export const TODAY_TAB_ID = "today";
-const SPECIAL_TABS = new Set([HISTORY_TAB_ID, TODAY_TAB_ID]);
+export const MAIL_TAB_ID = "mail";
+const SPECIAL_TABS = new Set([HISTORY_TAB_ID, TODAY_TAB_ID, MAIL_TAB_ID]);
+const MAIL_SETTINGS_TAB = "mail";
 const DEFAULT_SETTINGS_TAB = "";
 const ASSISTANT_SETTINGS_TAB = "assistant";
 
@@ -150,6 +153,9 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const openToday = useCallback(() => {
     select(TODAY_TAB_ID);
   }, [select]);
+  const openMail = useCallback(() => {
+    select(MAIL_TAB_ID);
+  }, [select]);
   const openSettings = useCallback((tab?: string) => {
     setSettingsTab(tab ?? DEFAULT_SETTINGS_TAB);
   }, []);
@@ -167,6 +173,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
     openHelp,
     openHistory,
     openToday,
+    openMail,
   });
   useIntegrationBridge();
 
@@ -218,7 +225,10 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
           <ModuleTabs
             modules={modules}
             leadingTabs={[{ id: TODAY_TAB_ID, label: "Aujourd'hui", icon: <SunIcon /> }]}
-            extraTabs={[{ id: HISTORY_TAB_ID, label: "Historique", icon: <ClockIcon /> }]}
+            extraTabs={[
+              { id: MAIL_TAB_ID, label: "Courriels", icon: <MailIcon /> },
+              { id: HISTORY_TAB_ID, label: "Historique", icon: <ClockIcon /> },
+            ]}
             selectedId={selectedId}
             onSelect={select}
             footer={sidebarActions}
@@ -244,6 +254,13 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
               hidden={selectedId !== HISTORY_TAB_ID}
             >
               <HistoryPanel />
+            </div>
+            <div role="tabpanel" id={tabPanelId(MAIL_TAB_ID)} hidden={selectedId !== MAIL_TAB_ID}>
+              <MailPanel
+                onOpenSettings={() => {
+                  openSettings(MAIL_SETTINGS_TAB);
+                }}
+              />
             </div>
           </main>
           <AssistantPanel

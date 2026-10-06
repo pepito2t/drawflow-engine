@@ -91,6 +91,14 @@ export function toastFor(event: AppEvent): ToastSpec | null {
       return { ...plain("success", "Modèle importé"), body: event.name };
     case "settingsExported":
       return { ...plain("success", "Paramètres exportés"), body: event.target };
+    case "mailFetched":
+      return {
+        ...plain("success", "Courriels récupérés"),
+        body:
+          event.added === 0
+            ? "Aucun nouveau message."
+            : `${String(event.added)} nouveau${event.added > 1 ? "x" : ""} message${event.added > 1 ? "s" : ""}.`,
+      };
     case "setupNeeded":
       return {
         tone: "info",

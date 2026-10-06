@@ -22,6 +22,7 @@ export type AppEvent =
   | { type: "templateImported"; name: string }
   | { type: "settingsExported"; target: string }
   | { type: "accessCodeChanged" }
-  | { type: "setupNeeded"; missing: number };
+  | { type: "setupNeeded"; missing: number }
+  | { type: "mailFetched"; added: number };
 
 export type AppEventListener = (event: AppEvent) => void;
