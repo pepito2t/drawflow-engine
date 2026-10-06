@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from engine.core.anomalies import Anomaly
-from engine.modules.dwg_parts.reader import RawPart
-from engine.modules.dwg_parts.settings import DwgPartsSettings
+from engine.parts.reader import RawPart
+from engine.parts.settings import PartsListSettings
 
 BLOCK_COLUMN_TITLE = "Bloc"
 DECIMAL_COMMA = ","
@@ -26,7 +26,7 @@ class MappingOutcome:
     warnings: list[Anomaly] = field(default_factory=list)
 
 
-def map_parts(raw_parts: Sequence[RawPart], settings: DwgPartsSettings) -> MappingOutcome:
+def map_parts(raw_parts: Sequence[RawPart], settings: PartsListSettings) -> MappingOutcome:
     patterns = settings.block_patterns()
     retained = [part for part in raw_parts if _matches(part.block, patterns)]
     missing: Counter[str] = Counter()
@@ -49,13 +49,13 @@ def _matches(block: str, patterns: Sequence[str]) -> bool:
     return any(fnmatch.fnmatchcase(name, pattern.upper()) for pattern in patterns)
 
 
-def _headers(settings: DwgPartsSettings) -> tuple[str, ...]:
+def _headers(settings: PartsListSettings) -> tuple[str, ...]:
     titles = tuple(column.key for column in settings.columns)
     return (BLOCK_COLUMN_TITLE, *titles) if settings.include_block_name else titles
 
 
 def _column_values(
-    part: RawPart, settings: DwgPartsSettings, missing: Counter[str]
+    part: RawPart, settings: PartsListSettings, missing: Counter[str]
 ) -> tuple[str, ...]:
     values: list[str] = []
     for column in settings.columns:

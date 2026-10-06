@@ -18,12 +18,14 @@ from engine.core.registry import get_module
 MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
 EXPECTED_TOOLS = {
     "list_features",
+    "inspect_submission_headers",
     "list_help_topics",
     "read_today",
     "list_presets",
     "list_runs",
     "read_run",
     "list_templates",
+    "propose_column_synonyms",
     "propose_feature",
     "propose_preset",
     "read_help",
@@ -56,6 +58,7 @@ def test_client_lists_read_only_tools_and_reads_features(tmp_path: Path) -> None
     features, presets = (_payload(result) for result in results)
     assert [feature["id"] for feature in features["features"]] == [
         "dwg-parts",
+        "dwg-diff",
         "pdf-report",
         "soumission",
     ]
@@ -145,6 +148,26 @@ def test_assistant_reads_the_guide_through_mcp(tmp_path: Path) -> None:
 
     assert outcome.ok
     assert "Installer le plugin" in outcome.text
+
+
+def test_assistant_can_inspect_a_submission_and_propose_synonyms(tmp_path: Path) -> None:
+    from engine.modules.soumission.tests.workbooks import submission_bytes
+
+    settings = tmp_path / "settings.json"
+    offer = tmp_path / "offre.xlsx"
+    offer.write_bytes(submission_bytes())
+
+    inspected = anyio.run(
+        _toolbox_call, settings, "inspect_submission_headers", {"path": str(offer)}
+    )
+    proposed = anyio.run(
+        _toolbox_call, settings, "propose_column_synonyms", {"additions": {"Quantité": ["Nbre"]}}
+    )
+
+    assert inspected.ok and "Pos." in inspected.text
+    assert proposed.ok and proposed.proposal is not None
+    assert proposed.proposal.kind == "synonyms"
+    assert proposed.proposal.inputs == {"columns": {"Quantité": ["Nbre"]}}
 
 
 def test_today_summarizes_recent_runs_and_presets(tmp_path: Path) -> None:

@@ -26,9 +26,26 @@ export function describeInputs(
 }
 
 export function proposalTitle(proposal: RunProposal): string {
-  return proposal.kind === "preset"
-    ? `${proposal.featureName} — préréglage « ${proposal.label} »`
-    : proposal.featureName;
+  switch (proposal.kind) {
+    case "preset":
+      return `${proposal.featureName} — préréglage « ${proposal.label} »`;
+    case "synonyms":
+      return `Ajouter des en-têtes reconnus (${proposal.featureName})`;
+    case "feature":
+      return proposal.featureName;
+  }
+}
+
+/** One line per column: which new header names the assistant wants it to recognize. */
+export function describeSynonyms(inputs: Record<string, unknown>): InputLine[] {
+  const columns = inputs.columns;
+  if (typeof columns !== "object" || columns === null) {
+    return [];
+  }
+  return Object.entries(columns).flatMap(([column, names]) => {
+    const value = displayValue(names);
+    return value === null ? [] : [{ label: column, value }];
+  });
 }
 
 function displayValue(raw: unknown): string | null {

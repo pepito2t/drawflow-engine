@@ -61,6 +61,14 @@ Vous pouvez changer d'onglet ou lancer une autre fonctionnalité pendant un trai
 
 L'onglet **Historique** liste les derniers traitements (200 au plus) : date, durée, résultat ou erreur, nombre d'avertissements. **Ouvrir le résultat** ouvre le dernier fichier produit ; **Relancer** recharge les mêmes fichiers et relance ; **×** retire une ligne. Commandes `history.open` et `history.rerun` pour le Stream Dock et l'assistant.
 
+### Plusieurs projets en une liste
+
+Cochez **Un projet par dossier** dans la liste de pièces : chaque dossier de plans devient un projet (son nom), la liste reçoit une colonne **Projet**, et un onglet **Total** additionne les pièces identiques de tous les projets — pratique pour une commande fournisseur qui couvre plusieurs chantiers.
+
+### Comparer deux indices de plans
+
+L'onglet **Comparaison d'indices** prend les plans de l'indice précédent (A) et ceux du nouvel indice (B), établit les deux listes de pièces avec la norme de la liste de pièces, puis les compare : pièces **ajoutées**, **supprimées**, **quantités modifiées**, inchangées, et un onglet **Plans** (présent dans A, dans B, dans les deux). Les pièces sont rapprochées par les colonnes choisies dans Paramètres → Comparaison d'indices (par défaut « Référence »). Les plans numérotés (`01_facade-nord`, `facade-nord_02`) sont reconnus comme le même plan grâce au motif d'incrément, réglable au même endroit.
+
 ### Adapter une fonctionnalité à votre norme
 
 Chaque fonctionnalité a sa catégorie dans les Paramètres :
@@ -89,6 +97,7 @@ Il peut aussi **proposer un lancement** (« lance la soumission sur C:\Chantier\
 - Prérequis : un modèle local (voir [Installer les prérequis](#installer-les-prérequis)). L'adresse du serveur doit désigner ce poste : aucune donnée ne sort de la machine.
 - **Paramètres → Modèles d'IA** recommande le modèle adapté à la mémoire du poste, et permet de chercher, télécharger, utiliser ou supprimer un modèle (ou d'en télécharger un autre de la bibliothèque Ollama par son nom).
 - **Pourquoi cette pièce manque ?** L'assistant lit le traitement concerné (fichiers produits, avertissements avec fichier et endroit) et répond en citant la cause et le conseil.
+- **Soumission non reconnue** : demandez à l'assistant d'associer les en-têtes du fichier aux colonnes ; il lit le fichier, propose les correspondances dans une carte, et **Appliquer** les enregistre dans Paramètres → Soumission. Rien n'est modifié sans ce clic.
 - La liste en haut du panneau change de modèle. **Arrêter** interrompt une réponse, **+** démarre une nouvelle conversation. La conversation en cours est conservée sur le poste entre deux lancements (sans les cartes de lancement).
 
 ## Piloter avec un Stream Dock

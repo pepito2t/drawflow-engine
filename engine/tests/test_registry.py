@@ -10,7 +10,7 @@ from engine.core.registry import discover_modules, get_module
 def test_discovers_modules_automatically_in_tab_order() -> None:
     modules = discover_modules()
 
-    assert list(modules) == ["dwg-parts", "pdf-report", "soumission"]
+    assert list(modules) == ["dwg-parts", "dwg-diff", "pdf-report", "soumission"]
     assert modules["dwg-parts"].manifest.name == "Liste de pièces"
 
 

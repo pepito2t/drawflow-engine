@@ -151,3 +151,11 @@ export function SunIcon(props: IconProps) {
     </Svg>
   );
 }
+
+export function DiffIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 7h16M4 17h16M9 4v6M6 7h6M9 14v6" />
+    </Svg>
+  );
+}

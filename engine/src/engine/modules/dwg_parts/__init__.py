@@ -3,7 +3,7 @@ from datetime import datetime
 from engine.core.contract import EngineModule, ModuleResult, RunContext
 from engine.modules.dwg_parts.manifest import MANIFEST
 from engine.modules.dwg_parts.schema import DwgPartsInputs
-from engine.modules.dwg_parts.settings import DwgPartsSettings
+from engine.parts.settings import PartsListSettings
 
 
 def _run(inputs: DwgPartsInputs, context: RunContext) -> ModuleResult:
@@ -17,5 +17,5 @@ MODULE = EngineModule(
     manifest=MANIFEST,
     inputs_model=DwgPartsInputs,
     run=_run,
-    settings_model=DwgPartsSettings,
+    settings_model=PartsListSettings,
 )

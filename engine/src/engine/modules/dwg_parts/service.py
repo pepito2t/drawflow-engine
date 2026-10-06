@@ -1,40 +1,16 @@
 from collections.abc import Sequence
-from dataclasses import dataclass
 
-from engine.core.anomalies import Anomaly
 from engine.core.events import TableEvent, TableRow
-from engine.modules.dwg_parts.aggregation import PartLine, aggregate
-from engine.modules.dwg_parts.mapping import map_parts
-from engine.modules.dwg_parts.reader import RawPart
-from engine.modules.dwg_parts.settings import DwgPartsSettings
+from engine.parts.aggregation import PartLine
+from engine.parts.listing import PartsList
 
 DOCUMENT_TYPE = "liste-pieces"
+PROJECT_HEADER = "Projet"
+FILES_PROJECT = "Fichiers"
 QUANTITY_HEADER = "Quantité"
 SOURCES_HEADER = "Plans"
 PREVIEW_MAX_ROWS = 500
 EMPTY_CELL_ISSUE = "Colonne « {column} » vide"
-NO_PART_WARNING = "Aucun bloc ne correspond aux blocs retenus (Paramètres → Liste de pièces)."
-
-
-@dataclass(frozen=True)
-class PartsList:
-    headers: tuple[str, ...]
-    lines: list[PartLine]
-    warnings: list[Anomaly]
-
-    @property
-    def total_quantity(self) -> float:
-        return sum(line.quantity for line in self.lines)
-
-
-def build_parts_list(raw_parts: Sequence[RawPart], settings: DwgPartsSettings) -> PartsList:
-    mapping = map_parts(raw_parts, settings)
-    lines = aggregate(mapping.parts, group_identical=settings.group_identical)
-    no_part = Anomaly(
-        NO_PART_WARNING, hint="Vérifiez les blocs retenus (jokers * et ?) et les plans choisis."
-    )
-    warnings = [*mapping.warnings, *([] if lines else [no_part])]
-    return PartsList(headers=mapping.headers, lines=lines, warnings=warnings)
 
 
 def preview_table(parts_list: PartsList) -> TableEvent:
@@ -62,3 +38,31 @@ def describe_result(parts_list: PartsList, read: int, total: int) -> str:
     quantity = parts_list.total_quantity
     pieces = int(quantity) if float(quantity).is_integer() else round(quantity, 2)
     return f"{len(parts_list.lines)} ligne(s), {pieces} pièce(s), {read}/{total} plan(s) lu(s)"
+
+
+def merge_projects(lists: Sequence[tuple[str, PartsList]]) -> PartsList:
+    """One list for several projects: a « Projet » column first, lines kept per project."""
+    headers = lists[0][1].headers if lists else ()
+    lines = [
+        PartLine((project, *line.values), line.quantity, line.sources)
+        for project, parts_list in lists
+        for line in parts_list.lines
+    ]
+    warnings = [warning for _, parts_list in lists for warning in parts_list.warnings]
+    return PartsList(headers=(PROJECT_HEADER, *headers), lines=lines, warnings=warnings)
+
+
+def total_of(lists: Sequence[tuple[str, PartsList]]) -> PartsList:
+    """The same parts summed across projects, for one order to the supplier."""
+    quantities: dict[tuple[str, ...], float] = {}
+    sources: dict[tuple[str, ...], set[str]] = {}
+    for _, parts_list in lists:
+        for line in parts_list.lines:
+            quantities[line.values] = quantities.get(line.values, 0.0) + line.quantity
+            sources.setdefault(line.values, set()).update(line.sources)
+    lines = [
+        PartLine(values, quantity, tuple(sorted(sources[values])))
+        for values, quantity in quantities.items()
+    ]
+    headers = lists[0][1].headers if lists else ()
+    return PartsList(headers=headers, lines=lines, warnings=[])

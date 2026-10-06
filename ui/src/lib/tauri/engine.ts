@@ -32,6 +32,7 @@ export type EngineRequestName =
   | "assistant.model-delete"
   | "help.guide"
   | "setup.scan"
+  | "settings.add-synonyms"
   | "history.list"
   | "history.remove"
   | "history.clear";
