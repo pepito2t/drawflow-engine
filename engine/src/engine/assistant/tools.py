@@ -13,6 +13,13 @@ from engine.core.presets import PresetStore
 from engine.core.registry import discover_modules, get_module
 from engine.core.templates import TemplateLibrary
 from engine.core.validation import describe_validation_error
+from engine.modules.soumission.headers import (
+    SECTION_ID,
+    SECTION_TITLE,
+    current_settings,
+    inspect_headers,
+    validate_additions,
+)
 from engine.requests import template_users
 
 
@@ -78,6 +85,22 @@ def propose_feature_run(feature_id: str, inputs: dict[str, Any]) -> dict[str, An
         feature_name=module.manifest.name,
         label=module.manifest.name,
         inputs=validated.model_dump(mode="json"),
+    )
+    return {"proposal": proposal.model_dump(mode="json")}
+
+
+def inspect_submission(settings: Path, path: str) -> dict[str, Any]:
+    return inspect_headers(Path(path), current_settings(settings))
+
+
+def propose_column_synonyms(settings: Path, additions: dict[str, list[str]]) -> dict[str, Any]:
+    cleaned = validate_additions(current_settings(settings), additions)
+    proposal = Proposal(
+        kind="synonyms",
+        feature=SECTION_ID,
+        feature_name=SECTION_TITLE,
+        label="En-têtes reconnus",
+        inputs={"columns": cleaned},
     )
     return {"proposal": proposal.model_dump(mode="json")}
 

@@ -110,6 +110,8 @@ pub enum EngineRequest {
     HelpGuide,
     #[serde(rename = "setup.scan")]
     SetupScan,
+    #[serde(rename = "settings.add-synonyms")]
+    SettingsAddSynonyms,
     #[serde(rename = "history.list")]
     HistoryList,
     #[serde(rename = "history.remove")]
@@ -137,6 +139,7 @@ impl EngineRequest {
             Self::AssistantModelDelete => ("assistant", "model-delete"),
             Self::HelpGuide => ("help", "guide"),
             Self::SetupScan => ("setup", "scan"),
+            Self::SettingsAddSynonyms => ("settings", "add-synonyms"),
             Self::HistoryList => ("history", "list"),
             Self::HistoryRemove => ("history", "remove"),
             Self::HistoryClear => ("history", "clear"),

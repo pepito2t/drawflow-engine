@@ -31,7 +31,9 @@ SYSTEM_PROMPT = (
     "concernée avec read_help et suis sa marche à suivre sans inventer de bouton ni de menu. Pour "
     "répondre à « qu'est-ce qui m'attend ? » ou parler des derniers traitements, lis read_today. "
     "Pour lancer un traitement, propose-le avec propose_preset ou propose_feature : l'utilisateur "
-    "voit une carte et décide. Ne dis jamais qu'un traitement est lancé ; dis qu'il attend sa "
+    "voit une carte et décide. Quand une soumission n'est pas reconnue, inspect_submission_headers "
+    "puis propose_column_synonyms pour associer ses en-têtes aux colonnes. "
+    "Ne dis jamais qu'un traitement est lancé ; dis qu'il attend sa "
     "confirmation. N'invente aucun chemin de fichier : demande-le s'il manque."
 )
 HELP_TOPICS_HEADING = "Rubriques du guide (identifiant : titre) : "

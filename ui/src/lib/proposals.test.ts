@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RunProposal } from "./assistant-chat";
 import type { FieldDescriptor } from "./form-schema";
-import { describeInputs, proposalTitle } from "./proposals";
+import { describeInputs, describeSynonyms, proposalTitle } from "./proposals";
 
 const field = (name: string, label: string): FieldDescriptor => ({
   name,
@@ -53,5 +53,26 @@ describe("proposalTitle", () => {
 
     expect(proposalTitle(base)).toBe("Soumission — préréglage « Chantier Nord »");
     expect(proposalTitle({ ...base, kind: "feature", label: "Soumission" })).toBe("Soumission");
+  });
+});
+
+describe("synonyms proposals", () => {
+  it("lists the new header names per column and titles the card as a settings change", () => {
+    const inputs = { columns: { Quantité: ["Nbre", "Qty"], Total: [] } };
+
+    expect(describeSynonyms(inputs)).toEqual([{ label: "Quantité", value: "Nbre, Qty" }]);
+    expect(
+      proposalTitle({
+        id: "p1",
+        kind: "synonyms",
+        feature: "soumission",
+        featureName: "Soumission",
+        label: "En-têtes reconnus",
+        presetId: null,
+        inputs,
+        status: "pending",
+        error: null,
+      }),
+    ).toBe("Ajouter des en-têtes reconnus (Soumission)");
   });
 });

@@ -22,7 +22,7 @@ def read_pdf_submission(path: Path, settings: SoumissionSettings) -> WorkbookCon
     """Reads every .xlsx embedded in the PDF as if it were a standalone workbook."""
     tables: list[SubmissionTable] = []
     warnings: list[Anomaly] = []
-    workbooks = _embedded_workbooks(path)
+    workbooks = embedded_workbooks(path)
     for name, data in workbooks:
         content = read_workbook(BytesIO(data), f"{path.name}{SOURCE_SEPARATOR}{name}", settings)
         tables.extend(content.tables)
@@ -38,7 +38,7 @@ def read_pdf_submission(path: Path, settings: SoumissionSettings) -> WorkbookCon
     return WorkbookContent(tables=tables, warnings=warnings)
 
 
-def _embedded_workbooks(path: Path) -> list[tuple[str, bytes]]:
+def embedded_workbooks(path: Path) -> list[tuple[str, bytes]]:
     try:
         reader = PdfReader(path)
         if reader.is_encrypted:
