@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **L'assistant lit les traitements** : outils `list_runs` et `read_run` — résultat, fichiers produits, avertissements avec fichier, endroit et conseil ; il répond à « pourquoi la pièce P-12 manque ? » en citant la source (#171).
+
 ## 0.16.0 — 2026-10-06
 
 - **Soumission : en-têtes inconnus associés par l'assistant** — quand un fichier n'est pas reconnu, l'avertissement cite les en-têtes trouvés ; l'assistant peut inspecter le fichier (`inspect_submission_headers`) et proposer d'ajouter ces en-têtes aux colonnes (`propose_column_synonyms`), appliqué d'un clic (#169).

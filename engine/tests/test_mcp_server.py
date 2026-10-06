@@ -22,6 +22,8 @@ EXPECTED_TOOLS = {
     "list_help_topics",
     "read_today",
     "list_presets",
+    "list_runs",
+    "read_run",
     "list_templates",
     "propose_column_synonyms",
     "propose_feature",
@@ -191,3 +193,38 @@ def test_today_summarizes_recent_runs_and_presets(tmp_path: Path) -> None:
     assert today["recent_runs"][0]["feature_name"] == "Liste de pièces"
     assert today["recent_runs"][0]["outputs"] == ["C:/Sortie/liste.xlsx"]
     assert today["presets"] == []
+
+
+def test_assistant_reads_a_run_and_its_warnings_in_detail(tmp_path: Path) -> None:
+    from engine.core.history import HistoryEntry, HistoryStore, HistoryWarning
+
+    settings = tmp_path / "settings.json"
+    HistoryStore(settings).record(
+        HistoryEntry(
+            id="abc123abc123",
+            started_at="2026-10-06T08:00:00+00:00",
+            module="dwg-parts",
+            module_name="Liste de pièces",
+            inputs={"files": ["C:/Plans/a.dwg"]},
+            status="succeeded",
+            summary="3 lignes",
+            outputs=["C:/Sortie/liste.xlsx"],
+            warnings=[
+                HistoryWarning(
+                    message="Attribut « REF » absent sur 1 bloc.",
+                    file="C:/Plans/a.dwg",
+                    location="bloc PANNEAU",
+                    hint="Ajoutez l'attribut.",
+                )
+            ],
+            duration_ms=10,
+        )
+    )
+
+    listed = anyio.run(_toolbox_call, settings, "list_runs", {"limit": 3})
+    detail = anyio.run(_toolbox_call, settings, "read_run", {"run_id": "abc123abc123"})
+    missing = anyio.run(_toolbox_call, settings, "read_run", {"run_id": "nope"})
+
+    assert listed.ok and "abc123abc123" in listed.text
+    assert detail.ok and "bloc PANNEAU" in detail.text and "Ajoutez l'attribut." in detail.text
+    assert not missing.ok and "list_runs" in missing.text

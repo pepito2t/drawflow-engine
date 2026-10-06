@@ -106,26 +106,49 @@ def propose_column_synonyms(settings: Path, additions: dict[str, list[str]]) -> 
 
 
 RECENT_RUNS = 5
+MAX_LISTED_RUNS = 50
+
+
+def describe_runs(settings: Path, limit: int = RECENT_RUNS) -> dict[str, Any]:
+    """The history as the assistant may quote it: ids first, so it can read one in detail."""
+    count = max(1, min(limit, MAX_LISTED_RUNS))
+    return {"runs": [_run_summary(entry) for entry in HistoryStore(settings).entries()[:count]]}
+
+
+def describe_run(settings: Path, run_id: str) -> dict[str, Any]:
+    """Everything recorded for one run: inputs, outputs and each warning with its place."""
+    entry = next((e for e in HistoryStore(settings).entries() if e.id == run_id), None)
+    if entry is None:
+        raise InvalidInputError(
+            f"Aucun traitement « {run_id} » dans l'historique.", hint="Utilise list_runs."
+        )
+    return {
+        **_run_summary(entry),
+        "inputs": entry.inputs,
+        "duration_ms": entry.duration_ms,
+        "warnings": [warning.model_dump(mode="json") for warning in entry.warnings],
+    }
+
+
+def _run_summary(entry: Any) -> dict[str, Any]:
+    return {
+        "id": entry.id,
+        "started_at": entry.started_at,
+        "feature": entry.module,
+        "feature_name": entry.module_name,
+        "status": entry.status,
+        "summary": entry.summary,
+        "error": entry.error,
+        "outputs": entry.outputs,
+        "warnings": len(entry.warnings),
+    }
 
 
 def describe_today(settings: Path) -> dict[str, Any]:
     """What the user sees on the Today screen: last runs and one-click presets."""
     recent = HistoryStore(settings).entries()[:RECENT_RUNS]
     return {
-        "recent_runs": [
-            {
-                "id": entry.id,
-                "started_at": entry.started_at,
-                "feature": entry.module,
-                "feature_name": entry.module_name,
-                "status": entry.status,
-                "summary": entry.summary,
-                "error": entry.error,
-                "outputs": entry.outputs,
-                "warnings": len(entry.warnings),
-            }
-            for entry in recent
-        ],
+        "recent_runs": [_run_summary(entry) for entry in recent],
         "presets": describe_presets(settings)["presets"],
     }
 
