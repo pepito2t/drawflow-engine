@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Liste de pièces multi-projets** : option « Un projet par dossier » — colonne Projet et onglet Total toutes origines confondues (#168).
+
 ## 0.14.0 — 2026-10-06
 
 - **Comparaison d'indices** : nouvelle fonctionnalité qui compare deux indices d'un jeu de plans DWG/DXF (ajouts, suppressions, quantités modifiées, plans présents dans chaque indice), avec aperçu avant export et fichier Excel à onglets. Les noms de plans incrémentés (`01_`, `_02`) sont rapprochés automatiquement (#166).
