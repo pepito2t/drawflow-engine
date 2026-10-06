@@ -25,6 +25,7 @@ EXPECTED_MCP_TOOLS = [
     "propose_feature",
     "propose_preset",
     "read_help",
+    "read_today",
 ]
 PARALLEL_BATCH_SIZE = 2
 MCP_REQUEST_TIMEOUT = timedelta(seconds=120)
