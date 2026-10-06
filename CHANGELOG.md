@@ -4,7 +4,10 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+## 0.18.0 — 2026-10-06
+
 - **Courriels Exchange / Microsoft 365** : connexion par code (OAuth, sans mot de passe stocké), récupération des messages rangés par conversation avec pièces jointes, lecture, export vers un dossier de chantier, retrait local ; commandes `mail.open` et `mail.fetch` (#134).
+
 ## 0.17.0 — 2026-10-06
 
 - **Profil complet** (Paramètres → Profil) : export en zip des normes, modèles importés et préréglages ; import avec aperçu de ce qui est remplacé ; profil d'une version plus récente refusé (#129).
