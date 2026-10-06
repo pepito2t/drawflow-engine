@@ -19,13 +19,17 @@ from mcp.client.stdio import stdio_client
 EXPECTED_MODULE_IDS = ["dwg-parts", "dwg-diff", "pdf-report", "soumission"]
 EXPECTED_MCP_TOOLS = [
     "inspect_file",
+    "inspect_submission_headers",
     "list_features",
     "list_help_topics",
     "list_presets",
+    "list_runs",
     "list_templates",
+    "propose_column_synonyms",
     "propose_feature",
     "propose_preset",
     "read_help",
+    "read_run",
     "read_today",
 ]
 PARALLEL_BATCH_SIZE = 2

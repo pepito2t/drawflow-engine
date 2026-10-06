@@ -20,6 +20,9 @@ from engine.modules.soumission.settings import (
 )
 
 HEADER_PUNCTUATION = " .:"
+MIN_TEXT_CELLS = 2
+MAX_CANDIDATES = 5
+MAX_LOCATION_TEXTS = 8
 
 type CellValue = str | float
 type Row = dict[str, CellValue]
@@ -27,6 +30,23 @@ type Row = dict[str, CellValue]
 
 class WorkbookReadError(EngineError):
     pass
+
+
+@dataclass(frozen=True)
+class HeaderCandidate:
+    row: int
+    texts: list[str]
+
+
+def header_candidates(rows: Sequence[Sequence[object]]) -> list[HeaderCandidate]:
+    """Rows that look like a header, most text cells first: what the file calls its columns."""
+    candidates = [
+        HeaderCandidate(index, [text.strip() for _, text in _texts(row)])
+        for index, row in enumerate(rows)
+    ]
+    candidates = [candidate for candidate in candidates if len(candidate.texts) >= MIN_TEXT_CELLS]
+    candidates.sort(key=lambda candidate: (-len(candidate.texts), candidate.row))
+    return candidates[:MAX_CANDIDATES]
 
 
 @dataclass(frozen=True)
@@ -45,12 +65,15 @@ class WorkbookContent:
 def read_workbook(
     stream: Path | IO[bytes], source: str, settings: SoumissionSettings
 ) -> WorkbookContent:
-    workbook = _open(stream, source)
+    workbook = open_workbook(stream, source)
     try:
         tables: list[SubmissionTable] = []
         warnings: list[Anomaly] = []
+        first_rows: Sequence[Sequence[object]] = ()
         for sheet in workbook.worksheets:
             rows = list(sheet.iter_rows(values_only=True))
+            if not first_rows:
+                first_rows = rows[: settings.header_search_rows]
             table, sheet_warnings = _read_sheet(rows, sheet.title, source, settings)
             warnings.extend(sheet_warnings)
             if table is not None:
@@ -58,17 +81,20 @@ def read_workbook(
     finally:
         workbook.close()
     if not tables:
+        candidates = header_candidates(first_rows)
+        found = ", ".join(candidates[0].texts[:MAX_LOCATION_TEXTS]) if candidates else ""
         warnings.append(
             Anomaly(
                 "Aucun tableau de soumission reconnu (en-têtes introuvables).",
-                hint="Ajoutez les en-têtes de ce fichier aux synonymes de colonnes dans "
-                "Paramètres → Soumission.",
+                location=f"en-têtes trouvés : {found}" if found else None,
+                hint="Ajoutez ces en-têtes aux colonnes dans Paramètres → Soumission, ou "
+                "demandez à l'assistant de les associer.",
             )
         )
     return WorkbookContent(tables=tables, warnings=warnings)
 
 
-def _open(stream: Path | IO[bytes], source: str) -> Workbook:
+def open_workbook(stream: Path | IO[bytes], source: str) -> Workbook:
     try:
         return load_workbook(stream, read_only=True, data_only=True)
     except (OSError, BadZipFile, InvalidFileException, KeyError) as error:
@@ -110,13 +136,13 @@ def _find_header(
     rows: Sequence[Sequence[object]], settings: SoumissionSettings
 ) -> tuple[int, dict[str, int]] | None:
     for index, row in enumerate(rows[: settings.header_search_rows]):
-        positions = _match_columns(row, settings.columns)
+        positions = match_columns(row, settings.columns)
         if len(positions) >= MIN_HEADER_MATCHES:
             return index, positions
     return None
 
 
-def _match_columns(row: Sequence[object], columns: Sequence[KeyValue]) -> dict[str, int]:
+def match_columns(row: Sequence[object], columns: Sequence[KeyValue]) -> dict[str, int]:
     cells = {
         fold(str(value)).strip(HEADER_PUNCTUATION): position for position, value in _texts(row)
     }

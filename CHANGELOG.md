@@ -5,6 +5,18 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 ## Non publié
 
 - **Fichiers glissés dans l'assistant** : pièces jointes visibles dans le message ; outil `inspect_file` (blocs d'un plan, pages et texte d'un PDF, feuilles d'un XLSX, paragraphes d'un DOCX) et proposition de la fonctionnalité adaptée (#159).
+- **L'assistant lit les traitements** : outils `list_runs` et `read_run` — résultat, fichiers produits, avertissements avec fichier, endroit et conseil ; il répond à « pourquoi la pièce P-12 manque ? » en citant la source (#171).
+
+## 0.16.0 — 2026-10-06
+
+- **Soumission : en-têtes inconnus associés par l'assistant** — quand un fichier n'est pas reconnu, l'avertissement cite les en-têtes trouvés ; l'assistant peut inspecter le fichier (`inspect_submission_headers`) et proposer d'ajouter ces en-têtes aux colonnes (`propose_column_synonyms`), appliqué d'un clic (#169).
+
+## 0.15.0 — 2026-10-06
+
+- **Liste de pièces multi-projets** : option « Un projet par dossier » — colonne Projet et onglet Total toutes origines confondues (#168).
+
+## 0.14.0 — 2026-10-06
+
 - **Comparaison d'indices** : nouvelle fonctionnalité qui compare deux indices d'un jeu de plans DWG/DXF (ajouts, suppressions, quantités modifiées, plans présents dans chaque indice), avec aperçu avant export et fichier Excel à onglets. Les noms de plans incrémentés (`01_`, `_02`) sont rapprochés automatiquement (#166).
 
 ## 0.13.0 — 2026-10-06

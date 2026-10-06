@@ -14,7 +14,7 @@ export const assistantEventSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("proposal"),
     id: z.string(),
-    kind: z.enum(["preset", "feature"]),
+    kind: z.enum(["preset", "feature", "synonyms"]),
     feature: z.string(),
     feature_name: z.string(),
     label: z.string(),
