@@ -22,7 +22,7 @@ def test_business_error_is_logged_with_its_underlying_cause(tmp_path: Path) -> N
     [entry] = _entries(settings)
     assert entry["type"] == "EngineError"
     assert entry["message"] == "Le serveur a refusé."
-    assert entry["file"] == "C:/a.dwg"
+    assert entry["file"] == str(Path("C:/a.dwg"))
     assert "more system memory" in str(entry["cause"])
     assert entry["command"] == ["assistant", "chat"]
 
