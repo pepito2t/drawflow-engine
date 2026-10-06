@@ -12,6 +12,7 @@ import { useIntegrationBridge } from "../hooks/use-integration-bridge";
 import { useRunEvents } from "../hooks/use-run-events";
 import { useSetupCheck } from "../hooks/use-setup-check";
 import { useSystemNotifications } from "../hooks/use-system-notifications";
+import { useLanguageSync } from "../hooks/use-language-sync";
 import { parseCatalog, type CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
 import { getLockStatus, type LockStatus } from "../lib/tauri/access";
@@ -133,6 +134,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const { state, dispatch } = useRunsStore();
   useRunEvents(state, modules);
+  useLanguageSync();
   useSystemNotifications();
   useSetupCheck();
 

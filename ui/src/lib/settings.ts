@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEFAULT_LANGUAGE, isLanguage, type Language } from "../i18n";
 import { CatalogError, parseFormFields } from "./catalog";
 import { toEngineInputs, toFormValue, type FieldDescriptor, type FormValues } from "./form-schema";
 import { parseJsonOrNull } from "./json";
@@ -61,8 +62,15 @@ export function toSettingsPayload(
 }
 
 const GENERAL_SECTION_ID = "general";
+const LANGUAGE_FIELD = "language";
 const NOTIFICATION_THRESHOLD_FIELD = "notification_threshold_seconds";
 const DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10;
+
+export function readLanguage(rawJson: string): Language {
+  const general = parseSettings(rawJson).find((section) => section.id === GENERAL_SECTION_ID);
+  const value = general?.values[LANGUAGE_FIELD];
+  return isLanguage(value) ? value : DEFAULT_LANGUAGE;
+}
 
 export function readNotificationThreshold(rawJson: string): number {
   const general = parseSettings(rawJson).find((section) => section.id === GENERAL_SECTION_ID);

@@ -1,5 +1,6 @@
 from ipaddress import ip_address
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -15,6 +16,8 @@ MAX_NOTIFICATION_THRESHOLD_SECONDS = 3600
 DEFAULT_MODEL_SERVER_URL = "http://127.0.0.1:11434/v1"
 DEFAULT_MODEL_NAME = "qwen3.5:9b"
 LOCAL_HOST_NAMES = {"localhost"}
+Language = Literal["fr", "en"]
+DEFAULT_LANGUAGE: Language = "fr"
 DEFAULT_MAIL_TENANT = "common"
 DEFAULT_MAIL_LOOKBACK_DAYS = 90
 MAX_MAIL_LOOKBACK_DAYS = 3650
@@ -32,6 +35,12 @@ class ModuleSettings(SettingsSection):
 
 
 class GeneralSettings(SettingsSection):
+    language: Language = ui_field(
+        "enum",
+        label="Langue / Language",
+        default=DEFAULT_LANGUAGE,
+        description="fr : français · en : English.",
+    )
     oda_converter_path: Path | None = ui_field(
         "file",
         label="ODA File Converter",
