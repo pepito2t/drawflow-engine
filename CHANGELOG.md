@@ -4,7 +4,9 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
-- **Avertissements lisibles** : à la fin d'un traitement, un rapport par fichier indique l'anomalie, l'endroit (feuille, cartouche, bloc) et le conseil pour la corriger ; bouton **Copier** ; détail conservé dans l'Historique. Les messages des trois fonctionnalités ont été réécrits dans ce sens (#161).
+- **Avertissements lisibles** : à la fin d'un traitement, un rapport par fichier indique l'anomalie, l'endroit (feuille, cartouche, bloc) et le conseil pour la corriger ; bouton **Copier** ; détail conservé dans l'Historique. Les messages des trois fonctionnalités ont été réécrits dans ce sens (#162).
+
+## 0.10.0 — 2026-10-06
 
 - **Historique des traitements** : onglet Historique (date, durée, résultat, avertissements), **Ouvrir le résultat**, **Relancer**, retrait d'une ligne ou vidage ; conservé entre deux lancements (200 entrées), commandes `history.open` / `history.rerun` (#160).
 
