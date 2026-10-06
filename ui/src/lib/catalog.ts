@@ -2,7 +2,7 @@ import { z } from "zod";
 import { parseJsonOrNull } from "./json";
 import { describeFields, inputsSchemaSchema, type FieldDescriptor } from "./form-schema";
 
-export const MODULE_ICONS = ["module", "list", "report", "table", "check"] as const;
+export const MODULE_ICONS = ["module", "list", "report", "table", "check", "diff"] as const;
 export type ModuleIconName = (typeof MODULE_ICONS)[number];
 
 const manifestSchema = z.object({

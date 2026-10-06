@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +41,7 @@ class SectionSpec:
 class RunSettings:
     general: GeneralSettings
     module: ModuleSettings | None
+    document: Document = field(default_factory=dict)
 
 
 def section_specs(modules: dict[str, AnyModule]) -> list[SectionSpec]:
@@ -86,10 +87,10 @@ def load_run_settings(path: Path | None, module: AnyModule) -> RunSettings:
     document = read_document(path)
     general = load_section(GeneralSettings, GENERAL_SECTION_ID, GENERAL_SECTION_TITLE, document)
     if module.settings_model is None:
-        return RunSettings(general=general, module=None)
+        return RunSettings(general=general, module=None, document=document)
     manifest = module.manifest
     module_settings = load_section(module.settings_model, manifest.id, manifest.name, document)
-    return RunSettings(general=general, module=module_settings)
+    return RunSettings(general=general, module=module_settings, document=document)
 
 
 def load_general_settings(path: Path | None) -> GeneralSettings:

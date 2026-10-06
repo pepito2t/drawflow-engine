@@ -4,7 +4,7 @@ import pytest
 
 from engine.core.collect import FileCollectionError
 from engine.core.events import Event, WarningEvent
-from engine.modules.dwg_parts.collect import collect_plans
+from engine.parts.collect import collect_plans
 
 
 @pytest.fixture

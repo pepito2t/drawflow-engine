@@ -9,7 +9,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 from engine.core.templates import TemplateLibrary, TemplateUser
-from engine.modules.dwg_parts.tests.plans import build_facade_plan
+from engine.parts.tests.plans import build_facade_plan
 
 GOLDEN_RELATIVE_PATH = Path("fixtures") / "dwg-parts" / "expected" / "liste-pieces.json"
 
@@ -143,3 +143,35 @@ def test_preview_shows_the_table_and_writes_nothing(tmp_path: Path, plans: Path)
     assert table["total"] == len(table["rows"]) > 0
     assert events[-1]["type"] == "result" and events[-1]["summary"].startswith("Aperçu")
     assert not output.exists() or not any(output.iterdir())
+
+
+def test_one_project_per_folder_adds_a_project_column_and_a_total_sheet(tmp_path: Path) -> None:
+    tour_a = tmp_path / "Tour A"
+    tour_b = tmp_path / "Tour B"
+    tour_a.mkdir()
+    tour_b.mkdir()
+    build_facade_plan(tour_a / "facade.dxf")
+    build_facade_plan(tour_b / "facade.dxf")
+    inputs = write_json(
+        tmp_path / "inputs.json",
+        {
+            "folders": [str(tour_a), str(tour_b)],
+            "project": "Chantier",
+            "output_folder": str(tmp_path / "Sortie"),
+            "multi_project": True,
+            "preview": False,
+        },
+    )
+
+    completed = run_engine("run", "dwg-parts", "--input", str(inputs))
+    events = [json.loads(line) for line in completed.stdout.splitlines()]
+
+    assert events[-1]["type"] == "result", events
+    workbook = load_workbook(events[-1]["outputs"][0], read_only=True)
+    main = list(workbook.worksheets[0].iter_rows(values_only=True))
+    assert main[0][0] == "Projet"
+    assert {row[0] for row in main[1:]} == {"Tour A", "Tour B"}
+    total = list(workbook["Total"].iter_rows(values_only=True))
+    assert total[0][0] != "Projet"
+    doubled = [row for row in total[1:] if row[1] == "P-1200"]
+    assert doubled and doubled[0][-2] == 4

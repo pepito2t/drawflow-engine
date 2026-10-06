@@ -4,8 +4,8 @@ from pathlib import Path
 from engine.core.anomalies import Anomaly
 from engine.core.cache import FileCache
 from engine.core.events import Event, WarningEvent
-from engine.modules.dwg_parts.oda import OdaConverter, ensure_dxf
-from engine.modules.dwg_parts.reader import RawPart, read_parts
+from engine.parts.oda import OdaConverter, ensure_dxf
+from engine.parts.reader import RawPart, read_parts
 
 DXF_CACHE_NAMESPACE = "dxf"
 

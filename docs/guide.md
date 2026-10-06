@@ -20,6 +20,10 @@ La marche à suivre complète, dans l'ordre. Chaque étape renvoie à sa section
 
 En cas de souci : [Dépannage](#dépannage).
 
+## L'écran Aujourd'hui
+
+Drawflow s'ouvre sur **Aujourd'hui** : les prérequis manquants (bouton **Configurer**), les préréglages lançables en un clic, et les derniers traitements avec **Ouvrir le résultat** et **Relancer**. Commande `today.open` pour le Stream Dock ; l'assistant lit le même écran (« qu'est-ce qui m'attend ? »).
+
 ## Installer Drawflow
 
 1. Téléchargez `Drawflow_X.Y.Z_x64-setup.exe` depuis la [dernière release](https://github.com/pepito2t/drawflow-engine/releases/latest) et lancez-le (installation pour l'utilisateur courant, sans droits administrateur).
@@ -56,6 +60,14 @@ Vous pouvez changer d'onglet ou lancer une autre fonctionnalité pendant un trai
 ### Historique
 
 L'onglet **Historique** liste les derniers traitements (200 au plus) : date, durée, résultat ou erreur, nombre d'avertissements. **Ouvrir le résultat** ouvre le dernier fichier produit ; **Relancer** recharge les mêmes fichiers et relance ; **×** retire une ligne. Commandes `history.open` et `history.rerun` pour le Stream Dock et l'assistant.
+
+### Plusieurs projets en une liste
+
+Cochez **Un projet par dossier** dans la liste de pièces : chaque dossier de plans devient un projet (son nom), la liste reçoit une colonne **Projet**, et un onglet **Total** additionne les pièces identiques de tous les projets — pratique pour une commande fournisseur qui couvre plusieurs chantiers.
+
+### Comparer deux indices de plans
+
+L'onglet **Comparaison d'indices** prend les plans de l'indice précédent (A) et ceux du nouvel indice (B), établit les deux listes de pièces avec la norme de la liste de pièces, puis les compare : pièces **ajoutées**, **supprimées**, **quantités modifiées**, inchangées, et un onglet **Plans** (présent dans A, dans B, dans les deux). Les pièces sont rapprochées par les colonnes choisies dans Paramètres → Comparaison d'indices (par défaut « Référence »). Les plans numérotés (`01_facade-nord`, `facade-nord_02`) sont reconnus comme le même plan grâce au motif d'incrément, réglable au même endroit.
 
 ### Adapter une fonctionnalité à votre norme
 

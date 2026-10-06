@@ -19,6 +19,7 @@ export const COMMAND_ARGUMENTS = {
   "app.state": z.object({}),
   "settings.add-synonyms": z.object({ columns: z.record(z.string(), z.array(z.string())) }),
   "history.open": z.object({}),
+  "today.open": z.object({}),
   "history.rerun": z.object({ entryId: z.string().min(1) }),
 } as const;
 
@@ -41,6 +42,7 @@ export const COMMANDS = {
   appState: "app.state",
   addSynonyms: "settings.add-synonyms",
   openHistory: "history.open",
+  openToday: "today.open",
   rerunHistory: "history.rerun",
 } as const satisfies Record<string, CommandId>;
 

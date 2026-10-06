@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from engine.assistant.events import Proposal
 from engine.core.errors import InvalidInputError
 from engine.core.guide import read_section, sections
+from engine.core.history import HistoryStore
 from engine.core.presets import PresetStore
 from engine.core.registry import discover_modules, get_module
 from engine.core.templates import TemplateLibrary
@@ -102,6 +103,31 @@ def propose_column_synonyms(settings: Path, additions: dict[str, list[str]]) -> 
         inputs={"columns": cleaned},
     )
     return {"proposal": proposal.model_dump(mode="json")}
+
+
+RECENT_RUNS = 5
+
+
+def describe_today(settings: Path) -> dict[str, Any]:
+    """What the user sees on the Today screen: last runs and one-click presets."""
+    recent = HistoryStore(settings).entries()[:RECENT_RUNS]
+    return {
+        "recent_runs": [
+            {
+                "id": entry.id,
+                "started_at": entry.started_at,
+                "feature": entry.module,
+                "feature_name": entry.module_name,
+                "status": entry.status,
+                "summary": entry.summary,
+                "error": entry.error,
+                "outputs": entry.outputs,
+                "warnings": len(entry.warnings),
+            }
+            for entry in recent
+        ],
+        "presets": describe_presets(settings)["presets"],
+    }
 
 
 def help_topics() -> dict[str, Any]:

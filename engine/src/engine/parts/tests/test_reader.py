@@ -4,8 +4,8 @@ import pytest
 from ezdxf.filemanagement import new
 
 from engine.core.events import Event, WarningEvent
-from engine.modules.dwg_parts.reader import MAX_NESTING_DEPTH, DxfReadError, read_parts
-from engine.modules.dwg_parts.tests.plans import build_facade_plan
+from engine.parts.reader import MAX_NESTING_DEPTH, DxfReadError, read_parts
+from engine.parts.tests.plans import build_facade_plan
 
 
 @pytest.fixture

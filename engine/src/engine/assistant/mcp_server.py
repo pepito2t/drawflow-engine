@@ -14,6 +14,7 @@ from engine.assistant.tools import (
     describe_features,
     describe_presets,
     describe_templates,
+    describe_today,
     help_section,
     help_topics,
     inspect_submission,
@@ -61,6 +62,14 @@ def build_server(settings: Path) -> FastMCP:
     )
     def list_templates() -> dict[str, Any]:
         return _as_tool_result(lambda: describe_templates(settings))
+
+    @server.tool(
+        description="Ce qui attend l'utilisateur aujourd'hui : derniers traitements (résultat, "
+        "fichiers produits, avertissements) et préréglages lançables en un clic.",
+        annotations=READ_ONLY,
+    )
+    def read_today() -> dict[str, Any]:
+        return _as_tool_result(lambda: describe_today(settings))
 
     @server.tool(
         description="Liste les sections du guide utilisateur de Drawflow (installation, "

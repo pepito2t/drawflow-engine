@@ -9,26 +9,29 @@ from engine.core.contract import ModuleResult, RunContext
 from engine.core.errors import EngineError
 from engine.core.events import LogEvent
 from engine.core.naming import naming_values, output_target, writing_output
-from engine.modules.dwg_parts.collect import collect_plans
 from engine.modules.dwg_parts.export import export_parts
-from engine.modules.dwg_parts.oda import is_dxf, require_oda
-from engine.modules.dwg_parts.reader import RawPart
 from engine.modules.dwg_parts.schema import DwgPartsInputs
 from engine.modules.dwg_parts.service import (
     DOCUMENT_TYPE,
-    build_parts_list,
+    FILES_PROJECT,
     describe_result,
+    merge_projects,
     preview_table,
+    total_of,
 )
-from engine.modules.dwg_parts.settings import DwgPartsSettings
-from engine.modules.dwg_parts.worker import FileExtraction, extract_file
+from engine.parts.collect import collect_plans
+from engine.parts.listing import PartsList, build_parts_list
+from engine.parts.oda import is_dxf, require_oda
+from engine.parts.reader import RawPart
+from engine.parts.settings import PartsListSettings
+from engine.parts.worker import FileExtraction, extract_file
 
 OUTPUT_EXTENSION = "xlsx"
 READ_LABEL = "Lecture"
 
 
 def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime) -> ModuleResult:
-    settings = context.settings_as(DwgPartsSettings)
+    settings = context.settings_as(PartsListSettings)
     emit = context.emit
     plans = collect_plans(inputs.files, inputs.folders, recursive=inputs.recursive, emit=emit)
     needs_oda = any(not is_dxf(plan) for plan in plans)
@@ -44,7 +47,8 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
         raise EngineError(
             "Aucun plan n'a pu être lu.", hint="Consultez les avertissements du journal."
         )
-    parts_list = build_parts_list(_flatten(outcome.results, context), settings)
+    by_project = _by_project(inputs, outcome.results, context, settings)
+    parts_list = merge_projects(by_project) if inputs.multi_project else by_project[0][1]
     emit_anomalies(emit, parts_list.warnings, None)
     emit(preview_table(parts_list))
     if inputs.preview:
@@ -52,22 +56,45 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
         return ModuleResult(summary=f"Aperçu : {summary}", preview=True)
     target = _target(inputs, settings, plans, moment)
     emit(LogEvent(message=f"Écriture de {target.name}"))
+    total = total_of(by_project) if inputs.multi_project else None
     with writing_output(target):
-        export_parts(parts_list.lines, parts_list.headers, target, inputs.template, settings)
+        export_parts(
+            parts_list.lines,
+            parts_list.headers,
+            target,
+            inputs.template,
+            settings,
+            total=(total.headers, total.lines) if total else None,
+        )
     summary = describe_result(parts_list, len(outcome.results), len(plans))
     return ModuleResult(summary=summary, outputs=[target])
 
 
-def _flatten(results: list[tuple[Path, FileExtraction]], context: RunContext) -> list[RawPart]:
-    parts: list[RawPart] = []
+def _by_project(
+    inputs: DwgPartsInputs,
+    results: list[tuple[Path, FileExtraction]],
+    context: RunContext,
+    settings: PartsListSettings,
+) -> list[tuple[str, PartsList]]:
+    """One parts list per project; a single project unless each folder is one."""
+    groups: dict[str, list[RawPart]] = {}
     for path, extraction in results:
         emit_anomalies(context.emit, extraction.warnings, path)
-        parts.extend(extraction.parts)
-    return parts
+        project = _project_of(path, inputs) if inputs.multi_project else inputs.project
+        groups.setdefault(project, []).extend(extraction.parts)
+    return [(project, build_parts_list(parts, settings)) for project, parts in groups.items()]
+
+
+def _project_of(plan: Path, inputs: DwgPartsInputs) -> str:
+    """Plans from a folder belong to that folder's project; loose files to the named one."""
+    for folder in inputs.folders:
+        if folder == plan.parent or folder in plan.parents:
+            return folder.name
+    return inputs.project.strip() or FILES_PROJECT
 
 
 def _target(
-    inputs: DwgPartsInputs, settings: DwgPartsSettings, plans: list[Path], moment: datetime
+    inputs: DwgPartsInputs, settings: PartsListSettings, plans: list[Path], moment: datetime
 ) -> Path:
     source = plans[0].stem if len(plans) == 1 else ""
     values = naming_values(moment, projet=inputs.project.strip(), type=DOCUMENT_TYPE, source=source)
