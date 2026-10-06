@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { describeDuration, describeStart, lastOutput, parseHistory } from "./history";
+import {
+  describeDuration,
+  describeStart,
+  lastOutput,
+  parseHistory,
+  type HistoryEntry,
+} from "./history";
 
-const ENTRY = {
+const ENTRY: HistoryEntry = {
   id: "abc123",
   started_at: "2026-10-06T08:30:00+00:00",
   module: "dwg-parts",
