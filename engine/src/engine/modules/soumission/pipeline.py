@@ -2,6 +2,7 @@ from datetime import datetime
 from functools import partial
 from pathlib import Path
 
+from engine.core.anomalies import emit_anomalies
 from engine.core.batch import process_batch
 from engine.core.collect import collect_files
 from engine.core.contract import ModuleResult, RunContext
@@ -68,8 +69,7 @@ def _tables(
 ) -> list[SubmissionTable]:
     tables: list[SubmissionTable] = []
     for path, content in results:
-        for warning in content.warnings:
-            context.emit(WarningEvent(message=warning, file=str(path)))
+        emit_anomalies(context.emit, content.warnings, path)
         tables.extend(content.tables)
     return tables
 

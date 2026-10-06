@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from engine.core.anomalies import Anomaly
 from engine.modules.dwg_parts.reader import RawPart
 from engine.modules.dwg_parts.settings import DwgPartsSettings
 
@@ -22,7 +23,7 @@ class MappedPart:
 class MappingOutcome:
     headers: tuple[str, ...]
     parts: list[MappedPart]
-    warnings: list[str] = field(default_factory=list)
+    warnings: list[Anomaly] = field(default_factory=list)
 
 
 def map_parts(raw_parts: Sequence[RawPart], settings: DwgPartsSettings) -> MappingOutcome:
@@ -75,14 +76,22 @@ def _quantity(part: RawPart, tag: str) -> tuple[float, bool]:
         return float(part.count), False
 
 
-def _warnings(missing: Counter[str], invalid_quantities: int, quantity_tag: str) -> list[str]:
+def _warnings(missing: Counter[str], invalid_quantities: int, quantity_tag: str) -> list[Anomaly]:
     warnings = [
-        f"Attribut « {tag} » absent sur {_blocks(count)} (cellule laissée vide)."
+        Anomaly(
+            f"Attribut « {tag} » absent sur {_blocks(count)} (cellule laissée vide).",
+            hint=f"Ajoutez l'attribut {tag} aux blocs dans AutoCAD, ou changez la colonne dans "
+            "Paramètres → Liste de pièces.",
+        )
         for tag, count in sorted(missing.items())
     ]
     if invalid_quantities:
         warnings.append(
-            f"Quantité « {quantity_tag} » illisible sur {invalid_quantities} bloc(s) : compté(s) 1."
+            Anomaly(
+                f"Quantité « {quantity_tag} » illisible sur {invalid_quantities} bloc(s) : "
+                "compté(s) 1.",
+                hint=f"Saisissez un nombre dans l'attribut {quantity_tag} de ces blocs.",
+            )
         )
     return warnings
 

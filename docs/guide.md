@@ -49,6 +49,8 @@ En cas de souci : [Dépannage](#dépannage).
 3. Renseignez le nom du projet et le dossier de sortie. Drawflow n'écrit **jamais** dans les fichiers d'origine.
 4. Cliquez sur **Lancer**.
 
+À la fin, le bloc **avertissements à vérifier** liste, fichier par fichier, ce qui n'a pas pu être traité comme prévu : où (feuille, cartouche, bloc) et quoi faire. **Copier** met le rapport dans le presse-papiers pour l'envoyer. Les avertissements restent consultables dans l'Historique.
+
 Vous pouvez changer d'onglet ou lancer une autre fonctionnalité pendant un traitement. L'icône **Traitements** (à côté de la roue) montre ceux en cours ; **Annuler** arrête un traitement. Un message signale la fin, et une notification Windows si le traitement a été long ou si Drawflow était en arrière-plan.
 
 ### Historique

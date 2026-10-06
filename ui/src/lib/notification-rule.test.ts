@@ -38,7 +38,16 @@ describe("describeOutcome", () => {
   it("uses the first error for failures", () => {
     const run = finished({
       status: "failed",
-      log: [{ id: 0, level: "error", message: "ODA introuvable", file: null, hint: null }],
+      log: [
+        {
+          id: 0,
+          level: "error",
+          message: "ODA introuvable",
+          file: null,
+          location: null,
+          hint: null,
+        },
+      ],
     });
 
     expect(describeOutcome("Liste de pièces", run)?.body).toBe("ODA introuvable");

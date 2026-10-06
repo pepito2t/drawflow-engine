@@ -14,6 +14,8 @@ const warningEventSchema = z.object({
   type: z.literal("warning"),
   message: z.string(),
   file: z.string().nullable(),
+  location: z.string().nullable().optional(),
+  hint: z.string().nullable().optional(),
 });
 
 const resultEventSchema = z.object({

@@ -6,9 +6,9 @@ import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, ValidationError
 
 from engine.core.contract import ModuleResult
 from engine.core.errors import EngineError, InvalidInputError, OutputWriteError
@@ -34,6 +34,20 @@ class HistoryError(EngineError):
     pass
 
 
+class HistoryWarning(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    message: str
+    file: str | None = None
+    location: str | None = None
+    hint: str | None = None
+
+
+def _as_warning(value: Any) -> Any:
+    # Entries written before warnings were structured hold plain messages.
+    return {"message": value} if isinstance(value, str) else value
+
+
 class HistoryEntry(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -45,7 +59,9 @@ class HistoryEntry(BaseModel):
     status: RunStatus
     summary: str
     outputs: list[str] = Field(default_factory=list)
-    warnings: list[str] = Field(default_factory=list)
+    warnings: list[Annotated[HistoryWarning, BeforeValidator(_as_warning)]] = Field(
+        default_factory=list
+    )
     error: str | None = None
     duration_ms: int
 
@@ -95,13 +111,20 @@ def run_with_history(
     """Runs the module and records the outcome; the run's own error is still raised."""
     if history is None:
         return run(emit)
-    warnings: list[str] = []
+    warnings: list[HistoryWarning] = []
     started = datetime.now(UTC)
     clock = time.monotonic()
 
     def observing(event: Event) -> None:
         if isinstance(event, WarningEvent):
-            warnings.append(event.message)
+            warnings.append(
+                HistoryWarning(
+                    message=event.message,
+                    file=event.file,
+                    location=event.location,
+                    hint=event.hint,
+                )
+            )
         emit(event)
 
     def entry(**outcome: Any) -> HistoryEntry:

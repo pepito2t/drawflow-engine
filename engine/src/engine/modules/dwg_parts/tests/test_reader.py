@@ -73,5 +73,6 @@ def test_blocks_nested_too_deeply_are_reported_instead_of_silently_dropped(tmp_p
     assert blocks == [f"NIVEAU{level}" for level in range(MAX_NESTING_DEPTH + 1)]
     assert len(events) == 1
     assert isinstance(events[0], WarningEvent)
-    assert f"NIVEAU{MAX_NESTING_DEPTH}" in events[0].message
+    assert events[0].location == f"blocs NIVEAU{MAX_NESTING_DEPTH}"
+    assert events[0].hint is not None
     assert events[0].file == str(plan)

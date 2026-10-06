@@ -48,7 +48,7 @@ def test_successful_run_is_recorded_with_outputs_and_warnings(tmp_path: Path) ->
     assert result.summary == "2 pièces"
     assert entry.status == "succeeded"
     assert entry.outputs == [str(Path("C:/Sortie/liste.xlsx"))]
-    assert entry.warnings == ["Bloc inconnu"]
+    assert [warning.message for warning in entry.warnings] == ["Bloc inconnu"]
     assert entry.inputs == INPUTS
     assert entry.module_name == MODULE.manifest.name
     assert [event.type for event in seen] == ["warning", "log"]
@@ -110,3 +110,14 @@ def test_unreadable_history_is_reported_not_overwritten(tmp_path: Path) -> None:
         HistoryStore(settings).entries()
     assert history.read_text(encoding="utf-8") == "pas du json"
     assert json.loads('{"ok": true}')["ok"]
+
+
+def test_entries_with_plain_text_warnings_from_older_versions_still_load(tmp_path: Path) -> None:
+    settings = tmp_path / "settings.json"
+    legacy = {**_entry(1).model_dump(mode="json"), "warnings": ["Bloc inconnu"]}
+    (tmp_path / "history.json").write_text(json.dumps([legacy]), encoding="utf-8")
+
+    [entry] = HistoryStore(settings).entries()
+
+    assert entry.warnings[0].message == "Bloc inconnu"
+    assert entry.warnings[0].location is None

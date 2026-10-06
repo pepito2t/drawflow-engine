@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from engine.core.anomalies import Anomaly
 from engine.modules.dwg_parts.aggregation import PartLine, aggregate
 from engine.modules.dwg_parts.mapping import map_parts
 from engine.modules.dwg_parts.reader import RawPart
@@ -14,7 +15,7 @@ NO_PART_WARNING = "Aucun bloc ne correspond aux blocs retenus (Paramètres → L
 class PartsList:
     headers: tuple[str, ...]
     lines: list[PartLine]
-    warnings: list[str]
+    warnings: list[Anomaly]
 
     @property
     def total_quantity(self) -> float:
@@ -24,7 +25,10 @@ class PartsList:
 def build_parts_list(raw_parts: Sequence[RawPart], settings: DwgPartsSettings) -> PartsList:
     mapping = map_parts(raw_parts, settings)
     lines = aggregate(mapping.parts, group_identical=settings.group_identical)
-    warnings = [*mapping.warnings, *([] if lines else [NO_PART_WARNING])]
+    no_part = Anomaly(
+        NO_PART_WARNING, hint="Vérifiez les blocs retenus (jokers * et ?) et les plans choisis."
+    )
+    warnings = [*mapping.warnings, *([] if lines else [no_part])]
     return PartsList(headers=mapping.headers, lines=lines, warnings=warnings)
 
 

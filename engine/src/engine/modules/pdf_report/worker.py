@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from engine.core.anomalies import Anomaly
 from engine.modules.pdf_report.fields import extract_fields, find_references
 from engine.modules.pdf_report.reader import TextLine, read_pages
 from engine.modules.pdf_report.report import PlanData
@@ -13,7 +14,7 @@ NO_TEXT_WARNING = "Aucun texte trouvé : le PDF est peut-être une image scanné
 @dataclass(frozen=True)
 class PlanExtraction:
     plan: PlanData
-    warnings: list[str] = field(default_factory=list)
+    warnings: list[Anomaly] = field(default_factory=list)
 
 
 def extract_plan(path: Path, *, settings: PdfReportSettings) -> PlanExtraction:
@@ -36,9 +37,22 @@ def extract_plan(path: Path, *, settings: PdfReportSettings) -> PlanExtraction:
     return PlanExtraction(plan=plan, warnings=_warnings(all_lines, fields.missing))
 
 
-def _warnings(lines: list[TextLine], missing: list[str]) -> list[str]:
+def _warnings(lines: list[TextLine], missing: list[str]) -> list[Anomaly]:
     if not lines:
-        return [NO_TEXT_WARNING]
+        return [
+            Anomaly(
+                NO_TEXT_WARNING,
+                hint="Exportez le PDF depuis le logiciel de dessin (texte sélectionnable) "
+                "plutôt qu'un scan.",
+            )
+        ]
     if missing:
-        return [f"Champs introuvables dans le cartouche : {', '.join(missing)}."]
+        return [
+            Anomaly(
+                f"Champs introuvables : {', '.join(missing)}.",
+                location="cartouche",
+                hint="Vérifiez la zone du cartouche et les libellés cherchés dans "
+                "Paramètres → Rapport.",
+            )
+        ]
     return []

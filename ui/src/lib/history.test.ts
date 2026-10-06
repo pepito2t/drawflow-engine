@@ -16,7 +16,7 @@ const ENTRY: HistoryEntry = {
   status: "succeeded",
   summary: "12 pièces",
   outputs: ["C:\\Sortie\\liste.xlsx"],
-  warnings: [],
+  warnings: [{ message: "Bloc inconnu", file: null, location: "bloc X", hint: null }],
   error: null,
   duration_ms: 4200,
 };
@@ -44,5 +44,18 @@ describe("history", () => {
   it("gives the last produced file", () => {
     expect(lastOutput(ENTRY)).toBe("C:\\Sortie\\liste.xlsx");
     expect(lastOutput({ ...ENTRY, outputs: [] })).toBeNull();
+  });
+});
+
+describe("history warnings", () => {
+  it("accepts plain-text warnings written by older versions", () => {
+    const raw = { entries: [{ ...ENTRY, warnings: ["Bloc inconnu"] }] };
+
+    expect(parseHistory(JSON.stringify(raw))[0]?.warnings[0]).toEqual({
+      message: "Bloc inconnu",
+      file: null,
+      location: null,
+      hint: null,
+    });
   });
 });

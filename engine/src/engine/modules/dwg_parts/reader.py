@@ -41,9 +41,12 @@ def read_parts(dxf_path: Path, source: Path, emit: Emit) -> list[RawPart]:
     if truncated:
         emit(
             WarningEvent(
-                message=f"Blocs imbriqués au-delà de {MAX_NESTING_DEPTH} niveaux, contenu "
-                f"ignoré : {', '.join(sorted(truncated))}.",
+                message=f"Blocs imbriqués au-delà de {MAX_NESTING_DEPTH} niveaux : leur contenu "
+                "n'est pas compté.",
                 file=str(source),
+                location=f"blocs {', '.join(sorted(truncated))}",
+                hint="Simplifiez l'imbrication dans AutoCAD, ou vérifiez qu'aucune pièce ne se "
+                "trouve à ce niveau.",
             )
         )
     return parts

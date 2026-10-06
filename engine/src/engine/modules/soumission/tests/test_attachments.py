@@ -30,7 +30,8 @@ def test_reads_every_embedded_workbook(tmp_path: Path) -> None:
         "soumission é.pdf > lot-2.XLSX",
     ]
     assert content.tables[0].rows[0]["Position"] == "1.1"
-    assert content.warnings[0].startswith("lot-1.xlsx : ")
+    assert content.warnings[0].location is not None
+    assert content.warnings[0].location.startswith("lot-1.xlsx")
 
 
 def test_pdf_without_workbook_is_flagged(tmp_path: Path) -> None:
@@ -39,7 +40,8 @@ def test_pdf_without_workbook_is_flagged(tmp_path: Path) -> None:
     content = read_pdf_submission(path, SoumissionSettings())
 
     assert content.tables == []
-    assert content.warnings == [NO_WORKBOOK_WARNING]
+    assert [warning.message for warning in content.warnings] == [NO_WORKBOOK_WARNING]
+    assert content.warnings[0].hint is not None
 
 
 def test_damaged_pdf_is_reported(tmp_path: Path) -> None:
