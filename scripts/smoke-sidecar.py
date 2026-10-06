@@ -158,7 +158,7 @@ def smoke_report(binary: Path, workdir: Path) -> list[dict[str, object]]:
         binary,
         workdir,
         "pdf-report",
-        {"files": [str(plan)], "output_folder": str(workdir / "Sortie"), "preview": False},
+        {"files": [str(plan)], "output_folder": str(workdir / "Sortie")},
     )
 
 
@@ -173,7 +173,7 @@ def smoke_soumission(binary: Path, workdir: Path) -> list[dict[str, object]]:
         binary,
         workdir,
         "soumission",
-        {"files": [str(pdf)], "output_folder": str(workdir / "Sortie")},
+        {"files": [str(pdf)], "output_folder": str(workdir / "Sortie"), "preview": False},
     )
 
 
