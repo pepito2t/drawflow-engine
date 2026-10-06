@@ -55,6 +55,15 @@ export function toastFor(event: AppEvent): ToastSpec | null {
       return null;
     case "runFinished":
       return runToast(event);
+    case "featureRunIncomplete":
+      return {
+        tone: "info",
+        title: `${event.moduleName} : formulaire pré-rempli`,
+        body: `Indiquez ${event.missing.join(", ")}, puis cliquez sur Lancer.`,
+        moduleId: event.moduleId,
+        durationMs: null,
+        actions: [],
+      };
     case "updateAvailable":
       return {
         tone: "info",

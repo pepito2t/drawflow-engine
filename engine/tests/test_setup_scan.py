@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any
 
@@ -207,3 +208,17 @@ def test_local_machine_reads_a_manifest_or_nothing(tmp_path: Path) -> None:
 
     assert LocalMachine().read_text(manifest) == '{"Version": "1.0.0"}'
     assert LocalMachine().read_text(tmp_path / "absent.json") is None
+
+
+def test_scan_stores_the_model_that_fits_the_memory_until_the_user_picks_one(
+    tmp_path: Path,
+) -> None:
+    settings = tmp_path / "settings.json"
+    eight_gb = FakeMachine(memory=8_000_000_000)
+
+    first = service.scan(settings, eight_gb, _server({"version": "0.12.0"}))
+    service.scan(settings, FakeMachine(memory=64_000_000_000), _server({"version": "0.12.0"}))
+
+    stored = json.loads(settings.read_text(encoding="utf-8"))["assistant"]["model"]
+    assert stored == "qwen3.5:4b"
+    assert first["items"][2]["detail"].startswith("qwen3.5:4b")

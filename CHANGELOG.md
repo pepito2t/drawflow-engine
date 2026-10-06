@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- Correctif : quand le serveur du modèle refuse une demande, l'assistant affiche le message du serveur ; un modèle trop gros pour la mémoire du poste est signalé comme tel, avec le conseil de choisir le modèle recommandé. Le modèle par défaut est celui qui tient dans la mémoire du poste (plus `qwen3.5:9b` en dur). Un lancement depuis le Stream Dock ou l'assistant avec un champ obligatoire vide pré-remplit le formulaire au lieu d'échouer (#155).
+
 ## 0.9.0 — 2026-10-06
 
 - Écran Installation plus lisible : boutons sous le texte quand la fenêtre est étroite, aide par icône, libellés sans redite, accent bleu-cyan propre à Drawflow ; l'onglet Intégrations devient **API locale** (en bas des Paramètres) ; l'indicateur de mise à jour n'apparaît plus quand l'updater n'est pas configuré (#152).

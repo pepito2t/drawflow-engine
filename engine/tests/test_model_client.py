@@ -70,6 +70,24 @@ def test_server_error_is_reported_with_its_status() -> None:
         complete(transport, [])
 
 
+def test_server_error_message_is_shown_to_the_user() -> None:
+    body = {"error": {"message": "llama runner process has terminated: exit status 2"}}
+    transport = httpx.MockTransport(lambda _: httpx.Response(500, json=body))
+
+    with pytest.raises(AssistantError, match="llama runner process has terminated"):
+        complete(transport, [])
+
+
+def test_model_too_big_for_the_memory_suggests_a_smaller_one() -> None:
+    body = {"error": "model requires more system memory (7.2 GiB) than is available (5.1 GiB)"}
+    transport = httpx.MockTransport(lambda _: httpx.Response(500, json=body))
+
+    with pytest.raises(AssistantError, match="trop gros pour la mémoire") as caught:
+        complete(transport, [])
+    assert caught.value.hint is not None
+    assert "Modèles d'IA" in caught.value.hint
+
+
 def test_unreadable_chunk_is_a_readable_error() -> None:
     transport = httpx.MockTransport(lambda _: httpx.Response(200, content=b"data: {oops\n\n"))
 

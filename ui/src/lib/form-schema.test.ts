@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  missingRequired,
   describeFields,
   initialValues,
   mergeDroppedPaths,
@@ -108,5 +109,23 @@ describe("mergeDroppedPaths", () => {
 
   it("keeps the current value when nothing is dropped", () => {
     expect(mergeDroppedPaths("folder", "D:\\plans", [])).toBe("D:\\plans");
+  });
+});
+
+describe("missingRequired", () => {
+  it("names the required fields that are still empty", () => {
+    const fields = describeFields({
+      properties: {
+        files: { title: "Plans", "x-ui": "files" },
+        output_folder: { title: "Dossier de sortie", "x-ui": "output_folder" },
+        project: { title: "Nom du projet", "x-ui": "text" },
+      },
+      required: ["output_folder", "project"],
+    });
+
+    expect(missingRequired(fields, { files: ["C:\\a.dwg"], project: "Façade" })).toEqual([
+      "Dossier de sortie",
+    ]);
+    expect(missingRequired(fields, { output_folder: "C:\\Sortie", project: "x" })).toEqual([]);
   });
 });

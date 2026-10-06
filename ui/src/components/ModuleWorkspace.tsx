@@ -4,7 +4,7 @@ import { usePresets } from "../hooks/presets-context";
 import { useFieldDrop } from "../hooks/use-field-drop";
 import { useModuleRun } from "../hooks/use-module-run";
 import type { CatalogModule } from "../lib/catalog";
-import { initialValues, toEngineInputs, type FormValue } from "../lib/form-schema";
+import { initialValues, missingRequired, toEngineInputs, type FormValue } from "../lib/form-schema";
 import { formValuesFrom, presetFormValues } from "../lib/presets";
 import { ModuleForm } from "./ModuleForm";
 import { ModuleInstructions } from "./ModuleInstructions";
@@ -26,7 +26,7 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
   }, []);
   useFieldDrop(manifest.id, fields, setValues, isRunning);
 
-  const { subscribe } = useNotificationCenter();
+  const { subscribe, publish } = useNotificationCenter();
   const { presets } = usePresets();
   useEffect(
     () =>
@@ -44,10 +44,20 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
         if (inputs) {
           const requested = formValuesFrom(inputs, fields);
           setValues(requested);
+          const missing = missingRequired(fields, requested);
+          if (missing.length > 0) {
+            publish({
+              type: "featureRunIncomplete",
+              moduleId: manifest.id,
+              moduleName: manifest.name,
+              missing,
+            });
+            return;
+          }
           start(toEngineInputs(fields, requested));
         }
       }),
-    [subscribe, presets, fields, manifest.id, start],
+    [subscribe, publish, presets, fields, manifest.id, manifest.name, start],
   );
 
   return (
