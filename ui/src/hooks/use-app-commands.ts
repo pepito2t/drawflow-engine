@@ -4,6 +4,8 @@ import { COMMANDS } from "../lib/commands";
 import { entryFor, runningModuleIds } from "../lib/runs-store";
 import { cancelRun } from "../lib/tauri/engine";
 import { listHistory } from "../lib/tauri/history";
+import { getAutomationStatus } from "../lib/tauri/automations";
+import { inputsForNewFile } from "../lib/automations";
 import { bringToFront, openOutput } from "../lib/tauri/window";
 import { AI_MODELS_TAB_ID, SETUP_TAB_ID } from "../lib/setup";
 import { useCommand } from "./command-registry";
@@ -120,6 +122,24 @@ export function useAppCommands({
     [runFeature],
   );
   useCommand(COMMANDS.rerunHistory, rerunHistory);
+
+  const runAutomation = useCallback(
+    async ({ automationId, path }: { automationId: string; path: string }) => {
+      const { automations } = await getAutomationStatus();
+      const automation = automations.find((candidate) => candidate.id === automationId);
+      const preset = presets.find((candidate) => candidate.id === automation?.presetId);
+      const module = modules.find((candidate) => candidate.manifest.id === preset?.module);
+      if (!automation?.enabled || !preset || !module) {
+        throw new Error("Cette automatisation n'existe plus.");
+      }
+      await runFeature({
+        moduleId: module.manifest.id,
+        inputs: inputsForNewFile(module.fields, preset.inputs, path),
+      });
+    },
+    [modules, presets, runFeature],
+  );
+  useCommand(COMMANDS.runAutomation, runAutomation);
 
   const appState = useCallback(
     () => ({

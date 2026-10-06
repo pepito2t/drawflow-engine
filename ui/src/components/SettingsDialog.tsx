@@ -11,6 +11,8 @@ import {
   type SettingsValues,
 } from "../lib/settings";
 import { getSettings, saveSettings } from "../lib/tauri/engine";
+import type { CatalogModule } from "../lib/catalog";
+import { AutomationsPanel } from "./AutomationsPanel";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { ErrorPanel } from "./ErrorPanel";
@@ -29,10 +31,12 @@ const ACCESS_CODE_TAB_ID = "access-code";
 const GENERAL_SECTION_ID = "general";
 const TEMPLATES_TAB_ID = "templates";
 const INTEGRATIONS_TAB_ID = "integrations";
+const AUTOMATIONS_TAB_ID = "automations";
 const STATIC_TABS = [
   { id: SETUP_TAB_ID, title: "Installation" },
   { id: AI_MODELS_TAB_ID, title: "Modèles d'IA" },
   { id: TEMPLATES_TAB_ID, title: "Modèles" },
+  { id: AUTOMATIONS_TAB_ID, title: "Automatisations" },
   { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
   { id: INTEGRATIONS_TAB_ID, title: "API locale" },
 ];
@@ -47,9 +51,10 @@ function loadSettings(): Promise<SettingsSection[]> {
 interface SettingsDialogProps {
   initialTab?: string | undefined;
   onClose: () => void;
+  modules: CatalogModule[];
 }
 
-export function SettingsDialog({ initialTab, onClose }: SettingsDialogProps) {
+export function SettingsDialog({ initialTab, modules, onClose }: SettingsDialogProps) {
   const { id, promise, retry } = useRetryablePromise(loadSettings);
   return (
     <div
@@ -78,7 +83,13 @@ export function SettingsDialog({ initialTab, onClose }: SettingsDialogProps) {
             <CloseIcon />
           </button>
         </header>
-        <SettingsContent attemptId={id} promise={promise} retry={retry} initialTab={initialTab} />
+        <SettingsContent
+          attemptId={id}
+          promise={promise}
+          retry={retry}
+          initialTab={initialTab}
+          modules={modules}
+        />
       </div>
     </div>
   );
@@ -89,9 +100,10 @@ interface SettingsContentProps {
   promise: Promise<SettingsSection[]>;
   retry: () => void;
   initialTab: string | undefined;
+  modules: CatalogModule[];
 }
 
-function SettingsContent({ attemptId, promise, retry, initialTab }: SettingsContentProps) {
+function SettingsContent({ attemptId, promise, retry, initialTab, modules }: SettingsContentProps) {
   return (
     <ErrorBoundary
       key={attemptId}
@@ -116,7 +128,7 @@ function SettingsContent({ attemptId, promise, retry, initialTab }: SettingsCont
           </div>
         }
       >
-        <SettingsEditor sectionsPromise={promise} initialTab={initialTab} />
+        <SettingsEditor sectionsPromise={promise} initialTab={initialTab} modules={modules} />
       </Suspense>
     </ErrorBoundary>
   );
@@ -124,10 +136,11 @@ function SettingsContent({ attemptId, promise, retry, initialTab }: SettingsCont
 
 interface SettingsEditorProps {
   sectionsPromise: Promise<SettingsSection[]>;
+  modules: CatalogModule[];
   initialTab: string | undefined;
 }
 
-function SettingsEditor({ sectionsPromise, initialTab }: SettingsEditorProps) {
+function SettingsEditor({ sectionsPromise, initialTab, modules }: SettingsEditorProps) {
   const [sections, setSections] = useState(use(sectionsPromise));
   const [values, setValues] = useState<SettingsValues>(() => valuesBySection(sections));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
@@ -199,6 +212,7 @@ function SettingsEditor({ sectionsPromise, initialTab }: SettingsEditorProps) {
           {activeId === AI_MODELS_TAB_ID && <AiModelsPanel />}
           {activeId === TEMPLATES_TAB_ID && <TemplatesPanel />}
           {activeId === INTEGRATIONS_TAB_ID && <IntegrationsPanel />}
+          {activeId === AUTOMATIONS_TAB_ID && <AutomationsPanel modules={modules} />}
           {activeId === ACCESS_CODE_TAB_ID && <AccessCodeForm />}
           {sections.map((section) => (
             <div key={section.id} role="tabpanel" hidden={section.id !== activeSection?.id}>

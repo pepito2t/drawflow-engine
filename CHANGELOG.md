@@ -4,6 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Dossiers surveillés** (Paramètres → Automatisations) : un plan, un PDF ou un fichier Excel déposé dans un dossier lance le préréglage choisi, une seule fois par fichier, après la fin de la copie ; dossiers réseau scrutés périodiquement (#126).
 - **Liste de pièces multi-projets** : option « Un projet par dossier » — colonne Projet et onglet Total toutes origines confondues (#168).
 
 ## 0.14.0 — 2026-10-06
