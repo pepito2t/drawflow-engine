@@ -18,6 +18,15 @@ const warningEventSchema = z.object({
   hint: z.string().nullable().optional(),
 });
 
+const tableRowSchema = z.object({ cells: z.array(z.string()), issues: z.array(z.string()) });
+
+const tableEventSchema = z.object({
+  type: z.literal("table"),
+  headers: z.array(z.string()),
+  rows: z.array(tableRowSchema),
+  total: z.number(),
+});
+
 const resultEventSchema = z.object({
   type: z.literal("result"),
   summary: z.string(),
@@ -35,12 +44,15 @@ export const engineEventSchema = z.discriminatedUnion("type", [
   progressEventSchema,
   logEventSchema,
   warningEventSchema,
+  tableEventSchema,
   resultEventSchema,
   errorEventSchema,
 ]);
 
 export type EngineEvent = z.infer<typeof engineEventSchema>;
 export type ProgressEvent = z.infer<typeof progressEventSchema>;
+export type TableEvent = z.infer<typeof tableEventSchema>;
+export type TableRow = z.infer<typeof tableRowSchema>;
 
 export const UNREADABLE_EVENT_MESSAGE = "Message illisible reçu du moteur.";
 

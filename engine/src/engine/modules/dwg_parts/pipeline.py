@@ -14,7 +14,12 @@ from engine.modules.dwg_parts.export import export_parts
 from engine.modules.dwg_parts.oda import is_dxf, require_oda
 from engine.modules.dwg_parts.reader import RawPart
 from engine.modules.dwg_parts.schema import DwgPartsInputs
-from engine.modules.dwg_parts.service import DOCUMENT_TYPE, build_parts_list, describe_result
+from engine.modules.dwg_parts.service import (
+    DOCUMENT_TYPE,
+    build_parts_list,
+    describe_result,
+    preview_table,
+)
 from engine.modules.dwg_parts.settings import DwgPartsSettings
 from engine.modules.dwg_parts.worker import FileExtraction, extract_file
 
@@ -41,6 +46,10 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
         )
     parts_list = build_parts_list(_flatten(outcome.results, context), settings)
     emit_anomalies(emit, parts_list.warnings, None)
+    emit(preview_table(parts_list))
+    if inputs.preview:
+        summary = describe_result(parts_list, len(outcome.results), len(plans))
+        return ModuleResult(summary=f"Aperçu : {summary}", preview=True)
     target = _target(inputs, settings, plans, moment)
     emit(LogEvent(message=f"Écriture de {target.name}"))
     with writing_output(target):

@@ -49,7 +49,12 @@ def run_parts_list(tmp_path: Path, plans: Path, batch_size: int) -> list[dict[st
     settings = write_json(tmp_path / "settings.json", {"general": {"batch_size": batch_size}})
     inputs = write_json(
         tmp_path / "inputs.json",
-        {"folders": [str(plans)], "project": "Tour B", "output_folder": str(tmp_path / "Sortie")},
+        {
+            "folders": [str(plans)],
+            "project": "Tour B",
+            "output_folder": str(tmp_path / "Sortie"),
+            "preview": False,
+        },
     )
     completed = run_engine("run", "dwg-parts", "--input", str(inputs), "--settings", str(settings))
     assert completed.returncode == 0, completed.stdout + completed.stderr
@@ -121,3 +126,20 @@ def test_default_template_is_used_when_none_is_chosen(tmp_path: Path, plans: Pat
     events = [json.loads(line) for line in completed.stdout.splitlines()]
     assert {"type": "log", "message": "Modèle par défaut : Modèle maison.xlsx"} in events
     assert events[-1]["type"] == "result"
+
+
+def test_preview_shows_the_table_and_writes_nothing(tmp_path: Path, plans: Path) -> None:
+    output = tmp_path / "Sortie"
+    inputs = write_json(
+        tmp_path / "inputs.json",
+        {"folders": [str(plans)], "project": "Test", "output_folder": str(output), "preview": True},
+    )
+
+    completed = run_engine("run", "dwg-parts", "--input", str(inputs))
+    events = [json.loads(line) for line in completed.stdout.splitlines()]
+
+    [table] = [event for event in events if event["type"] == "table"]
+    assert table["headers"][-2:] == ["Quantité", "Plans"]
+    assert table["total"] == len(table["rows"]) > 0
+    assert events[-1]["type"] == "result" and events[-1]["summary"].startswith("Aperçu")
+    assert not output.exists() or not any(output.iterdir())

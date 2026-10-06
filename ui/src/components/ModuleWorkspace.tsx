@@ -11,6 +11,9 @@ import { ModuleInstructions } from "./ModuleInstructions";
 import { PresetBar } from "./PresetBar";
 import { RunPanel } from "./RunPanel";
 
+/** Modules that can show their table first expose this boolean input. */
+const PREVIEW_FIELD = "preview";
+
 interface ModuleWorkspaceProps {
   module: CatalogModule;
 }
@@ -86,6 +89,9 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
         state={state}
         onStart={() => {
           start(toEngineInputs(fields, values));
+        }}
+        onExport={() => {
+          start(toEngineInputs(fields, { ...values, [PREVIEW_FIELD]: false }));
         }}
         onCancel={cancel}
       />

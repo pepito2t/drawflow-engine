@@ -1,18 +1,23 @@
 import { useState } from "react";
+import type { TableEvent } from "../lib/events";
 import { anomaliesAsText, groupAnomalies, type AnomalyGroup } from "../lib/anomalies";
 import { STATUS_LABELS } from "../lib/run-labels";
-import type { LogEntry, RunState } from "../lib/run-state";
+import { isPreview, type LogEntry, type RunState } from "../lib/run-state";
+import { TablePreview } from "./TablePreview";
 import { ErrorPanel } from "./ErrorPanel";
 import { Spinner } from "./Spinner";
 
 interface RunPanelProps {
   state: RunState;
   onStart: () => void;
+  onExport: () => void;
   onCancel: () => void;
 }
 
-export function RunPanel({ state, onStart, onCancel }: RunPanelProps) {
+export function RunPanel({ state, onStart, onExport, onCancel }: RunPanelProps) {
   const isRunning = state.status === "running";
+  const [dismissedTable, setDismissedTable] = useState<TableEvent | null>(null);
+  const preview = isPreview(state) && state.table !== dismissedTable ? state.table : null;
 
   return (
     <section className="run-panel">
@@ -32,7 +37,17 @@ export function RunPanel({ state, onStart, onCancel }: RunPanelProps) {
         </span>
       </div>
       {isRunning && <RunProgress state={state} />}
-      <RunOutcome state={state} />
+      {preview ? (
+        <TablePreview
+          table={preview}
+          onExport={onExport}
+          onDismiss={() => {
+            setDismissedTable(preview);
+          }}
+        />
+      ) : (
+        <RunOutcome state={state} />
+      )}
       {!isRunning && <AnomaliesReport groups={groupAnomalies(state.log)} />}
       {state.log.length > 0 && (
         <RunLog entries={state.log.filter((entry) => entry.level !== "warning")} />

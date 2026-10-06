@@ -140,6 +140,8 @@ function applyLine(run: Extract<SetupRun, { status: "running" }>, line: string):
       };
     case "log":
       return { ...run, message: event.message };
+    case "table":
+      return run;
     case "warning":
       return { ...run, message: event.message };
     case "result":

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { EngineMessage } from "./engine-message";
-import { INITIAL_RUN_STATE, runReducer, type RunAction, type RunState } from "./run-state";
+import {
+  INITIAL_RUN_STATE,
+  runReducer,
+  type RunAction,
+  type RunState,
+  isPreview,
+} from "./run-state";
 
 const stdout = (event: object): RunAction => ({
   type: "message",
@@ -108,5 +114,35 @@ describe("runReducer", () => {
     ]);
 
     expect(state).toEqual({ ...INITIAL_RUN_STATE, status: "running" });
+  });
+});
+
+describe("preview runs", () => {
+  it("keeps the table and knows nothing was written", () => {
+    const table = {
+      type: "table" as const,
+      headers: ["Repère", "Quantité"],
+      rows: [{ cells: ["P-1", "2"], issues: [] }],
+      total: 1,
+    };
+    const state = reduce([
+      { type: "started" },
+      stdout(table),
+      stdout({ type: "result", summary: "Aperçu : 1 ligne", outputs: [] }),
+      exit(0),
+    ]);
+
+    expect(isPreview(state)).toBe(true);
+    expect(state.table?.rows[0]?.cells).toEqual(["P-1", "2"]);
+  });
+
+  it("is not a preview once a file was produced", () => {
+    const state = reduce([
+      { type: "started" },
+      stdout({ type: "result", summary: "ok", outputs: ["C:\\Sortie\\liste.xlsx"] }),
+      exit(0),
+    ]);
+
+    expect(isPreview(state)).toBe(false);
   });
 });

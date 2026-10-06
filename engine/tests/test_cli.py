@@ -45,7 +45,7 @@ def test_run_streams_events_and_writes_output(tmp_path: Path) -> None:
     source = write_submission(tmp_path / "offre é.xlsx")
     output_folder = tmp_path / "Sortie avec espaces é"
     input_file = write_inputs(
-        tmp_path, {"files": [str(source)], "output_folder": str(output_folder)}
+        tmp_path, {"files": [str(source)], "output_folder": str(output_folder), "preview": False}
     )
 
     completed = run_cli("run", "soumission", "--input", str(input_file))

@@ -43,6 +43,7 @@ def run_soumission(tmp_path: Path, folders: list[Path]) -> list[dict[str, Any]]:
         "folders": [str(folder) for folder in folders],
         "project": "Tour B",
         "output_folder": str(tmp_path / "Sortie"),
+        "preview": False,
     }
     input_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     completed = subprocess.run(
