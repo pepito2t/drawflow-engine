@@ -7,6 +7,7 @@ use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use argon2::Argon2;
 use serde::{Deserialize, Serialize};
+use subtle::ConstantTimeEq;
 use tauri::{AppHandle, Manager, State};
 
 use crate::error::BridgeError;
@@ -139,7 +140,7 @@ fn access_file(app: &AppHandle) -> Result<PathBuf, BridgeError> {
 
 fn verify_code(path: &Path, code: &str) -> Result<bool, BridgeError> {
     let Some(stored) = read_stored(path)? else {
-        return Ok(code == DEFAULT_ACCESS_CODE);
+        return Ok(code.as_bytes().ct_eq(DEFAULT_ACCESS_CODE.as_bytes()).into());
     };
     let hash = PasswordHash::new(&stored.hash).map_err(|_| BridgeError::AccessFileCorrupted)?;
     Ok(Argon2::default()

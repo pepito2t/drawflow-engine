@@ -1,8 +1,8 @@
 import { useCommands } from "../hooks/command-registry";
 import type { ProposalStatus, RunProposal } from "../lib/assistant-chat";
 import type { CatalogModule } from "../lib/catalog";
-import { COMMANDS } from "../lib/commands";
-import { describeInputs, proposalTitle } from "../lib/proposals";
+import { COMMAND_ARGUMENTS, COMMANDS } from "../lib/commands";
+import { describeInputs, describeSynonyms, proposalTitle } from "../lib/proposals";
 import { Spinner } from "./Spinner";
 
 interface ProposalCardProps {
@@ -14,12 +14,16 @@ interface ProposalCardProps {
 export function ProposalCard({ proposal, modules, onStatus }: ProposalCardProps) {
   const { execute } = useCommands();
   const fields = modules.find((module) => module.manifest.id === proposal.feature)?.fields ?? [];
-  const lines = describeInputs(proposal.inputs, fields);
+  const isSettings = proposal.kind === "synonyms";
+  const lines = isSettings
+    ? describeSynonyms(proposal.inputs)
+    : describeInputs(proposal.inputs, fields);
 
   const launch = () => {
     onStatus("launching");
-    const request =
-      proposal.kind === "preset" && proposal.presetId !== null
+    const request = isSettings
+      ? execute(COMMANDS.addSynonyms, synonymsArguments(proposal.inputs))
+      : proposal.kind === "preset" && proposal.presetId !== null
         ? execute(COMMANDS.runPreset, { presetId: proposal.presetId })
         : execute(COMMANDS.runFeature, { moduleId: proposal.feature, inputs: proposal.inputs });
     request
@@ -37,7 +41,10 @@ export function ProposalCard({ proposal, modules, onStatus }: ProposalCardProps)
 
   return (
     <div className={`proposal-card ${proposal.status}`}>
-      <strong>Lancer : {proposalTitle(proposal)}</strong>
+      <strong>
+        {isSettings ? "" : "Lancer : "}
+        {proposalTitle(proposal)}
+      </strong>
       {lines.length > 0 && (
         <dl className="proposal-inputs">
           {lines.map((line) => (
@@ -71,7 +78,7 @@ function ProposalFooter({ proposal, onLaunch, onDismiss }: ProposalFooterProps) 
       return (
         <div className="proposal-actions">
           <button type="button" className="primary" onClick={onLaunch}>
-            Lancer
+            {proposal.kind === "synonyms" ? "Appliquer" : "Lancer"}
           </button>
           <button type="button" onClick={onDismiss}>
             Ignorer
@@ -81,7 +88,13 @@ function ProposalFooter({ proposal, onLaunch, onDismiss }: ProposalFooterProps) 
     case "launching":
       return <Spinner label="Lancement" />;
     case "launched":
-      return <span className="run-status succeeded">Lancé — suivi dans Traitements</span>;
+      return (
+        <span className="run-status succeeded">
+          {proposal.kind === "synonyms"
+            ? "Appliqué — Paramètres → Soumission"
+            : "Lancé — suivi dans Traitements"}
+        </span>
+      );
     case "dismissed":
       return <span className="muted">Ignoré</span>;
     case "failed":
@@ -94,4 +107,9 @@ function ProposalFooter({ proposal, onLaunch, onDismiss }: ProposalFooterProps) 
         </div>
       );
   }
+}
+
+function synonymsArguments(inputs: Record<string, unknown>): { columns: Record<string, string[]> } {
+  const parsed = COMMAND_ARGUMENTS["settings.add-synonyms"].safeParse(inputs);
+  return parsed.success ? parsed.data : { columns: {} };
 }

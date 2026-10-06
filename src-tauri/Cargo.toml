@@ -1,6 +1,6 @@
 [package]
 name = "drawflow"
-version = "0.15.0"
+version = "0.16.0"
 description = "Automatisation des tâches du dessinateur en façade"
 edition = "2021"
 rust-version = "1.85"
@@ -28,7 +28,10 @@ tokio = { version = "1.53", features = ["net", "sync", "time", "macros", "rt"] }
 tokio-tungstenite = "0.30"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 argon2 = { version = "0.5", features = ["std"] }
+subtle = "2.6"
 password-hash = { version = "0.5", features = ["getrandom"] }
+notify = "8"
+sha2 = "0.10"
 
 [lints.clippy]
 unwrap_used = "deny"

@@ -85,39 +85,42 @@ impl Dispatcher for AppDispatcher {
     }
 
     fn dispatch(&self, request: CommandRequest) -> ReplyFuture<'_> {
-        Box::pin(async move {
-            let state = self.app.state::<IntegrationState>();
-            let ticket = format!(
-                "{}-{}",
-                state.next_request.fetch_add(1, Ordering::Relaxed),
-                request.id
-            );
-            let (sender, receiver) = oneshot::channel();
-            match state.pending() {
-                Ok(mut pending) => {
-                    pending.insert(ticket.clone(), sender);
-                }
-                Err(error) => return CommandReply::failure(request.id, error.to_string()),
-            }
-            let forwarded = CommandRequest {
-                id: ticket.clone(),
-                ..request.clone()
-            };
-            if let Err(error) = self.app.emit(COMMAND_EVENT, forwarded) {
-                return CommandReply::failure(request.id, error.to_string());
-            }
-            let reply = tokio::time::timeout(REPLY_TIMEOUT, receiver).await;
-            if let Ok(mut pending) = state.pending() {
-                pending.remove(&ticket);
-            }
-            match reply {
-                Ok(Ok(reply)) => CommandReply {
-                    id: request.id,
-                    ..reply
-                },
-                _ => CommandReply::failure(request.id, NO_REPLY_MESSAGE),
-            }
-        })
+        Box::pin(dispatch_to_ui(&self.app, request))
+    }
+}
+
+/// Sends a named command to the UI and waits for its reply, as the local API does.
+pub async fn dispatch_to_ui(app: &AppHandle, request: CommandRequest) -> CommandReply {
+    let state = app.state::<IntegrationState>();
+    let ticket = format!(
+        "{}-{}",
+        state.next_request.fetch_add(1, Ordering::Relaxed),
+        request.id
+    );
+    let (sender, receiver) = oneshot::channel();
+    match state.pending() {
+        Ok(mut pending) => {
+            pending.insert(ticket.clone(), sender);
+        }
+        Err(error) => return CommandReply::failure(request.id, error.to_string()),
+    }
+    let forwarded = CommandRequest {
+        id: ticket.clone(),
+        ..request.clone()
+    };
+    if let Err(error) = app.emit(COMMAND_EVENT, forwarded) {
+        return CommandReply::failure(request.id, error.to_string());
+    }
+    let reply = tokio::time::timeout(REPLY_TIMEOUT, receiver).await;
+    if let Ok(mut pending) = state.pending() {
+        pending.remove(&ticket);
+    }
+    match reply {
+        Ok(Ok(reply)) => CommandReply {
+            id: request.id,
+            ..reply
+        },
+        _ => CommandReply::failure(request.id, NO_REPLY_MESSAGE),
     }
 }
 

@@ -17,9 +17,11 @@ export const COMMAND_ARGUMENTS = {
   "help.open": z.object({ topic: z.string().optional() }),
   "update.install": z.object({}),
   "app.state": z.object({}),
+  "settings.add-synonyms": z.object({ columns: z.record(z.string(), z.array(z.string())) }),
   "history.open": z.object({}),
   "today.open": z.object({}),
   "history.rerun": z.object({ entryId: z.string().min(1) }),
+  "automation.run": z.object({ automationId: z.string().min(1), path: z.string().min(1) }),
 } as const;
 
 export type CommandId = keyof typeof COMMAND_ARGUMENTS;
@@ -39,9 +41,11 @@ export const COMMANDS = {
   openHelp: "help.open",
   installUpdate: "update.install",
   appState: "app.state",
+  addSynonyms: "settings.add-synonyms",
   openHistory: "history.open",
   openToday: "today.open",
   rerunHistory: "history.rerun",
+  runAutomation: "automation.run",
 } as const satisfies Record<string, CommandId>;
 
 export type CommandResult = { ok: true; data?: unknown } | { ok: false; error: string };

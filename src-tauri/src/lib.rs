@@ -1,5 +1,6 @@
 mod access;
 mod assistant;
+mod automations;
 mod error;
 mod integrations;
 mod outputs;
@@ -27,6 +28,7 @@ pub fn run() {
         .manage(AccessLock::default())
         .manage(AssistantTurn::default())
         .manage(IntegrationState::default())
+        .manage(automations::AutomationState::default())
         .manage(outputs::KnownOutputs::default())
         .invoke_handler(tauri::generate_handler![
             access::lock_status,
@@ -37,6 +39,8 @@ pub fn run() {
             integrations::integration_update,
             integrations::integration_reply,
             integrations::integration_publish,
+            automations::automation_status,
+            automations::automation_save,
             access::unlock,
             access::change_access_code,
             sidecar::list_modules,

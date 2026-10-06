@@ -57,6 +57,7 @@ Réponse (même `id`) :
 | `models.open` | — | Ouvre Paramètres → Modèles d'IA |
 | `help.open` | `topic` (facultatif) | Ouvre l'aide, sur une section du guide si `topic` est donné |
 | `update.install` | — | Installe la mise à jour disponible |
+| `automation.run` | `automationId`, `path` | Lance le préréglage d'un dossier surveillé avec ce fichier (émis par l'application elle-même) |
 
 ## Événements diffusés
 

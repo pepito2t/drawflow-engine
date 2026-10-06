@@ -10,15 +10,22 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
+from engine.assistant.inspect import inspect_file
 from engine.assistant.tools import (
     describe_features,
     describe_presets,
+    describe_run,
+    describe_runs,
     describe_templates,
     describe_today,
     help_section,
     help_topics,
+    inspect_submission,
     propose_feature_run,
     propose_preset_run,
+)
+from engine.assistant.tools import (
+    propose_column_synonyms as propose_column_synonyms_run,
 )
 from engine.core.errors import EngineError
 from engine.core.registry import discover_modules
@@ -68,6 +75,33 @@ def build_server(settings: Path) -> FastMCP:
         return _as_tool_result(lambda: describe_today(settings))
 
     @server.tool(
+        name="inspect_file",
+        description="Inspecte un fichier donné par l'utilisateur (chemin complet) : plan DWG/DXF "
+        "(blocs et attributs), PDF (pages, texte de la première page), XLSX (feuilles, premières "
+        "lignes) ou DOCX (premiers paragraphes), et la fonctionnalité conseillée.",
+        annotations=READ_ONLY,
+    )
+    def inspect_file_tool(path: str) -> dict[str, Any]:
+        return _as_tool_result(lambda: inspect_file(settings, path))
+
+    @server.tool(
+        description="Liste les derniers traitements (identifiant, fonctionnalité, résultat, "
+        "fichiers produits, nombre d'avertissements), du plus récent au plus ancien.",
+        annotations=READ_ONLY,
+    )
+    def list_runs(limit: int = 5) -> dict[str, Any]:
+        return _as_tool_result(lambda: describe_runs(settings, limit))
+
+    @server.tool(
+        description="Détail d'un traitement : entrées, fichiers produits et chaque avertissement "
+        "avec le fichier, l'endroit (feuille, cartouche, bloc) et le conseil. À utiliser pour "
+        "expliquer pourquoi une pièce ou un champ manque.",
+        annotations=READ_ONLY,
+    )
+    def read_run(run_id: str) -> dict[str, Any]:
+        return _as_tool_result(lambda: describe_run(settings, run_id))
+
+    @server.tool(
         description="Liste les sections du guide utilisateur de Drawflow (installation, "
         "fonctionnalités, assistant, Stream Dock, dépannage…).",
         annotations=READ_ONLY,
@@ -82,6 +116,24 @@ def build_server(settings: Path) -> FastMCP:
     )
     def read_help(topic: str) -> dict[str, Any]:
         return _as_tool_result(lambda: help_section(topic))
+
+    @server.tool(
+        description="Inspecte une soumission (XLSX, ou PDF avec classeur joint) : en-têtes "
+        "trouvés dans chaque feuille, colonnes déjà reconnues, colonnes normalisées et leurs "
+        "en-têtes connus. À utiliser quand une soumission n'est pas reconnue.",
+        annotations=READ_ONLY,
+    )
+    def inspect_submission_headers(path: str) -> dict[str, Any]:
+        return _as_tool_result(lambda: inspect_submission(settings, path))
+
+    @server.tool(
+        description="Propose d'ajouter des en-têtes reconnus à des colonnes normalisées de la "
+        'soumission, ex. {"Quantité": ["Nbre"]}. Rien n\'est enregistré : l\'utilisateur '
+        "voit une carte et doit cliquer sur Appliquer.",
+        annotations=READ_ONLY,
+    )
+    def propose_column_synonyms(additions: dict[str, list[str]]) -> dict[str, Any]:
+        return _as_tool_result(lambda: propose_column_synonyms_run(settings, additions))
 
     @server.tool(
         description="Propose de lancer un préréglage. Rien n'est lancé : l'utilisateur voit "
