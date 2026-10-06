@@ -35,6 +35,7 @@ def test_list_modules_outputs_manifests_and_schemas() -> None:
     catalog = json.loads(completed.stdout)
     assert [entry["manifest"]["id"] for entry in catalog] == [
         "dwg-parts",
+        "dwg-diff",
         "pdf-report",
         "soumission",
     ]
@@ -69,7 +70,7 @@ def test_unknown_module_emits_error_event(tmp_path: Path) -> None:
             "type": "error",
             "message": "La fonctionnalité « nope » n'existe pas.",
             "file": None,
-            "hint": "Fonctionnalités disponibles : dwg-parts, pdf-report, soumission.",
+            "hint": "Fonctionnalités disponibles : dwg-diff, dwg-parts, pdf-report, soumission.",
         }
     ]
 

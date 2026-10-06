@@ -1,7 +1,7 @@
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -10,7 +10,7 @@ from engine.core.settings_models import GeneralSettings, ModuleSettings
 
 MODULE_ID_PATTERN = r"^[a-z][a-z0-9-]*$"
 
-ModuleIcon = Literal["module", "list", "report", "table", "check"]
+ModuleIcon = Literal["module", "list", "report", "table", "check", "diff"]
 TemplateKind = Literal["xlsx", "docx"]
 
 
@@ -49,6 +49,8 @@ class RunContext:
     emit: Emit
     general: GeneralSettings
     module_settings: ModuleSettings | None = None
+    # Every section of the settings file: a feature built on another one reads its norm here.
+    document: dict[str, Any] = field(default_factory=dict)
 
     def settings_as[SettingsT: ModuleSettings](self, model: type[SettingsT]) -> SettingsT:
         if not isinstance(self.module_settings, model):

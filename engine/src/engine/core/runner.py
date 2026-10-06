@@ -42,7 +42,12 @@ def run_module(
         emit(LogEvent(message=f"Modèle par défaut : {default_template.name}"))
         raw_inputs = {**raw_inputs, TEMPLATE_INPUT: str(default_template)}
     inputs = _validate_inputs(module, raw_inputs)
-    context = RunContext(emit=emit, general=settings.general, module_settings=settings.module)
+    context = RunContext(
+        emit=emit,
+        general=settings.general,
+        module_settings=settings.module,
+        document=settings.document,
+    )
     result = module.run(inputs, context)
     emit(ResultEvent(summary=result.summary, outputs=[str(path) for path in result.outputs]))
     return result

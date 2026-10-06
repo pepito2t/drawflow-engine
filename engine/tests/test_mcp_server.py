@@ -54,6 +54,7 @@ def test_client_lists_read_only_tools_and_reads_features(tmp_path: Path) -> None
     features, presets = (_payload(result) for result in results)
     assert [feature["id"] for feature in features["features"]] == [
         "dwg-parts",
+        "dwg-diff",
         "pdf-report",
         "soumission",
     ]

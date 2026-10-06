@@ -61,6 +61,10 @@ Vous pouvez changer d'onglet ou lancer une autre fonctionnalité pendant un trai
 
 L'onglet **Historique** liste les derniers traitements (200 au plus) : date, durée, résultat ou erreur, nombre d'avertissements. **Ouvrir le résultat** ouvre le dernier fichier produit ; **Relancer** recharge les mêmes fichiers et relance ; **×** retire une ligne. Commandes `history.open` et `history.rerun` pour le Stream Dock et l'assistant.
 
+### Comparer deux indices de plans
+
+L'onglet **Comparaison d'indices** prend les plans de l'indice précédent (A) et ceux du nouvel indice (B), établit les deux listes de pièces avec la norme de la liste de pièces, puis les compare : pièces **ajoutées**, **supprimées**, **quantités modifiées**, inchangées, et un onglet **Plans** (présent dans A, dans B, dans les deux). Les pièces sont rapprochées par les colonnes choisies dans Paramètres → Comparaison d'indices (par défaut « Référence »). Les plans numérotés (`01_facade-nord`, `facade-nord_02`) sont reconnus comme le même plan grâce au motif d'incrément, réglable au même endroit.
+
 ### Adapter une fonctionnalité à votre norme
 
 Chaque fonctionnalité a sa catégorie dans les Paramètres :

@@ -1,40 +1,11 @@
-from collections.abc import Sequence
-from dataclasses import dataclass
-
-from engine.core.anomalies import Anomaly
 from engine.core.events import TableEvent, TableRow
-from engine.modules.dwg_parts.aggregation import PartLine, aggregate
-from engine.modules.dwg_parts.mapping import map_parts
-from engine.modules.dwg_parts.reader import RawPart
-from engine.modules.dwg_parts.settings import DwgPartsSettings
+from engine.parts.listing import PartsList
 
 DOCUMENT_TYPE = "liste-pieces"
 QUANTITY_HEADER = "Quantité"
 SOURCES_HEADER = "Plans"
 PREVIEW_MAX_ROWS = 500
 EMPTY_CELL_ISSUE = "Colonne « {column} » vide"
-NO_PART_WARNING = "Aucun bloc ne correspond aux blocs retenus (Paramètres → Liste de pièces)."
-
-
-@dataclass(frozen=True)
-class PartsList:
-    headers: tuple[str, ...]
-    lines: list[PartLine]
-    warnings: list[Anomaly]
-
-    @property
-    def total_quantity(self) -> float:
-        return sum(line.quantity for line in self.lines)
-
-
-def build_parts_list(raw_parts: Sequence[RawPart], settings: DwgPartsSettings) -> PartsList:
-    mapping = map_parts(raw_parts, settings)
-    lines = aggregate(mapping.parts, group_identical=settings.group_identical)
-    no_part = Anomaly(
-        NO_PART_WARNING, hint="Vérifiez les blocs retenus (jokers * et ?) et les plans choisis."
-    )
-    warnings = [*mapping.warnings, *([] if lines else [no_part])]
-    return PartsList(headers=mapping.headers, lines=lines, warnings=warnings)
 
 
 def preview_table(parts_list: PartsList) -> TableEvent:

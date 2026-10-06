@@ -4,9 +4,9 @@ import pytest
 from pydantic import ValidationError
 
 from engine.core.fields import KeyValue
-from engine.modules.dwg_parts.mapping import map_parts
-from engine.modules.dwg_parts.reader import RawPart
-from engine.modules.dwg_parts.settings import DwgPartsSettings
+from engine.parts.mapping import map_parts
+from engine.parts.reader import RawPart
+from engine.parts.settings import PartsListSettings
 
 SOURCE = Path("plan.dwg")
 
@@ -15,12 +15,12 @@ def part(block: str, count: int = 1, **attributes: str) -> RawPart:
     return RawPart(block=block, attributes=attributes, count=count, layout="Model", source=SOURCE)
 
 
-def settings(**overrides: object) -> DwgPartsSettings:
+def settings(**overrides: object) -> PartsListSettings:
     base: dict[str, object] = {
         "columns": [KeyValue(key="Réf", value="REF"), KeyValue(key="Long.", value="LONGUEUR")],
         "include_block_name": False,
     }
-    return DwgPartsSettings.model_validate({**base, **overrides})
+    return PartsListSettings.model_validate({**base, **overrides})
 
 
 def test_maps_attributes_to_columns_in_order() -> None:
@@ -80,7 +80,7 @@ def test_at_least_one_column_is_required() -> None:
 
 
 def test_mapping_schema_exposes_ui_labels() -> None:
-    columns = DwgPartsSettings.model_json_schema()["properties"]["columns"]
+    columns = PartsListSettings.model_json_schema()["properties"]["columns"]
 
     assert columns["x-ui"] == "mapping"
     assert columns["x-ui-key-label"] == "Colonne"

@@ -50,7 +50,7 @@ module = ["PyInstaller.*", "docxtpl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "src/engine/modules"]
+testpaths = ["tests", "src/engine/modules", "src/engine/parts"]
 addopts = ["--import-mode=importlib", "-ra"]
 markers = ["oda: requires ODA File Converter (skipped when absent)"]
 # A hung test fails with the stack of every thread instead of blocking CI.

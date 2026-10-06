@@ -9,14 +9,14 @@ from datetime import timedelta
 from pathlib import Path
 
 import anyio
-from engine.modules.dwg_parts.tests.plans import build_facade_plan
+from engine.parts.tests.plans import build_facade_plan
 from engine.modules.pdf_report.tests.plans import build_report_plan
 from engine.modules.soumission.tests.workbooks import submission_bytes
 from engine.testing.pdf import PdfSpec, TextItem, write_pdf
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-EXPECTED_MODULE_IDS = ["dwg-parts", "pdf-report", "soumission"]
+EXPECTED_MODULE_IDS = ["dwg-parts", "dwg-diff", "pdf-report", "soumission"]
 EXPECTED_MCP_TOOLS = [
     "list_features",
     "list_help_topics",
