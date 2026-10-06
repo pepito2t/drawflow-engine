@@ -17,6 +17,7 @@ from engine.core.registry import get_module
 
 MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
 EXPECTED_TOOLS = {
+    "inspect_file",
     "list_features",
     "inspect_submission_headers",
     "list_help_topics",

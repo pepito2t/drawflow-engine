@@ -10,6 +10,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
+from engine.assistant.inspect import inspect_file
 from engine.assistant.tools import (
     describe_features,
     describe_presets,
@@ -72,6 +73,16 @@ def build_server(settings: Path) -> FastMCP:
     )
     def read_today() -> dict[str, Any]:
         return _as_tool_result(lambda: describe_today(settings))
+
+    @server.tool(
+        name="inspect_file",
+        description="Inspecte un fichier donné par l'utilisateur (chemin complet) : plan DWG/DXF "
+        "(blocs et attributs), PDF (pages, texte de la première page), XLSX (feuilles, premières "
+        "lignes) ou DOCX (premiers paragraphes), et la fonctionnalité conseillée.",
+        annotations=READ_ONLY,
+    )
+    def inspect_file_tool(path: str) -> dict[str, Any]:
+        return _as_tool_result(lambda: inspect_file(settings, path))
 
     @server.tool(
         description="Liste les derniers traitements (identifiant, fonctionnalité, résultat, "

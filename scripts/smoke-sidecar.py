@@ -18,6 +18,7 @@ from mcp.client.stdio import stdio_client
 
 EXPECTED_MODULE_IDS = ["dwg-parts", "dwg-diff", "pdf-report", "soumission"]
 EXPECTED_MCP_TOOLS = [
+    "inspect_file",
     "inspect_submission_headers",
     "list_features",
     "list_help_topics",
