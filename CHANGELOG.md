@@ -4,6 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Dossiers surveillés** (Paramètres → Automatisations) : un plan, un PDF ou un fichier Excel déposé dans un dossier lance le préréglage choisi, une seule fois par fichier, après la fin de la copie ; dossiers réseau scrutés périodiquement (#126).
 - **Fichiers glissés dans l'assistant** : pièces jointes visibles dans le message ; outil `inspect_file` (blocs d'un plan, pages et texte d'un PDF, feuilles d'un XLSX, paragraphes d'un DOCX) et proposition de la fonctionnalité adaptée (#159).
 - **L'assistant lit les traitements** : outils `list_runs` et `read_run` — résultat, fichiers produits, avertissements avec fichier, endroit et conseil ; il répond à « pourquoi la pièce P-12 manque ? » en citant la source (#171).
 

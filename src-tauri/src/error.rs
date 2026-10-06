@@ -26,6 +26,8 @@ pub enum BridgeError {
     Locked,
     #[error("Code d'accès incorrect.")]
     WrongAccessCode,
+    #[error("Automatisation invalide : {0}")]
+    InvalidAutomation(String),
     #[error("Trop de tentatives. Réessayez dans {0} s.")]
     TooManyAttempts(u64),
     #[error("Le code doit contenir uniquement des chiffres, entre {min} et {max}.")]

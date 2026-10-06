@@ -30,6 +30,8 @@ futures-util = { version = "0.3", default-features = false, features = ["sink", 
 argon2 = { version = "0.5", features = ["std"] }
 subtle = "2.6"
 password-hash = { version = "0.5", features = ["getrandom"] }
+notify = "8"
+sha2 = "0.10"
 
 [lints.clippy]
 unwrap_used = "deny"

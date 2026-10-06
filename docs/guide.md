@@ -88,6 +88,10 @@ Chaque fonctionnalité a sa catégorie dans les Paramètres :
 
 **Enregistrer comme préréglage** (en haut de l'onglet) mémorise le formulaire sous un nom, pour le recharger ou le lancer depuis le Stream Dock.
 
+### Dossiers surveillés
+
+Paramètres → **Automatisations** : choisissez un dossier et un préréglage. Dès qu'un plan, un PDF ou un fichier Excel y est déposé, le préréglage se lance avec ce fichier, une seule fois par fichier et une fois la copie terminée. L'application doit être ouverte et déverrouillée ; un dossier réseau est vérifié toutes les quelques secondes.
+
 ## Utiliser l'assistant
 
 L'icône **bulle** ouvre le panneau de discussion. L'assistant répond aux questions sur Drawflow en consultant l'application.

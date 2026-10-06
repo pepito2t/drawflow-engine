@@ -261,6 +261,7 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
         {settingsTab !== null && (
           <SettingsDialog
             key={settingsTab}
+            modules={modules}
             initialTab={settingsTab === DEFAULT_SETTINGS_TAB ? undefined : settingsTab}
             onClose={() => {
               setSettingsTab(null);
