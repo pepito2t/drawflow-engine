@@ -8,8 +8,12 @@ from functools import cache
 from pathlib import Path
 
 from engine.core.errors import EngineError, InvalidInputError
+from engine.core.i18n import DEFAULT_LANGUAGE, Language, current_language
 
-GUIDE_PARTS = ("docs", "guide.md")
+GUIDE_FILES: dict[Language, tuple[str, ...]] = {
+    "fr": ("docs", "guide.md"),
+    "en": ("docs", "guide.en.md"),
+}
 # engine/src/engine/core/guide.py → repository root, for runs from the source checkout.
 SOURCE_ROOT = Path(__file__).resolve().parents[4]
 SECTION_PREFIX = "## "
@@ -27,16 +31,21 @@ class GuideUnavailableError(EngineError):
     pass
 
 
-def guide_file() -> Path:
+def guide_file(language: Language | None = None) -> Path:
     bundle = getattr(sys, "_MEIPASS", None)
     root = Path(bundle) if bundle else SOURCE_ROOT
-    return root.joinpath(*GUIDE_PARTS)
+    wanted = root.joinpath(*GUIDE_FILES[language or current_language()])
+    return wanted if wanted.is_file() else root.joinpath(*GUIDE_FILES[DEFAULT_LANGUAGE])
+
+
+def sections() -> tuple[Section, ...]:
+    return _sections(current_language())
 
 
 @cache
-def sections() -> tuple[Section, ...]:
+def _sections(language: Language) -> tuple[Section, ...]:
     try:
-        text = guide_file().read_text(encoding="utf-8")
+        text = guide_file(language).read_text(encoding="utf-8")
     except OSError as error:
         raise GuideUnavailableError(
             "Le guide utilisateur est introuvable.", hint="Réinstallez Drawflow."

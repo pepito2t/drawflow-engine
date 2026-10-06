@@ -47,7 +47,12 @@ pub async fn list_modules(
     lock: State<'_, AccessLock>,
 ) -> Result<EngineOutput, BridgeError> {
     lock.ensure_unlocked()?;
-    query_engine(&app, vec!["list-modules".to_owned()]).await
+    let settings = path_argument(settings_file(&app)?);
+    query_engine(
+        &app,
+        vec!["list-modules".to_owned(), "--settings".to_owned(), settings],
+    )
+    .await
 }
 
 #[tauri::command]

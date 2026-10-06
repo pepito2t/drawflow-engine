@@ -1,7 +1,13 @@
+# ruff: noqa: E402
 import argparse
 import json
 import sys
 import traceback
+
+from engine.core.i18n import LANGUAGES, configure_from_argv
+
+# Labels and manifests are built when their modules load: the language must be known first.
+configure_from_argv(sys.argv[1:])
 from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
@@ -59,6 +65,8 @@ ASSISTANT_ACTIONS = {
 
 def main(argv: Sequence[str] | None = None) -> int:
     _force_utf8_output()
+    if argv is not None:
+        configure_from_argv(argv)
     arguments = _build_parser().parse_args(argv)
     emit = make_stream_emitter(sys.stdout)
     settings = getattr(arguments, "settings", None)
@@ -81,8 +89,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="engine")
+    parser.add_argument("--lang", choices=LANGUAGES, help="Langue des textes (défaut : réglage).")
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("list-modules", help="Liste les manifestes des modules (JSON).")
+    list_parser = commands.add_parser(
+        "list-modules", help="Liste les manifestes des modules (JSON)."
+    )
+    list_parser.add_argument("--settings", type=Path, help="Fichier des paramètres (langue).")
 
     run_parser = commands.add_parser("run", help="Exécute un module (flux NDJSON).")
     run_parser.add_argument("module_id")
