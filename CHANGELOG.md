@@ -5,6 +5,13 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 ## Non publié
 
 - **Profil complet** (Paramètres → Profil) : export en zip des normes, modèles importés et préréglages ; import avec aperçu de ce qui est remplacé ; profil d'une version plus récente refusé (#129).
+- **Compteurs locaux** (Paramètres → À propos) : traitements, fichiers et temps estimé gagné par fonctionnalité, calculés sur ce poste et désactivables ; minutes par fichier réglables (#133).
+- **Dossiers surveillés** (Paramètres → Automatisations) : un plan, un PDF ou un fichier Excel déposé dans un dossier lance le préréglage choisi, une seule fois par fichier, après la fin de la copie ; dossiers réseau scrutés périodiquement (#126).
+- **Fichiers glissés dans l'assistant** : pièces jointes visibles dans le message ; outil `inspect_file` (blocs d'un plan, pages et texte d'un PDF, feuilles d'un XLSX, paragraphes d'un DOCX) et proposition de la fonctionnalité adaptée (#159).
+- **L'assistant lit les traitements** : outils `list_runs` et `read_run` — résultat, fichiers produits, avertissements avec fichier, endroit et conseil ; il répond à « pourquoi la pièce P-12 manque ? » en citant la source (#171).
+
+## 0.16.0 — 2026-10-06
+
 - **Soumission : en-têtes inconnus associés par l'assistant** — quand un fichier n'est pas reconnu, l'avertissement cite les en-têtes trouvés ; l'assistant peut inspecter le fichier (`inspect_submission_headers`) et proposer d'ajouter ces en-têtes aux colonnes (`propose_column_synonyms`), appliqué d'un clic (#169).
 
 ## 0.15.0 — 2026-10-06

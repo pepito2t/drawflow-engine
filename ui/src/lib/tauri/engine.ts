@@ -38,7 +38,8 @@ export type EngineRequestName =
   | "settings.add-synonyms"
   | "history.list"
   | "history.remove"
-  | "history.clear";
+  | "history.clear"
+  | "history.stats";
 
 export async function engineRequest(
   request: EngineRequestName,

@@ -92,6 +92,10 @@ Paramètres → **Profil** exporte en un zip toutes les normes, les modèles Exc
 
 **Enregistrer comme préréglage** (en haut de l'onglet) mémorise le formulaire sous un nom, pour le recharger ou le lancer depuis le Stream Dock.
 
+### Dossiers surveillés
+
+Paramètres → **Automatisations** : choisissez un dossier et un préréglage. Dès qu'un plan, un PDF ou un fichier Excel y est déposé, le préréglage se lance avec ce fichier, une seule fois par fichier et une fois la copie terminée. L'application doit être ouverte et déverrouillée ; un dossier réseau est vérifié toutes les quelques secondes.
+
 ## Utiliser l'assistant
 
 L'icône **bulle** ouvre le panneau de discussion. L'assistant répond aux questions sur Drawflow en consultant l'application.
@@ -100,6 +104,8 @@ Il peut aussi **proposer un lancement** (« lance la soumission sur C:\Chantier\
 
 - Prérequis : un modèle local (voir [Installer les prérequis](#installer-les-prérequis)). L'adresse du serveur doit désigner ce poste : aucune donnée ne sort de la machine.
 - **Paramètres → Modèles d'IA** recommande le modèle adapté à la mémoire du poste, et permet de chercher, télécharger, utiliser ou supprimer un modèle (ou d'en télécharger un autre de la bibliothèque Ollama par son nom).
+- **Glissez un fichier dans le panneau** (plan, PDF, soumission, Word) : il apparaît comme pièce jointe du message ; l'assistant le lit sur le poste, dit ce qu'il contient et propose la fonctionnalité adaptée. Rien n'est copié ni envoyé.
+- **Pourquoi cette pièce manque ?** L'assistant lit le traitement concerné (fichiers produits, avertissements avec fichier et endroit) et répond en citant la cause et le conseil.
 - **Soumission non reconnue** : demandez à l'assistant d'associer les en-têtes du fichier aux colonnes ; il lit le fichier, propose les correspondances dans une carte, et **Appliquer** les enregistre dans Paramètres → Soumission. Rien n'est modifié sans ce clic.
 - La liste en haut du panneau change de modèle. **Arrêter** interrompt une réponse, **+** démarre une nouvelle conversation. La conversation en cours est conservée sur le poste entre deux lancements (sans les cartes de lancement).
 
@@ -129,11 +135,16 @@ Code initial : `0000`, à changer dans **Paramètres → Code d'accès**. Après
 
 Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **Plus tard**). La mise à jour attend la fin des traitements en cours puis redémarre l'application.
 
+## Ce que Drawflow vous a fait gagner
+
+Paramètres → **À propos** compte les traitements terminés et les fichiers traités sur ce poste, par fonctionnalité, et en déduit un temps gagné (minutes par fichier réglables dans Général, compteurs désactivables). Rien n'est envoyé nulle part.
+
 ## Où sont les fichiers
 
 | Contenu | Emplacement (Windows) |
 |---|---|
 | Paramètres, préréglages, historique des traitements, modèles importés, code d'accès, intégrations | `%APPDATA%\ch.drawflow.desktop\` |
+| Compteurs d'utilisation (`stats.json`) | `%APPDATA%\ch.drawflow.desktop\` |
 | Journaux de diagnostic (`engine.log`) | `%APPDATA%\ch.drawflow.desktop\logs\` |
 | Cache des plans DWG convertis | `%LOCALAPPDATA%\drawflow\cache\` (modifiable dans Paramètres → Général) |
 
