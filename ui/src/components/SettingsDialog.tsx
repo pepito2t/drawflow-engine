@@ -16,6 +16,7 @@ import { useNotificationCenter } from "../hooks/notification-center";
 import { ErrorPanel } from "./ErrorPanel";
 import { AccessCodeForm } from "./AccessCodeForm";
 import { IntegrationsPanel } from "./IntegrationsPanel";
+import { ProfilePanel } from "./ProfilePanel";
 import { SectionTransfer } from "./SectionTransfer";
 import { AI_MODELS_TAB_ID, SETUP_TAB_ID } from "../lib/setup";
 import { AiModelsPanel } from "./AiModelsPanel";
@@ -29,12 +30,14 @@ const ACCESS_CODE_TAB_ID = "access-code";
 const GENERAL_SECTION_ID = "general";
 const TEMPLATES_TAB_ID = "templates";
 const INTEGRATIONS_TAB_ID = "integrations";
+const PROFILE_TAB_ID = "profile";
 const STATIC_TABS = [
   { id: SETUP_TAB_ID, title: "Installation" },
   { id: AI_MODELS_TAB_ID, title: "Modèles d'IA" },
   { id: TEMPLATES_TAB_ID, title: "Modèles" },
   { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
   { id: INTEGRATIONS_TAB_ID, title: "API locale" },
+  { id: PROFILE_TAB_ID, title: "Profil" },
 ];
 
 type SaveState =
@@ -116,7 +119,7 @@ function SettingsContent({ attemptId, promise, retry, initialTab }: SettingsCont
           </div>
         }
       >
-        <SettingsEditor sectionsPromise={promise} initialTab={initialTab} />
+        <SettingsEditor sectionsPromise={promise} initialTab={initialTab} onReload={retry} />
       </Suspense>
     </ErrorBoundary>
   );
@@ -124,10 +127,11 @@ function SettingsContent({ attemptId, promise, retry, initialTab }: SettingsCont
 
 interface SettingsEditorProps {
   sectionsPromise: Promise<SettingsSection[]>;
+  onReload: () => void;
   initialTab: string | undefined;
 }
 
-function SettingsEditor({ sectionsPromise, initialTab }: SettingsEditorProps) {
+function SettingsEditor({ sectionsPromise, initialTab, onReload }: SettingsEditorProps) {
   const [sections, setSections] = useState(use(sectionsPromise));
   const [values, setValues] = useState<SettingsValues>(() => valuesBySection(sections));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
@@ -199,6 +203,7 @@ function SettingsEditor({ sectionsPromise, initialTab }: SettingsEditorProps) {
           {activeId === AI_MODELS_TAB_ID && <AiModelsPanel />}
           {activeId === TEMPLATES_TAB_ID && <TemplatesPanel />}
           {activeId === INTEGRATIONS_TAB_ID && <IntegrationsPanel />}
+          {activeId === PROFILE_TAB_ID && <ProfilePanel onImported={onReload} />}
           {activeId === ACCESS_CODE_TAB_ID && <AccessCodeForm />}
           {sections.map((section) => (
             <div key={section.id} role="tabpanel" hidden={section.id !== activeSection?.id}>

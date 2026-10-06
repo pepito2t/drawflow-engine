@@ -4,6 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Profil complet** (Paramètres → Profil) : export en zip des normes, modèles importés et préréglages ; import avec aperçu de ce qui est remplacé ; profil d'une version plus récente refusé (#129).
 - **Soumission : en-têtes inconnus associés par l'assistant** — quand un fichier n'est pas reconnu, l'avertissement cite les en-têtes trouvés ; l'assistant peut inspecter le fichier (`inspect_submission_headers`) et proposer d'ajouter ces en-têtes aux colonnes (`propose_column_synonyms`), appliqué d'un clic (#169).
 
 ## 0.15.0 — 2026-10-06

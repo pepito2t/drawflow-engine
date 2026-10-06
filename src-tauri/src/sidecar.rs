@@ -96,6 +96,12 @@ pub enum EngineRequest {
     SettingsExport,
     #[serde(rename = "settings.read-import")]
     SettingsReadImport,
+    #[serde(rename = "profile.export")]
+    ProfileExport,
+    #[serde(rename = "profile.read-import")]
+    ProfileReadImport,
+    #[serde(rename = "profile.import")]
+    ProfileImport,
     #[serde(rename = "assistant.models")]
     AssistantModels,
     #[serde(rename = "assistant.history-get")]
@@ -132,6 +138,9 @@ impl EngineRequest {
             Self::PresetsRemove => ("presets", "remove"),
             Self::SettingsExport => ("settings", "export"),
             Self::SettingsReadImport => ("settings", "read-import"),
+            Self::ProfileExport => ("profile", "export"),
+            Self::ProfileReadImport => ("profile", "read-import"),
+            Self::ProfileImport => ("profile", "import"),
             Self::AssistantModels => ("assistant", "models"),
             Self::AssistantHistoryGet => ("assistant", "history-get"),
             Self::AssistantHistorySave => ("assistant", "history-save"),

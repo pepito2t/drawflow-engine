@@ -1524,3 +1524,22 @@ small {
   justify-content: space-between;
   gap: 12px;
 }
+
+/* Profile import preview */
+
+.profile-preview {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.profile-preview p {
+  margin: 0 0 8px;
+}
+
+.profile-preview ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}

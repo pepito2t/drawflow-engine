@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from engine.core.errors import InvalidInputError
 from engine.core.presets import PresetStore
+from engine.core.profile import export_profile, import_profile, read_profile
 from engine.core.registry import discover_modules, get_module
 from engine.core.settings import export_section, read_section_import
 from engine.core.templates import TemplateLibrary, TemplateUser
@@ -17,6 +18,11 @@ TEMPLATE_ACTIONS = {
     "import": "Importe un modèle .xlsx ou .docx.",
     "remove": "Supprime un modèle importé.",
     "set-default": "Définit le modèle par défaut d'une fonctionnalité.",
+}
+PROFILE_ACTIONS = {
+    "export": "Exporte le profil complet (paramètres, préréglages, modèles) en zip.",
+    "read-import": "Décrit un profil sans l'appliquer (JSON).",
+    "import": "Applique un profil : paramètres, préréglages et modèles sont remplacés.",
 }
 PRESET_ACTIONS = {
     "list": "Liste les préréglages (JSON).",
@@ -98,6 +104,19 @@ def handle_settings_file(action: str, settings: Path, raw: dict[str, Any]) -> di
         export_section(settings, request.section, modules, request.target)
         return {"exported": str(request.target)}
     return read_section_import(_parse(SourceRequest, raw).source, modules)
+
+
+def handle_profile(
+    action: str, settings: Path, raw: dict[str, Any], app_version: str | None
+) -> dict[str, Any]:
+    modules = discover_modules()
+    if action == "export":
+        target = _parse(ExportRequest, raw).target
+        return export_profile(settings, target, modules, app_version)
+    source = _parse(SourceRequest, raw).source
+    if action == "read-import":
+        return read_profile(source, settings, modules, app_version)
+    return import_profile(source, settings, modules, app_version)
 
 
 def template_users() -> list[TemplateUser]:
