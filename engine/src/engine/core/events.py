@@ -29,6 +29,22 @@ class WarningEvent(_BaseEvent):
     hint: str | None = None
 
 
+class TableRow(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    cells: list[str]
+    issues: list[str] = Field(default_factory=list)
+
+
+class TableEvent(_BaseEvent):
+    """The table about to be exported, so the user can check it before any file is written."""
+
+    type: Literal["table"] = "table"
+    headers: list[str]
+    rows: list[TableRow]
+    total: int
+
+
 class ResultEvent(_BaseEvent):
     type: Literal["result"] = "result"
     summary: str
@@ -43,7 +59,7 @@ class ErrorEvent(_BaseEvent):
 
 
 Event = Annotated[
-    ProgressEvent | LogEvent | WarningEvent | ResultEvent | ErrorEvent,
+    ProgressEvent | LogEvent | WarningEvent | TableEvent | ResultEvent | ErrorEvent,
     Field(discriminator="type"),
 ]
 Emit = Callable[[Event], None]

@@ -144,6 +144,8 @@ def run_with_history(
     except EngineError as error:
         history.record(entry(status="failed", summary="", error=error.message))
         raise
+    if result.preview:
+        return result
     history.record(
         entry(
             status="succeeded",

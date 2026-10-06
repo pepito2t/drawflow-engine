@@ -1425,3 +1425,54 @@ small {
 .history-warnings summary {
   cursor: pointer;
 }
+
+/* Table preview before export */
+
+.table-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.table-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.table-preview-scroll {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.table-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table-preview th,
+.table-preview td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table-preview th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface-raised);
+}
+
+.table-preview tr.flagged td {
+  background: rgb(229 170 69 / 12%);
+}
+
+.table-preview tr.flagged td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-warning);
+}

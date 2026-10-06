@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Aperçu avant export** (liste de pièces, soumission) : le tableau s'affiche avant l'écriture du fichier Excel, lignes à vérifier surlignées avec leur raison, filtre « Anomalies seulement », puis **Exporter** ou **Annuler**. Case « Aperçu avant export » dans le formulaire, mémorisée par les préréglages (#164).
+
 ## 0.11.0 — 2026-10-06
 
 - **Avertissements lisibles** : à la fin d'un traitement, un rapport par fichier indique l'anomalie, l'endroit (feuille, cartouche, bloc) et le conseil pour la corriger ; bouton **Copier** ; détail conservé dans l'Historique. Les messages des trois fonctionnalités ont été réécrits dans ce sens (#162).

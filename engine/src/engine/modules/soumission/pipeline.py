@@ -11,6 +11,7 @@ from engine.core.events import LogEvent, WarningEvent
 from engine.core.naming import naming_values, output_target, writing_output
 from engine.modules.soumission.dedupe import deduplicate
 from engine.modules.soumission.export import export_submissions
+from engine.modules.soumission.preview import preview_table
 from engine.modules.soumission.reader import SubmissionTable, WorkbookContent
 from engine.modules.soumission.schema import SoumissionInputs
 from engine.modules.soumission.settings import SoumissionSettings
@@ -47,9 +48,15 @@ def run_soumission(inputs: SoumissionInputs, context: RunContext, moment: dateti
             "Aucun tableau de soumission n'a été reconnu.",
             hint="Vérifiez les en-têtes reconnus dans Paramètres → Soumission.",
         )
+    columns = [column.key for column in settings.columns]
+    context.emit(preview_table(tables, columns, settings.numeric_column_names()))
+    if inputs.preview:
+        count = sum(len(table.rows) for table in tables)
+        return ModuleResult(
+            summary=f"Aperçu : {count} ligne(s) issues de {len(tables)} tableau(x)", preview=True
+        )
     target = _target(inputs, settings, moment)
     context.emit(LogEvent(message=f"Écriture de {target.name}"))
-    columns = [column.key for column in settings.columns]
     with writing_output(target):
         count = export_submissions(tables, columns, target)
     summary = f"{count} ligne(s) issues de {len(tables)} tableau(x), {len(sources)} fichier(s)"

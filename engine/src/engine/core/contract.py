@@ -40,6 +40,8 @@ class ModuleResult(BaseModel):
 
     summary: str
     outputs: list[Path] = Field(default_factory=list)
+    # A preview computes everything but writes nothing: not worth a history line.
+    preview: bool = False
 
 
 @dataclass(frozen=True)

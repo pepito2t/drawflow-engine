@@ -1,5 +1,5 @@
 import type { EngineMessage } from "./engine-message";
-import { parseEventLine, type EngineEvent, type ProgressEvent } from "./events";
+import { parseEventLine, type EngineEvent, type ProgressEvent, type TableEvent } from "./events";
 
 export type RunStatus = "idle" | "running" | "succeeded" | "failed" | "cancelled";
 export type LogLevel = "info" | "warning" | "error" | "detail";
@@ -19,6 +19,7 @@ export interface RunState {
   log: LogEntry[];
   summary: string | null;
   outputs: string[];
+  table: TableEvent | null;
   cancelRequested: boolean;
 }
 
@@ -34,6 +35,7 @@ export const INITIAL_RUN_STATE: RunState = {
   log: [],
   summary: null,
   outputs: [],
+  table: null,
   cancelRequested: false,
 };
 
@@ -84,6 +86,8 @@ function applyEvent(state: RunState, event: EngineEvent): RunState {
       );
     case "error":
       return appendLog(state, "error", event.message, event.file, event.hint);
+    case "table":
+      return { ...state, table: event };
     case "result":
       return { ...state, summary: event.summary, outputs: event.outputs };
   }
@@ -117,4 +121,9 @@ function appendLog(
 ): RunState {
   const entry: LogEntry = { id: state.log.length, level, message, file, location, hint };
   return { ...state, log: [...state.log, entry] };
+}
+
+/** A finished run that showed its table without writing anything: the user decides. */
+export function isPreview(state: RunState): boolean {
+  return state.status === "succeeded" && state.table !== null && state.outputs.length === 0;
 }
