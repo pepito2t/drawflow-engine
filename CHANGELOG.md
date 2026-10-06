@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **L'assistant lit les traitements** : outils `list_runs` et `read_run` — résultat, fichiers produits, avertissements avec fichier, endroit et conseil ; il répond à « pourquoi la pièce P-12 manque ? » en citant la source (#171).
+
 ## 0.13.0 — 2026-10-06
 
 - **Écran Aujourd'hui** à l'ouverture : prérequis à configurer, préréglages lançables en un clic, derniers traitements (ouvrir, relancer). Commande `today.open` ; outil `read_today` pour l'assistant (#165).

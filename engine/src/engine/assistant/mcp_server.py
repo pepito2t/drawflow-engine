@@ -13,6 +13,8 @@ from mcp.types import ToolAnnotations
 from engine.assistant.tools import (
     describe_features,
     describe_presets,
+    describe_run,
+    describe_runs,
     describe_templates,
     describe_today,
     help_section,
@@ -66,6 +68,23 @@ def build_server(settings: Path) -> FastMCP:
     )
     def read_today() -> dict[str, Any]:
         return _as_tool_result(lambda: describe_today(settings))
+
+    @server.tool(
+        description="Liste les derniers traitements (identifiant, fonctionnalité, résultat, "
+        "fichiers produits, nombre d'avertissements), du plus récent au plus ancien.",
+        annotations=READ_ONLY,
+    )
+    def list_runs(limit: int = 5) -> dict[str, Any]:
+        return _as_tool_result(lambda: describe_runs(settings, limit))
+
+    @server.tool(
+        description="Détail d'un traitement : entrées, fichiers produits et chaque avertissement "
+        "avec le fichier, l'endroit (feuille, cartouche, bloc) et le conseil. À utiliser pour "
+        "expliquer pourquoi une pièce ou un champ manque.",
+        annotations=READ_ONLY,
+    )
+    def read_run(run_id: str) -> dict[str, Any]:
+        return _as_tool_result(lambda: describe_run(settings, run_id))
 
     @server.tool(
         description="Liste les sections du guide utilisateur de Drawflow (installation, "

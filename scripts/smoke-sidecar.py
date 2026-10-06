@@ -21,10 +21,12 @@ EXPECTED_MCP_TOOLS = [
     "list_features",
     "list_help_topics",
     "list_presets",
+    "list_runs",
     "list_templates",
     "propose_feature",
     "propose_preset",
     "read_help",
+    "read_run",
     "read_today",
 ]
 PARALLEL_BATCH_SIZE = 2
