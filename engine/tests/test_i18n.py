@@ -60,7 +60,7 @@ def test_cli_lists_modules_in_english_on_request() -> None:
     listed = subprocess.run(
         [sys.executable, "-m", "engine.cli", "--lang", "en", "list-modules"],
         capture_output=True,
-        text=True,
+        encoding="utf-8",
         check=True,
     )
     names = [item["manifest"]["name"] for item in json.loads(listed.stdout)]
