@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from engine.core.errors import EngineError, OutputWriteError
 from engine.core.json_files import write_json_atomically
+from engine.mail.messages import t
 
 INDEX_FILE = "conversations.json"
 CONVERSATION_FILE = "conversation.json"
@@ -75,12 +76,12 @@ def folder_id_of(conversation_id: str) -> str:
 
 
 def clean_subject(subject: str) -> str:
-    return SUBJECT_PREFIXES.sub("", subject).strip() or "(sans objet)"
+    return SUBJECT_PREFIXES.sub("", subject).strip() or t("store.no_subject")
 
 
 def safe_name(text: str) -> str:
     cleaned = UNSAFE_NAME_CHARACTERS.sub(" ", text).strip(" .")
-    return (cleaned or "sans nom")[:MAX_NAME_LENGTH].rstrip(" .")
+    return (cleaned or t("store.no_name"))[:MAX_NAME_LENGTH].rstrip(" .")
 
 
 class ConversationStore:
@@ -96,9 +97,7 @@ class ConversationStore:
             listed = [Conversation.model_validate(item) for item in raw]
         except (OSError, json.JSONDecodeError, TypeError, ValidationError) as error:
             raise MailStoreError(
-                "L'index des conversations est illisible ; il n'a pas été modifié.",
-                file=path,
-                hint="Supprimez-le pour le reconstruire à la prochaine récupération.",
+                t("store.index_unreadable"), file=path, hint=t("store.index_unreadable.hint")
             ) from error
         return sorted(listed, key=lambda item: item.last_received_at, reverse=True)
 
@@ -106,7 +105,7 @@ class ConversationStore:
         for conversation in self.conversations():
             if conversation.id == conversation_id:
                 return conversation
-        raise MailStoreError("Cette conversation n'est plus dans Drawflow.")
+        raise MailStoreError(t("store.conversation_gone"))
 
     def messages(self, conversation_id: str) -> list[Message]:
         folder = self._folder(conversation_id) / MESSAGES_FOLDER
@@ -117,7 +116,7 @@ class ConversationStore:
             try:
                 found.append(Message.model_validate_json(path.read_text(encoding="utf-8")))
             except (OSError, ValidationError) as error:
-                raise MailStoreError("Un message enregistré est illisible.", file=path) from error
+                raise MailStoreError(t("store.message_unreadable"), file=path) from error
         return sorted(found, key=lambda message: message.received_at)
 
     def add_message(self, conversation_id: str, message: Message) -> bool:
@@ -130,7 +129,7 @@ class ConversationStore:
             folder.mkdir(parents=True, exist_ok=True)
             path.write_text(message.model_dump_json(indent=2), encoding="utf-8")
         except OSError as error:
-            raise OutputWriteError("Impossible d'enregistrer un message.", file=path) from error
+            raise OutputWriteError(t("store.message_save_failed"), file=path) from error
         return True
 
     def attachment_path(self, conversation_id: str, message_id: str, name: str) -> Path:
@@ -142,9 +141,7 @@ class ConversationStore:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible d'enregistrer une pièce jointe.", file=path
-            ) from error
+            raise OutputWriteError(t("store.attachment_save_failed"), file=path) from error
 
     def rebuild_index(
         self, classified: dict[str, Conversation] | None = None
@@ -178,13 +175,11 @@ class ConversationStore:
     def remove(self, conversation_id: str) -> None:
         folder = self._folder(conversation_id)
         if not folder.is_dir():
-            raise MailStoreError("Cette conversation n'est plus dans Drawflow.")
+            raise MailStoreError(t("store.conversation_gone"))
         try:
             shutil.rmtree(folder)
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible de supprimer la conversation.", file=folder
-            ) from error
+            raise OutputWriteError(t("store.remove_failed"), file=folder) from error
         self.rebuild_index()
 
     def prune(self, keep: int) -> int:
@@ -211,9 +206,7 @@ class ConversationStore:
                     if attachment.file and Path(attachment.file).is_file():
                         shutil.copy2(attachment.file, destination / f"{stem} {attachment.name}")
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible d'exporter la conversation.", file=destination
-            ) from error
+            raise OutputWriteError(t("store.export_failed"), file=destination) from error
         return destination
 
     def _folder(self, conversation_id: str) -> Path:
@@ -230,7 +223,7 @@ class ConversationStore:
             try:
                 messages.append(Message.model_validate_json(path.read_text(encoding="utf-8")))
             except (OSError, ValidationError) as error:
-                raise MailStoreError("Un message enregistré est illisible.", file=path) from error
+                raise MailStoreError(t("store.message_unreadable"), file=path) from error
         return sorted(messages, key=lambda message: message.received_at)
 
 
@@ -268,15 +261,15 @@ def _summarize(
 def _as_markdown(message: Message) -> str:
     recipients = ", ".join(_label(person) for person in message.recipients)
     lines = [
-        f"# {message.subject or '(sans objet)'}",
+        f"# {message.subject or t('store.no_subject')}",
         "",
-        f"- De : {_label(message.sender)}",
-        f"- À : {recipients}",
-        f"- Reçu : {message.received_at}",
+        t("store.export.from", sender=_label(message.sender)),
+        t("store.export.to", recipients=recipients),
+        t("store.export.received", date=message.received_at),
     ]
     if message.attachments:
         names = ", ".join(attachment.name for attachment in message.attachments)
-        lines.append(f"- Pièces jointes : {names}")
+        lines.append(t("store.export.attachments", names=names))
     lines.extend(["", message.body or message.preview, ""])
     return "\n".join(lines)
 

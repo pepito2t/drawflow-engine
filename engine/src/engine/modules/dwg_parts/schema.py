@@ -4,33 +4,36 @@ from pydantic import model_validator
 
 from engine.core.contract import ModuleInputs
 from engine.core.fields import ui_field
+from engine.modules.dwg_parts.messages import t
 
 
 class DwgPartsInputs(ModuleInputs):
     files: list[Path] = ui_field(
-        "files", label="Plans", default=[], description="Fichiers DWG ou DXF."
+        "files",
+        label=t("schema.files.label"),
+        default=[],
+        description=t("schema.files.description"),
     )
-    folders: list[Path] = ui_field("folders", label="Dossiers de plans", default=[])
-    recursive: bool = ui_field("bool", label="Inclure les sous-dossiers", default=True)
-    project: str = ui_field("text", label="Nom du projet", default="")
-    template: Path | None = ui_field("template", label="Modèle Excel", default=None)
-    output_folder: Path = ui_field("output_folder", label="Dossier de sortie")
+    folders: list[Path] = ui_field("folders", label=t("schema.folders.label"), default=[])
+    recursive: bool = ui_field("bool", label=t("schema.recursive.label"), default=True)
+    project: str = ui_field("text", label=t("schema.project.label"), default="")
+    template: Path | None = ui_field("template", label=t("schema.template.label"), default=None)
+    output_folder: Path = ui_field("output_folder", label=t("schema.output_folder.label"))
     multi_project: bool = ui_field(
         "bool",
-        label="Un projet par dossier",
+        label=t("schema.multi_project.label"),
         default=False,
-        description="Chaque dossier de plans devient un projet : colonne « Projet » dans la "
-        "liste et onglet « Total » toutes origines confondues.",
+        description=t("schema.multi_project.description"),
     )
     preview: bool = ui_field(
         "bool",
-        label="Aperçu avant export",
+        label=t("schema.preview.label"),
         default=True,
-        description="Affiche la liste et ses anomalies avant d'écrire le fichier Excel.",
+        description=t("schema.preview.description"),
     )
 
     @model_validator(mode="after")
     def require_plans(self) -> "DwgPartsInputs":
         if not self.files and not self.folders:
-            raise ValueError("indiquez au moins un plan ou un dossier de plans")
+            raise ValueError(t("schema.require_plans"))
         return self

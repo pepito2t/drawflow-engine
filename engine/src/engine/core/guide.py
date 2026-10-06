@@ -8,8 +8,13 @@ from functools import cache
 from pathlib import Path
 
 from engine.core.errors import EngineError, InvalidInputError
+from engine.core.i18n import DEFAULT_LANGUAGE, Language, current_language
+from engine.core.messages import t
 
-GUIDE_PARTS = ("docs", "guide.md")
+GUIDE_FILES: dict[Language, tuple[str, ...]] = {
+    "fr": ("docs", "guide.md"),
+    "en": ("docs", "guide.en.md"),
+}
 # engine/src/engine/core/guide.py → repository root, for runs from the source checkout.
 SOURCE_ROOT = Path(__file__).resolve().parents[4]
 SECTION_PREFIX = "## "
@@ -27,35 +32,54 @@ class GuideUnavailableError(EngineError):
     pass
 
 
-def guide_file() -> Path:
+def guide_file(language: Language | None = None) -> Path:
     bundle = getattr(sys, "_MEIPASS", None)
     root = Path(bundle) if bundle else SOURCE_ROOT
-    return root.joinpath(*GUIDE_PARTS)
+    wanted = root.joinpath(*GUIDE_FILES[language or current_language()])
+    return wanted if wanted.is_file() else root.joinpath(*GUIDE_FILES[DEFAULT_LANGUAGE])
+
+
+def sections() -> tuple[Section, ...]:
+    return _sections(current_language())
 
 
 @cache
-def sections() -> tuple[Section, ...]:
+def _sections(language: Language) -> tuple[Section, ...]:
     try:
-        text = guide_file().read_text(encoding="utf-8")
+        text = guide_file(language).read_text(encoding="utf-8")
     except OSError as error:
         raise GuideUnavailableError(
-            "Le guide utilisateur est introuvable.", hint="Réinstallez Drawflow."
+            t("guide.unavailable"), hint=t("guide.unavailable_hint")
         ) from error
     return tuple(_split(text))
 
 
 def read_section(topic: str) -> Section:
-    wanted = _fold(topic)
-    for section in sections():
-        if section.id == topic or _fold(section.title) == wanted:
-            return section
-    for section in sections():
-        if wanted and wanted in _fold(section.title):
-            return section
+    found = _find(topic, sections())
+    if found is None and current_language() != DEFAULT_LANGUAGE:
+        # Topics are often French ids (setup screen, saved links): same position in both guides.
+        french = _sections(DEFAULT_LANGUAGE)
+        translated = _find(topic, french)
+        if translated is not None and len(french) == len(sections()):
+            found = sections()[french.index(translated)]
+    if found is not None:
+        return found
     available = ", ".join(section.id for section in sections())
     raise InvalidInputError(
-        f"Section « {topic} » absente du guide.", hint=f"Sections : {available}."
+        t("guide.section_missing", topic=topic),
+        hint=t("guide.section_missing_hint", available=available),
     )
+
+
+def _find(topic: str, candidates: tuple[Section, ...]) -> Section | None:
+    wanted = _fold(topic)
+    for section in candidates:
+        if section.id == topic or _fold(section.title) == wanted:
+            return section
+    for section in candidates:
+        if wanted and wanted in _fold(section.title):
+            return section
+    return None
 
 
 def slug(title: str) -> str:

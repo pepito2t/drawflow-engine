@@ -12,6 +12,7 @@ from engine.core.anomalies import Anomaly
 from engine.core.errors import EngineError
 from engine.core.fields import KeyValue
 from engine.core.text import fold
+from engine.modules.soumission.messages import t
 from engine.modules.soumission.numbers import parse_amount
 from engine.modules.soumission.settings import (
     MIN_HEADER_MATCHES,
@@ -85,10 +86,9 @@ def read_workbook(
         found = ", ".join(candidates[0].texts[:MAX_LOCATION_TEXTS]) if candidates else ""
         warnings.append(
             Anomaly(
-                "Aucun tableau de soumission reconnu (en-têtes introuvables).",
-                location=f"en-têtes trouvés : {found}" if found else None,
-                hint="Ajoutez ces en-têtes aux colonnes dans Paramètres → Soumission, ou "
-                "demandez à l'assistant de les associer.",
+                t("reader.no_table"),
+                location=t("reader.no_table.location", found=found) if found else None,
+                hint=t("reader.no_table.hint"),
             )
         )
     return WorkbookContent(tables=tables, warnings=warnings)
@@ -99,9 +99,7 @@ def open_workbook(stream: Path | IO[bytes], source: str) -> Workbook:
         return load_workbook(stream, read_only=True, data_only=True)
     except (OSError, BadZipFile, InvalidFileException, KeyError) as error:
         raise WorkbookReadError(
-            "Le classeur Excel est illisible.",
-            file=Path(source),
-            hint="Vérifiez qu'il s'ouvre dans Excel (format .xlsx).",
+            t("reader.unreadable"), file=Path(source), hint=t("reader.unreadable.hint")
         ) from error
 
 
@@ -125,9 +123,9 @@ def _read_sheet(
         return table, []
     return table, [
         Anomaly(
-            f"{unreadable} montant(s) illisible(s) gardé(s) en texte.",
-            location=f"feuille « {title} »",
-            hint="Vérifiez les colonnes converties en nombres dans Paramètres → Soumission.",
+            t("reader.unreadable_amounts", count=unreadable),
+            location=t("reader.unreadable_amounts.location", sheet=title),
+            hint=t("reader.unreadable_amounts.hint"),
         )
     ]
 

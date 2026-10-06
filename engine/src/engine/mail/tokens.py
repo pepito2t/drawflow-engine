@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from engine.core.errors import OutputWriteError
+from engine.mail.messages import t
 
 TOKEN_FILE = "mail-session.json"
 OWNER_ONLY = stat.S_IRUSR | stat.S_IWUSR
@@ -41,14 +42,10 @@ class SessionStore:
             if os.name != "nt":
                 self.path.chmod(OWNER_ONLY)
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible d'enregistrer la session Microsoft.", file=self.path
-            ) from error
+            raise OutputWriteError(t("tokens.save_failed"), file=self.path) from error
 
     def clear(self) -> None:
         try:
             self.path.unlink(missing_ok=True)
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible d'effacer la session Microsoft.", file=self.path
-            ) from error
+            raise OutputWriteError(t("tokens.clear_failed"), file=self.path) from error

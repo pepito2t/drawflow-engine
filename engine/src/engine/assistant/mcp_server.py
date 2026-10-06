@@ -11,6 +11,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 from engine.assistant.inspect import inspect_file
+from engine.assistant.messages import t
 from engine.assistant.tools import (
     describe_features,
     describe_presets,
@@ -31,12 +32,7 @@ from engine.core.errors import EngineError
 from engine.core.registry import discover_modules
 
 SERVER_NAME = "drawflow"
-SERVER_INSTRUCTIONS = (
-    "Drawflow automatise le travail d'un dessinateur en façade : listes de pièces depuis des "
-    "plans DWG, rapports DOCX depuis des PDF et soumissions. Ces outils décrivent les "
-    "fonctionnalités, les préréglages et les modèles disponibles, et proposent des lancements "
-    "que l'utilisateur confirme."
-)
+SERVER_INSTRUCTIONS = t("mcp_server.instructions")
 # Proposals are read-only too: a run only starts when the user confirms it in the app.
 READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
@@ -44,111 +40,57 @@ READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 def build_server(settings: Path) -> FastMCP:
     server = FastMCP(SERVER_NAME, instructions=SERVER_INSTRUCTIONS, log_level="WARNING")
 
-    @server.tool(
-        description="Liste les fonctionnalités de Drawflow, leur mode d'emploi et leurs entrées.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.list_features"), annotations=READ_ONLY)
     def list_features() -> dict[str, Any]:
         return _as_tool_result(describe_features)
 
-    @server.tool(
-        description="Liste les préréglages enregistrés (jeux de paramètres prêts à lancer).",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.list_presets"), annotations=READ_ONLY)
     def list_presets() -> dict[str, Any]:
         return _as_tool_result(lambda: describe_presets(settings))
 
-    @server.tool(
-        description="Liste les modèles de sortie importés et le modèle par défaut de chaque "
-        "fonctionnalité.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.list_templates"), annotations=READ_ONLY)
     def list_templates() -> dict[str, Any]:
         return _as_tool_result(lambda: describe_templates(settings))
 
-    @server.tool(
-        description="Ce qui attend l'utilisateur aujourd'hui : derniers traitements (résultat, "
-        "fichiers produits, avertissements) et préréglages lançables en un clic.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.read_today"), annotations=READ_ONLY)
     def read_today() -> dict[str, Any]:
         return _as_tool_result(lambda: describe_today(settings))
 
     @server.tool(
-        name="inspect_file",
-        description="Inspecte un fichier donné par l'utilisateur (chemin complet) : plan DWG/DXF "
-        "(blocs et attributs), PDF (pages, texte de la première page), XLSX (feuilles, premières "
-        "lignes) ou DOCX (premiers paragraphes), et la fonctionnalité conseillée.",
-        annotations=READ_ONLY,
+        name="inspect_file", description=t("mcp_server.inspect_file"), annotations=READ_ONLY
     )
     def inspect_file_tool(path: str) -> dict[str, Any]:
         return _as_tool_result(lambda: inspect_file(settings, path))
 
-    @server.tool(
-        description="Liste les derniers traitements (identifiant, fonctionnalité, résultat, "
-        "fichiers produits, nombre d'avertissements), du plus récent au plus ancien.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.list_runs"), annotations=READ_ONLY)
     def list_runs(limit: int = 5) -> dict[str, Any]:
         return _as_tool_result(lambda: describe_runs(settings, limit))
 
-    @server.tool(
-        description="Détail d'un traitement : entrées, fichiers produits et chaque avertissement "
-        "avec le fichier, l'endroit (feuille, cartouche, bloc) et le conseil. À utiliser pour "
-        "expliquer pourquoi une pièce ou un champ manque.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.read_run"), annotations=READ_ONLY)
     def read_run(run_id: str) -> dict[str, Any]:
         return _as_tool_result(lambda: describe_run(settings, run_id))
 
-    @server.tool(
-        description="Liste les sections du guide utilisateur de Drawflow (installation, "
-        "fonctionnalités, assistant, Stream Dock, dépannage…).",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.list_help_topics"), annotations=READ_ONLY)
     def list_help_topics() -> dict[str, Any]:
         return _as_tool_result(help_topics)
 
-    @server.tool(
-        description="Lit une section du guide utilisateur (identifiant ou titre) : la marche à "
-        "suivre officielle, à utiliser pour expliquer comment faire.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.read_help"), annotations=READ_ONLY)
     def read_help(topic: str) -> dict[str, Any]:
         return _as_tool_result(lambda: help_section(topic))
 
-    @server.tool(
-        description="Inspecte une soumission (XLSX, ou PDF avec classeur joint) : en-têtes "
-        "trouvés dans chaque feuille, colonnes déjà reconnues, colonnes normalisées et leurs "
-        "en-têtes connus. À utiliser quand une soumission n'est pas reconnue.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.inspect_submission_headers"), annotations=READ_ONLY)
     def inspect_submission_headers(path: str) -> dict[str, Any]:
         return _as_tool_result(lambda: inspect_submission(settings, path))
 
-    @server.tool(
-        description="Propose d'ajouter des en-têtes reconnus à des colonnes normalisées de la "
-        'soumission, ex. {"Quantité": ["Nbre"]}. Rien n\'est enregistré : l\'utilisateur '
-        "voit une carte et doit cliquer sur Appliquer.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.propose_column_synonyms"), annotations=READ_ONLY)
     def propose_column_synonyms(additions: dict[str, list[str]]) -> dict[str, Any]:
         return _as_tool_result(lambda: propose_column_synonyms_run(settings, additions))
 
-    @server.tool(
-        description="Propose de lancer un préréglage. Rien n'est lancé : l'utilisateur voit "
-        "une carte et doit cliquer sur Lancer.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.propose_preset"), annotations=READ_ONLY)
     def propose_preset(preset_id: str) -> dict[str, Any]:
         return _as_tool_result(lambda: propose_preset_run(settings, preset_id))
 
-    @server.tool(
-        description="Propose de lancer une fonctionnalité avec des entrées conformes à son "
-        "inputs_schema (voir list_features). Rien n'est lancé : l'utilisateur voit une carte "
-        "et doit cliquer sur Lancer.",
-        annotations=READ_ONLY,
-    )
+    @server.tool(description=t("mcp_server.propose_feature"), annotations=READ_ONLY)
     def propose_feature(feature_id: str, inputs: dict[str, Any]) -> dict[str, Any]:
         return _as_tool_result(lambda: propose_feature_run(feature_id, inputs))
 

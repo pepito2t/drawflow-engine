@@ -10,6 +10,7 @@ from engine.core.errors import EngineError
 from engine.core.events import LogEvent
 from engine.core.naming import naming_values, output_target, writing_output
 from engine.modules.dwg_parts.export import export_parts
+from engine.modules.dwg_parts.messages import t
 from engine.modules.dwg_parts.schema import DwgPartsInputs
 from engine.modules.dwg_parts.service import (
     DOCUMENT_TYPE,
@@ -27,7 +28,7 @@ from engine.parts.settings import PartsListSettings
 from engine.parts.worker import FileExtraction, extract_file
 
 OUTPUT_EXTENSION = "xlsx"
-READ_LABEL = "Lecture"
+READ_LABEL = t("pipeline.read_label")
 
 
 def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime) -> ModuleResult:
@@ -44,18 +45,16 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
         plans, worker, batch_size=context.general.batch_size, emit=emit, label=READ_LABEL
     )
     if not outcome.results:
-        raise EngineError(
-            "Aucun plan n'a pu être lu.", hint="Consultez les avertissements du journal."
-        )
+        raise EngineError(t("pipeline.no_file"), hint=t("pipeline.no_file_hint"))
     by_project = _by_project(inputs, outcome.results, context, settings)
     parts_list = merge_projects(by_project) if inputs.multi_project else by_project[0][1]
     emit_anomalies(emit, parts_list.warnings, None)
     emit(preview_table(parts_list))
     if inputs.preview:
         summary = describe_result(parts_list, len(outcome.results), len(plans))
-        return ModuleResult(summary=f"Aperçu : {summary}", preview=True)
+        return ModuleResult(summary=t("pipeline.preview_summary", summary=summary), preview=True)
     target = _target(inputs, settings, plans, moment)
-    emit(LogEvent(message=f"Écriture de {target.name}"))
+    emit(LogEvent(message=t("pipeline.writing", name=target.name)))
     total = total_of(by_project) if inputs.multi_project else None
     with writing_output(target):
         export_parts(

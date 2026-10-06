@@ -17,6 +17,7 @@ from engine.assistant.conversation import ChatRequest
 from engine.assistant.errors import AssistantError
 from engine.assistant.events import EmitAssistant
 from engine.assistant.mcp_server import server_parameters
+from engine.assistant.messages import t
 from engine.assistant.model_client import ModelClient
 from engine.assistant.toolbox import McpToolBox
 from engine.core.errors import EngineError, InvalidInputError
@@ -44,8 +45,7 @@ def chat(
                 await session.initialize()
             except McpError as error:
                 raise AssistantError(
-                    "Les outils Drawflow de l'assistant n'ont pas démarré.",
-                    hint="Réessayez ; si le problème persiste, redémarrez l'application.",
+                    t("service.tools_not_started"), hint=t("service.tools_not_started.hint")
                 ) from error
             await run_turn(request, model, McpToolBox(session), emit)
 
@@ -79,7 +79,7 @@ def _parse_request(raw: dict[str, Any]) -> ChatRequest:
     try:
         return ChatRequest.model_validate(raw)
     except ValidationError as error:
-        raise InvalidInputError("Conversation invalide.", hint=str(error)) from error
+        raise InvalidInputError(t("service.invalid_conversation"), hint=str(error)) from error
 
 
 def _run(task: Callable[[], Awaitable[None]]) -> None:

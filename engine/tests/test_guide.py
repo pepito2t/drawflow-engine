@@ -5,7 +5,7 @@ import sys
 import pytest
 
 from engine.core.errors import InvalidInputError
-from engine.core.guide import read_section, sections, slug
+from engine.core.guide import _sections, read_section, sections, slug
 from engine.setup.scan import PREREQUISITES_HELP, STREAM_DOCK_HELP
 
 
@@ -48,3 +48,16 @@ def test_cli_returns_the_whole_guide() -> None:
     )
     guide = json.loads(completed.stdout)
     assert guide["sections"][0]["id"] == "premiers-pas"
+
+
+def test_french_topics_open_the_same_section_of_the_english_guide() -> None:
+    from engine.core.i18n import set_language
+
+    set_language("en")
+    try:
+        assert len(_sections("en")) == len(_sections("fr"))
+        assert read_section("installer-les-prérequis").title == "Install the prerequisites"
+        assert read_section("piloter-avec-un-stream-dock").title == "Control with a Stream Dock"
+        assert read_section("troubleshooting").title == "Troubleshooting"
+    finally:
+        set_language("fr")

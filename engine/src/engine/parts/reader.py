@@ -9,6 +9,7 @@ from ezdxf.lldxf.const import DXFError
 
 from engine.core.errors import EngineError
 from engine.core.events import Emit, WarningEvent
+from engine.parts.messages import t
 
 MAX_NESTING_DEPTH = 8
 ANONYMOUS_BLOCK_PREFIX = "*U"
@@ -41,12 +42,10 @@ def read_parts(dxf_path: Path, source: Path, emit: Emit) -> list[RawPart]:
     if truncated:
         emit(
             WarningEvent(
-                message=f"Blocs imbriqués au-delà de {MAX_NESTING_DEPTH} niveaux : leur contenu "
-                "n'est pas compté.",
+                message=t("reader.nesting_truncated", depth=MAX_NESTING_DEPTH),
                 file=str(source),
-                location=f"blocs {', '.join(sorted(truncated))}",
-                hint="Simplifiez l'imbrication dans AutoCAD, ou vérifiez qu'aucune pièce ne se "
-                "trouve à ce niveau.",
+                location=t("reader.nesting_location", names=", ".join(sorted(truncated))),
+                hint=t("reader.nesting_hint"),
             )
         )
     return parts
@@ -75,9 +74,7 @@ def _open(dxf_path: Path, source: Path) -> Drawing:
         return readfile(dxf_path)
     except (OSError, DXFError) as error:
         raise DxfReadError(
-            "Le plan est illisible.",
-            file=source,
-            hint="Vérifiez qu'il s'ouvre dans AutoCAD, puis réenregistrez-le.",
+            t("reader.unreadable"), file=source, hint=t("reader.unreadable_hint")
         ) from error
 
 

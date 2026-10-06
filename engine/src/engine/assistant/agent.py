@@ -13,34 +13,15 @@ from engine.assistant.events import (
     ToolCallEvent,
     ToolResultEvent,
 )
+from engine.assistant.messages import t
 from engine.assistant.model_client import ModelClient, ModelReply, ToolCall
 from engine.assistant.toolbox import ToolBox, ToolOutcome
 from engine.core.guide import GuideUnavailableError, sections
 
 MAX_TOOL_ROUNDS = 6
-PROPOSAL_SHOWN = (
-    "Proposition affichée à l'utilisateur : le traitement démarrera seulement s'il clique sur "
-    "Lancer. Rien n'est lancé pour l'instant."
-)
-SYSTEM_PROMPT = (
-    "Tu es l'assistant de Drawflow, une application qui automatise le travail d'un dessinateur "
-    "en façade : listes de pièces depuis des plans DWG, rapports DOCX depuis des PDF et "
-    "soumissions. Réponds en français, de façon brève et concrète. Utilise les outils pour "
-    "consulter les fonctionnalités, les préréglages et les modèles au lieu de supposer. Pour "
-    "expliquer comment installer, configurer ou dépanner, lis directement la rubrique du guide "
-    "concernée avec read_help et suis sa marche à suivre sans inventer de bouton ni de menu. Pour "
-    "répondre à « qu'est-ce qui m'attend ? » ou parler des derniers traitements, lis read_today. "
-    "Quand le message contient des fichiers joints (chemins), lis-les avec inspect_file puis "
-    "propose l'action adaptée (DWG → liste de pièces, PDF → rapport, XLSX → soumission). "
-    "Pour expliquer un résultat (pièce ou champ manquant, fichier ignoré), lis le traitement "
-    "concerné avec list_runs puis read_run et cite le fichier et l'endroit de l'avertissement. "
-    "Pour lancer un traitement, propose-le avec propose_preset ou propose_feature : l'utilisateur "
-    "voit une carte et décide. Quand une soumission n'est pas reconnue, inspect_submission_headers "
-    "puis propose_column_synonyms pour associer ses en-têtes aux colonnes. "
-    "Ne dis jamais qu'un traitement est lancé ; dis qu'il attend sa "
-    "confirmation. N'invente aucun chemin de fichier : demande-le s'il manque."
-)
-HELP_TOPICS_HEADING = "Rubriques du guide (identifiant : titre) : "
+PROPOSAL_SHOWN = t("agent.proposal_shown")
+SYSTEM_PROMPT = t("agent.system_prompt")
+HELP_TOPICS_HEADING = t("agent.help_topics_heading")
 JsonObject = dict[str, Any]
 
 
@@ -70,8 +51,8 @@ async def run_turn(
         for call in reply.tool_calls:
             messages.append(await _answer_tool_call(call, tools, emit))
     raise AssistantError(
-        f"L'assistant a dépassé {MAX_TOOL_ROUNDS} séries d'appels d'outils pour cette question.",
-        hint="Reformulez la demande de façon plus précise.",
+        t("agent.too_many_tool_rounds", rounds=MAX_TOOL_ROUNDS),
+        hint=t("agent.too_many_tool_rounds.hint"),
     )
 
 
@@ -79,7 +60,7 @@ async def _answer_tool_call(call: ToolCall, tools: ToolBox, emit: EmitAssistant)
     arguments = _parse_arguments(call.arguments)
     emit(ToolCallEvent(id=call.id, name=call.name, arguments=arguments or {}))
     if arguments is None:
-        outcome = ToolOutcome(ok=False, text="Arguments JSON invalides : corrige l'appel.")
+        outcome = ToolOutcome(ok=False, text=t("agent.invalid_arguments"))
     else:
         outcome = await tools.call(call.name, arguments)
     emit(ToolResultEvent(id=call.id, name=call.name, ok=outcome.ok))

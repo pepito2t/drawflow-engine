@@ -3,9 +3,10 @@ from pathlib import Path
 
 from engine.core.collect import collect_files
 from engine.core.events import Emit
+from engine.parts.messages import t
 
 PLAN_SUFFIXES = frozenset({".dwg", ".dxf"})
-PLAN_KIND = "plan DWG/DXF"
+PLAN_KIND = t("collect.plan_kind")
 
 
 def collect_plans(

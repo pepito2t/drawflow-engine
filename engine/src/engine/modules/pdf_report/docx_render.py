@@ -9,11 +9,10 @@ from docxtpl import DocxTemplate
 from jinja2 import Environment, StrictUndefined, TemplateError, UndefinedError
 
 from engine.core.errors import EngineError, OutputWriteError
+from engine.modules.pdf_report.messages import t
 
 DEFAULT_TEMPLATE_NAME = "rapport-par-defaut.docx"
-FIX_TEMPLATE_HINT = (
-    "Corrigez la balise dans le modèle Word ou ajoutez-la dans Paramètres → Rapport."
-)
+FIX_TEMPLATE_HINT = t("docx.fix_template_hint")
 
 
 class ReportTemplateError(EngineError):
@@ -31,14 +30,26 @@ def render_report(template: Path | None, context: dict[str, Any], target: Path) 
 
 def write_default_template(path: Path) -> Path:
     document = Document()
-    document.add_heading("Rapport de plans", level=0)
-    document.add_paragraph("Projet : {{ projet }} — Date : {{ date }} — {{ nb_plans }} plan(s)")
+    document.add_heading(t("docx.default.title"), level=0)
+    document.add_paragraph(
+        t(
+            "docx.default.summary",
+            project="{{ projet }}",
+            date="{{ date }}",
+            count="{{ nb_plans }}",
+        )
+    )
     document.add_paragraph("{%p for plan in plans %}")
-    document.add_heading("{{ plan.fichier }} ({{ plan.pages }} page(s))", level=1)
+    document.add_heading(
+        t("docx.default.plan_heading", file="{{ plan.fichier }}", pages="{{ plan.pages }}"),
+        level=1,
+    )
     document.add_paragraph("{%p for champ in plan.liste_champs %}")
-    document.add_paragraph("{{ champ.libelle }} : {{ champ.valeur }}")
+    document.add_paragraph(
+        t("docx.default.field", label="{{ champ.libelle }}", value="{{ champ.valeur }}")
+    )
     document.add_paragraph("{%p endfor %}")
-    document.add_paragraph("Références : {{ plan.references }}")
+    document.add_paragraph(t("docx.default.references", references="{{ plan.references }}"))
     document.add_paragraph("{%p endfor %}")
     document.save(str(path))
     return path
@@ -50,15 +61,15 @@ def _render(template: Path, context: dict[str, Any], target: Path, source: Path 
         document.render(context, jinja_env=Environment(undefined=StrictUndefined, autoescape=True))
     except UndefinedError as error:
         raise ReportTemplateError(
-            f"Balise inconnue dans le modèle Word : {error.message}.",
+            t("docx.unknown_tag", detail=error.message),
             file=source,
             hint=FIX_TEMPLATE_HINT,
         ) from error
     except TemplateError as error:
         raise ReportTemplateError(
-            f"Le modèle Word contient une balise mal écrite : {error.message}.",
+            t("docx.malformed_tag", detail=error.message),
             file=source,
-            hint="Vérifiez les accolades {{ }} et {% %} du modèle.",
+            hint=t("docx.malformed_tag.hint"),
         ) from error
     _save(document, target)
 
@@ -69,9 +80,7 @@ def _open(template: Path) -> DocxTemplate:
         document.init_docx()
     except (OSError, BadZipFile, KeyError, ValueError, PackageNotFoundError) as error:
         raise ReportTemplateError(
-            "Le modèle Word est illisible.",
-            file=template,
-            hint="Choisissez un fichier .docx valide.",
+            t("docx.unreadable"), file=template, hint=t("docx.unreadable.hint")
         ) from error
     return document
 
@@ -82,7 +91,5 @@ def _save(document: DocxTemplate, target: Path) -> None:
         document.save(str(target))
     except OSError as error:
         raise OutputWriteError(
-            "Impossible d'enregistrer le rapport.",
-            file=target,
-            hint="Fermez le fichier s'il est ouvert dans Word et vérifiez le dossier de sortie.",
+            t("docx.save_failed"), file=target, hint=t("docx.save_failed.hint")
         ) from error

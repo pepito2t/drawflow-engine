@@ -10,6 +10,7 @@ from engine.core.errors import EngineError
 from engine.core.events import LogEvent
 from engine.core.naming import naming_values, output_target, writing_output
 from engine.modules.pdf_report.docx_render import render_report
+from engine.modules.pdf_report.messages import t
 from engine.modules.pdf_report.report import PlanData, build_context
 from engine.modules.pdf_report.schema import PdfReportInputs
 from engine.modules.pdf_report.settings import PdfReportSettings
@@ -19,7 +20,6 @@ PDF_SUFFIXES = frozenset({".pdf"})
 PDF_KIND = "PDF"
 DOCUMENT_TYPE = "rapport"
 OUTPUT_EXTENSION = "docx"
-READ_LABEL = "Lecture"
 
 
 def run_report(inputs: PdfReportInputs, context: RunContext, moment: datetime) -> ModuleResult:
@@ -37,19 +37,17 @@ def run_report(inputs: PdfReportInputs, context: RunContext, moment: datetime) -
         partial(extract_plan, settings=settings),
         batch_size=context.general.batch_size,
         emit=context.emit,
-        label=READ_LABEL,
+        label=t("pipeline.read_label"),
     )
     if not outcome.results:
-        raise EngineError(
-            "Aucun PDF n'a pu être lu.", hint="Consultez les avertissements du journal."
-        )
+        raise EngineError(t("pipeline.nothing_read"), hint=t("pipeline.nothing_read.hint"))
     plan_data = _plan_data(outcome.results, context)
     target = _target(inputs, settings, plans, moment)
-    context.emit(LogEvent(message=f"Écriture de {target.name}"))
+    context.emit(LogEvent(message=t("pipeline.writing", name=target.name)))
     report = build_context(plan_data, settings.fields, inputs.project.strip(), moment)
     with writing_output(target):
         render_report(inputs.template, report, target)
-    summary = f"Rapport de {len(plan_data)} plan(s) ({len(plan_data)}/{len(plans)} lu(s))"
+    summary = t("pipeline.summary", count=len(plan_data), read=len(plan_data), total=len(plans))
     return ModuleResult(summary=summary, outputs=[target])
 
 

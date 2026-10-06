@@ -10,10 +10,10 @@ from mcp.types import TextContent
 from pydantic import ValidationError
 
 from engine.assistant.events import Proposal
+from engine.assistant.messages import t
 
 # Keeps one verbose tool answer from filling a small model's context.
 MAX_TOOL_OUTPUT_CHARS = 20_000
-TRUNCATION_NOTICE = "\n[… réponse tronquée]"
 
 
 PROPOSAL_KEY = "proposal"
@@ -54,7 +54,7 @@ class McpToolBox:
         try:
             result = await self._session.call_tool(name, arguments)
         except McpError as error:
-            return ToolOutcome(ok=False, text=f"L'outil {name} n'a pas répondu : {error}")
+            return ToolOutcome(ok=False, text=t("toolbox.tool_failed", name=name, error=error))
         texts = [part.text for part in result.content if isinstance(part, TextContent)]
         if not texts and result.structuredContent is not None:
             texts = [json.dumps(result.structuredContent, ensure_ascii=False)]
@@ -76,4 +76,4 @@ def _proposal(structured: dict[str, Any] | None) -> Proposal | None:
 def _truncate(text: str) -> str:
     if len(text) <= MAX_TOOL_OUTPUT_CHARS:
         return text
-    return text[:MAX_TOOL_OUTPUT_CHARS] + TRUNCATION_NOTICE
+    return text[:MAX_TOOL_OUTPUT_CHARS] + t("toolbox.truncated")

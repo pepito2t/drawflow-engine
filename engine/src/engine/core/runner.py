@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from engine.core.contract import ModuleResult, RunContext
 from engine.core.errors import InputFileError, InvalidInputError
 from engine.core.events import Emit, LogEvent, ResultEvent
+from engine.core.messages import t
 from engine.core.registry import AnyModule
 from engine.core.settings import RunSettings
 from engine.core.validation import describe_validation_error
@@ -16,15 +17,13 @@ def read_input_file(path: Path) -> dict[str, Any]:
     try:
         content = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as error:
-        raise InputFileError("Le fichier de paramètres est introuvable.", file=path) from error
+        raise InputFileError(t("runner.input_missing"), file=path) from error
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise InputFileError(
-            "Le fichier de paramètres est illisible.",
-            file=path,
-            hint="Relancez la fonctionnalité depuis l'application.",
+            t("runner.input_unreadable"), file=path, hint=t("runner.input_unreadable_hint")
         ) from error
     if not isinstance(content, dict):
-        raise InputFileError("Le fichier de paramètres doit contenir un objet JSON.", file=path)
+        raise InputFileError(t("runner.input_not_object"), file=path)
     return content
 
 
@@ -39,7 +38,7 @@ def run_module(
     default_template: Path | None = None,
 ) -> ModuleResult:
     if default_template is not None and not raw_inputs.get(TEMPLATE_INPUT):
-        emit(LogEvent(message=f"Modèle par défaut : {default_template.name}"))
+        emit(LogEvent(message=t("runner.default_template", name=default_template.name)))
         raw_inputs = {**raw_inputs, TEMPLATE_INPUT: str(default_template)}
     inputs = _validate_inputs(module, raw_inputs)
     context = RunContext(
@@ -58,6 +57,9 @@ def _validate_inputs(module: AnyModule, raw_inputs: dict[str, Any]) -> Any:
         return module.inputs_model.model_validate(raw_inputs)
     except ValidationError as error:
         raise InvalidInputError(
-            "Champs invalides : " + describe_validation_error(module.inputs_model, error),
-            hint="Corrigez les champs indiqués puis relancez.",
+            t(
+                "runner.invalid_fields",
+                details=describe_validation_error(module.inputs_model, error),
+            ),
+            hint=t("runner.invalid_fields_hint"),
         ) from error

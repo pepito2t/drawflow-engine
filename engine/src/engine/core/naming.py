@@ -10,14 +10,15 @@ from pydantic import AfterValidator
 
 from engine.core.errors import EngineError
 from engine.core.fields import ui_field
+from engine.core.messages import t
 
 NAMING_VARIABLES: dict[str, str] = {
-    "projet": "nom du projet",
-    "type": "type de document",
-    "date": "date (AAAAMMJJ)",
-    "heure": "heure (HHMM)",
-    "source": "nom du fichier source",
-    "indice": "indice",
+    "projet": t("naming.variable.projet"),
+    "type": t("naming.variable.type"),
+    "date": t("naming.variable.date"),
+    "heure": t("naming.variable.heure"),
+    "source": t("naming.variable.source"),
+    "indice": t("naming.variable.indice"),
 }
 DATE_FORMAT = "%Y%m%d"
 TIME_FORMAT = "%H%M"
@@ -35,14 +36,14 @@ FALLBACK_STEM = "export"
 
 def validate_template(template: str) -> str:
     if not template.strip():
-        raise ValueError("le modèle de nom ne peut pas être vide")
+        raise ValueError(t("naming.empty_template"))
     try:
         parts = list(Formatter().parse(template))
     except ValueError as error:
-        raise ValueError("accolades mal fermées dans le modèle de nom") from error
+        raise ValueError(t("naming.unbalanced_braces")) from error
     for literal, variable, format_spec, conversion in parts:
         if FORBIDDEN_CHARACTERS.search(literal):
-            raise ValueError('caractères interdits dans un nom de fichier : < > : " / \\ | ? *')
+            raise ValueError(t("naming.forbidden_characters"))
         if variable is not None:
             _check_variable(variable, format_spec, conversion)
     return template
@@ -51,21 +52,24 @@ def validate_template(template: str) -> str:
 def _check_variable(variable: str, format_spec: str | None, conversion: str | None) -> None:
     if variable not in NAMING_VARIABLES:
         allowed = ", ".join(f"{{{name}}}" for name in NAMING_VARIABLES)
-        raise ValueError(f"variable inconnue {{{variable}}} ; variables possibles : {allowed}")
+        raise ValueError(t("naming.unknown_variable", variable=variable, allowed=allowed))
     if format_spec or conversion:
-        raise ValueError(f"la variable {{{variable}}} ne prend pas d'option de format")
+        raise ValueError(t("naming.format_option", variable=variable))
 
 
 FileNameTemplate = Annotated[str, AfterValidator(validate_template)]
 
 
 def file_name_template_field(default: str) -> Any:
-    variables = ", ".join(f"{{{name}}} : {label}" for name, label in NAMING_VARIABLES.items())
+    variables = ", ".join(
+        t("naming.variable_item", name=name, label=label)
+        for name, label in NAMING_VARIABLES.items()
+    )
     return ui_field(
         "text",
-        label="Nom des fichiers exportés",
+        label=t("naming.file_name_template.label"),
         default=default,
-        description=f"Variables disponibles — {variables}.",
+        description=t("naming.file_name_template.description", variables=variables),
     )
 
 
@@ -110,9 +114,9 @@ def unique_output_path(folder: Path, file_name: str) -> Path:
             return folder / name
     except OSError as error:
         raise OutputFolderError(
-            "Le dossier de sortie est inaccessible.",
+            t("naming.output_folder_unreachable"),
             file=folder,
-            hint="Choisissez un autre dossier de sortie, ou vérifiez vos droits dessus.",
+            hint=t("naming.output_folder_unreachable_hint"),
         ) from error
 
 

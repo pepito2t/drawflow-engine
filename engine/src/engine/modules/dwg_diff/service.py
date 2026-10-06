@@ -6,17 +6,21 @@ from dataclasses import dataclass
 
 from engine.core.events import TableEvent, TableRow
 from engine.core.text import fold
+from engine.modules.dwg_diff.messages import t
 from engine.parts.listing import PartsList
 
 DOCUMENT_TYPE = "comparaison"
 PREVIEW_MAX_ROWS = 500
-STATUS_HEADER = "Statut"
-QUANTITY_BEFORE_HEADER = "Quantité A"
-QUANTITY_AFTER_HEADER = "Quantité B"
-DELTA_HEADER = "Écart"
-PLANS_BEFORE_HEADER = "Plans A"
-PLANS_AFTER_HEADER = "Plans B"
-ADDED, REMOVED, CHANGED, UNCHANGED = "Ajouté", "Supprimé", "Modifié", "Inchangé"
+STATUS_HEADER = t("service.status_header")
+QUANTITY_BEFORE_HEADER = t("service.quantity_before_header")
+QUANTITY_AFTER_HEADER = t("service.quantity_after_header")
+DELTA_HEADER = t("service.delta_header")
+PLANS_BEFORE_HEADER = t("service.plans_before_header")
+PLANS_AFTER_HEADER = t("service.plans_after_header")
+ADDED = t("service.status.added")
+REMOVED = t("service.status.removed")
+CHANGED = t("service.status.changed")
+UNCHANGED = t("service.status.unchanged")
 PLAN_SEPARATOR = ", "
 
 type Key = tuple[str, ...]
@@ -127,9 +131,12 @@ def preview_table(report: DiffReport) -> TableEvent:
 
 
 def describe_result(report: DiffReport) -> str:
-    return (
-        f"{len(report.added)} ajout(s), {len(report.removed)} suppression(s), "
-        f"{len(report.changed)} modification(s), {len(report.unchanged)} inchangée(s)"
+    return t(
+        "service.summary",
+        added=len(report.added),
+        removed=len(report.removed),
+        changed=len(report.changed),
+        unchanged=len(report.unchanged),
     )
 
 
@@ -191,7 +198,9 @@ def _delta(value: float) -> str:
 
 def _issue(status: str, line: DiffLine) -> str:
     if status == CHANGED:
-        return f"Quantité {_quantity(line.before)} → {_quantity(line.after)}"
+        return t(
+            "service.quantity_changed", before=_quantity(line.before), after=_quantity(line.after)
+        )
     return status
 
 

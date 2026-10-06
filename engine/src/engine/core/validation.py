@@ -1,7 +1,9 @@
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
 
-FORM_LABEL = "formulaire"
+from engine.core.messages import t
+
+FORM_LABEL = t("validation.form_label")
 
 
 def describe_validation_error(model: type[BaseModel], error: ValidationError) -> str:

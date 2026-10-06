@@ -1,7 +1,13 @@
+# ruff: noqa: E402
 import argparse
 import json
 import sys
 import traceback
+
+from engine.core.i18n import LANGUAGES, configure_from_argv
+
+# Labels and manifests are built when their modules load: the language must be known first.
+configure_from_argv(sys.argv[1:])
 from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
@@ -29,6 +35,7 @@ from engine.core.settings import (
 )
 from engine.core.stats import StatsStore
 from engine.core.templates import TemplateLibrary
+from engine.messages import t
 from engine.requests import (
     MAIL_ACTIONS,
     PRESET_ACTIONS,
@@ -45,8 +52,6 @@ from engine.requests import (
 EXIT_SUCCESS = 0
 EXIT_BUSINESS_ERROR = 1
 EXIT_INTERNAL_ERROR = 2
-INTERNAL_ERROR_MESSAGE = "Erreur interne inattendue."
-INTERNAL_ERROR_HINT = "Réessayez ; si le problème persiste, transmettez le journal au support."
 ASSISTANT_ACTIONS = {
     "chat": "Un tour de conversation (flux NDJSON).",
     "models": "Modèles disponibles sur le serveur local (JSON).",
@@ -59,6 +64,8 @@ ASSISTANT_ACTIONS = {
 
 def main(argv: Sequence[str] | None = None) -> int:
     _force_utf8_output()
+    if argv is not None:
+        configure_from_argv(argv)
     arguments = _build_parser().parse_args(argv)
     emit = make_stream_emitter(sys.stdout)
     settings = getattr(arguments, "settings", None)
@@ -74,15 +81,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Boundary of the sidecar: details go to the log and stderr, the user gets a readable event.
         record_failure(settings, command, error)
         traceback.print_exc(file=sys.stderr)
-        emit(ErrorEvent(message=INTERNAL_ERROR_MESSAGE, hint=INTERNAL_ERROR_HINT))
+        emit(ErrorEvent(message=t("cli.internal_error"), hint=t("cli.internal_error.hint")))
         return EXIT_INTERNAL_ERROR
     return EXIT_SUCCESS
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="engine")
+    parser.add_argument("--lang", choices=LANGUAGES, help="Langue des textes (défaut : réglage).")
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("list-modules", help="Liste les manifestes des modules (JSON).")
+    list_parser = commands.add_parser(
+        "list-modules", help="Liste les manifestes des modules (JSON)."
+    )
+    list_parser.add_argument("--settings", type=Path, help="Fichier des paramètres (langue).")
 
     run_parser = commands.add_parser("run", help="Exécute un module (flux NDJSON).")
     run_parser.add_argument("module_id")

@@ -15,6 +15,7 @@ from engine.core.contract import ModuleResult
 from engine.core.errors import EngineError, InvalidInputError, OutputWriteError
 from engine.core.events import Emit, Event, WarningEvent
 from engine.core.json_files import write_json_atomically
+from engine.core.messages import t
 from engine.core.registry import AnyModule
 from engine.core.stats import StatsStore, count_files
 
@@ -81,9 +82,7 @@ class HistoryStore:
             return [HistoryEntry.model_validate(item) for item in raw]
         except (OSError, json.JSONDecodeError, TypeError, ValidationError) as error:
             raise HistoryError(
-                "Le fichier d'historique est illisible ; il n'a pas été modifié.",
-                file=self.path,
-                hint="Supprimez-le pour repartir d'un historique vide.",
+                t("history.unreadable"), file=self.path, hint=t("history.unreadable_hint")
             ) from error
 
     def record(self, entry: HistoryEntry) -> None:
@@ -99,9 +98,7 @@ class HistoryStore:
         try:
             write_json_atomically(self.path, [entry.model_dump(mode="json") for entry in entries])
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible d'enregistrer l'historique.", file=self.path
-            ) from error
+            raise OutputWriteError(t("history.save_failed"), file=self.path) from error
 
 
 @dataclass(frozen=True)
@@ -186,7 +183,7 @@ def handle_history(action: str, settings_file: Path, request: dict[str, Any]) ->
     if action == "remove":
         entry_id = request.get("id")
         if not isinstance(entry_id, str) or not entry_id:
-            raise InvalidInputError("Identifiant de traitement manquant.")
+            raise InvalidInputError(t("history.missing_id"))
         store.remove(entry_id)
         return {"removed": entry_id}
     if action == "clear":
@@ -194,4 +191,4 @@ def handle_history(action: str, settings_file: Path, request: dict[str, Any]) ->
         return {"cleared": True}
     if action == "stats":
         return StatsStore(settings_file).read().model_dump(mode="json")
-    raise InvalidInputError(f"Action d'historique inconnue : {action}.")
+    raise InvalidInputError(t("history.unknown_action", action=action))

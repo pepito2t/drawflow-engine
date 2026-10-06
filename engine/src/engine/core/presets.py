@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from engine.core.errors import EngineError, OutputWriteError
 from engine.core.json_files import write_json_atomically
+from engine.core.messages import t
 from engine.core.registry import AnyModule
 from engine.core.validation import describe_validation_error
 
@@ -41,9 +42,7 @@ class PresetStore:
             return [Preset.model_validate(item) for item in raw]
         except (OSError, json.JSONDecodeError, TypeError, ValidationError) as error:
             raise PresetError(
-                "Le fichier des préréglages est illisible ; il n'a pas été modifié.",
-                file=self.path,
-                hint="Supprimez-le pour repartir d'une liste vide.",
+                t("presets.unreadable"), file=self.path, hint=t("presets.unreadable_hint")
             ) from error
 
     def save(
@@ -58,7 +57,7 @@ class PresetStore:
         )
         others = [existing for existing in self.presets() if existing.id != preset.id]
         if any(existing.name.casefold() == preset.name.casefold() for existing in others):
-            raise PresetError(f"Un préréglage « {preset.name} » existe déjà.")
+            raise PresetError(t("presets.duplicate", name=preset.name))
         self._write([*others, preset])
         return preset
 
@@ -70,9 +69,7 @@ class PresetStore:
         try:
             write_json_atomically(self.path, [preset.model_dump(mode="json") for preset in presets])
         except OSError as error:
-            raise OutputWriteError(
-                "Impossible d'enregistrer les préréglages.", file=self.path
-            ) from error
+            raise OutputWriteError(t("presets.save_failed"), file=self.path) from error
 
 
 def _validate_inputs(module: AnyModule, name: str, inputs: dict[str, Any]) -> None:
@@ -80,7 +77,10 @@ def _validate_inputs(module: AnyModule, name: str, inputs: dict[str, Any]) -> No
         module.inputs_model.model_validate(inputs)
     except ValidationError as error:
         raise PresetError(
-            f"Préréglage « {name.strip()} » incomplet : "
-            f"{describe_validation_error(module.inputs_model, error)}",
-            hint="Complétez le formulaire avant de l'enregistrer.",
+            t(
+                "presets.incomplete",
+                name=name.strip(),
+                details=describe_validation_error(module.inputs_model, error),
+            ),
+            hint=t("presets.incomplete_hint"),
         ) from error

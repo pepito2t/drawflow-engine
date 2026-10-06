@@ -6,6 +6,7 @@ from typing import Any
 import engine.modules as modules_package
 from engine.core.contract import EngineModule
 from engine.core.errors import ModuleContractError, UnknownModuleError
+from engine.core.messages import t
 
 MODULE_ATTRIBUTE = "MODULE"
 AnyModule = EngineModule[Any]
@@ -24,9 +25,7 @@ def _discovered() -> tuple[tuple[str, AnyModule], ...]:
             continue
         module = _load_module(info.name)
         if module.manifest.id in found:
-            raise ModuleContractError(
-                f"Deux modules utilisent l'identifiant « {module.manifest.id} »."
-            )
+            raise ModuleContractError(t("registry.duplicate_id", module_id=module.manifest.id))
         found[module.manifest.id] = module
     return tuple(sorted(found.items(), key=lambda item: (item[1].manifest.order, item[0])))
 
@@ -34,10 +33,10 @@ def _discovered() -> tuple[tuple[str, AnyModule], ...]:
 def get_module(module_id: str) -> AnyModule:
     modules = discover_modules()
     if module_id not in modules:
-        available = ", ".join(sorted(modules)) or "aucun"
+        available = ", ".join(sorted(modules)) or t("registry.none")
         raise UnknownModuleError(
-            f"La fonctionnalité « {module_id} » n'existe pas.",
-            hint=f"Fonctionnalités disponibles : {available}.",
+            t("registry.unknown", module_id=module_id),
+            hint=t("registry.unknown_hint", available=available),
         )
     return modules[module_id]
 
@@ -47,6 +46,6 @@ def _load_module(package_name: str) -> AnyModule:
     module = getattr(package, MODULE_ATTRIBUTE, None)
     if not isinstance(module, EngineModule):
         raise ModuleContractError(
-            f"Le module « {package_name} » n'expose pas d'attribut {MODULE_ATTRIBUTE} valide."
+            t("registry.invalid_attribute", package=package_name, attribute=MODULE_ATTRIBUTE)
         )
     return module

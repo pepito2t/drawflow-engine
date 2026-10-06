@@ -7,6 +7,7 @@ import anyio
 import httpx
 
 from engine.assistant.errors import AssistantError
+from engine.setup.messages import t
 
 OPENAI_PATH_SUFFIX = "/v1"
 PULL_PATH = "/api/pull"
@@ -66,8 +67,8 @@ async def pull_model(
     ):
         if not response.is_success:
             raise AssistantError(
-                f"Ollama a refusé le téléchargement de « {model} » (HTTP {response.status_code}).",
-                hint="Vérifiez le nom du modèle sur ollama.com/library.",
+                t("ollama.pull_refused", model=model, status=response.status_code),
+                hint=t("ollama.pull_refused.hint"),
             )
         async for line in response.aiter_lines():
             if line.strip():
@@ -79,8 +80,7 @@ def _parse_update(line: str, model: str) -> dict[str, object]:
         update = json.loads(line)
     except ValueError as error:
         raise AssistantError(
-            f"Ollama a envoyé une progression illisible pour « {model} ».",
-            hint="Relancez le téléchargement ; si cela persiste, redémarrez Ollama.",
+            t("ollama.unreadable_progress", model=model), hint=t("ollama.unreadable_progress.hint")
         ) from error
     return update if isinstance(update, dict) else {}
 
@@ -88,8 +88,8 @@ def _parse_update(line: str, model: str) -> dict[str, object]:
 def _report(update: dict[str, object], model: str, on_percent: OnPercent) -> None:
     if "error" in update:
         raise AssistantError(
-            f"Téléchargement de « {model} » impossible : {update['error']}",
-            hint="Vérifiez la connexion Internet et l'espace disque, puis réessayez.",
+            t("ollama.pull_failed", model=model, error=update["error"]),
+            hint=t("ollama.pull_failed.hint"),
         )
     total, completed = update.get("total"), update.get("completed")
     status = str(update.get("status", ""))
@@ -106,7 +106,7 @@ async def installed_sizes(
     try:
         return {str(model["name"]): int(model["size"]) for model in response.json()["models"]}
     except (ValueError, KeyError, TypeError) as error:
-        raise AssistantError("Liste des modèles d'Ollama illisible.") from error
+        raise AssistantError(t("ollama.unreadable_list")) from error
 
 
 async def delete_model(
@@ -119,10 +119,8 @@ async def delete_model(
             )
         except httpx.TransportError as error:
             raise AssistantError(
-                f"Ollama ne répond pas : impossible de supprimer « {model} ».",
-                hint="Vérifiez qu'Ollama est démarré.",
+                t("ollama.delete_unreachable", model=model),
+                hint=t("ollama.delete_unreachable.hint"),
             ) from error
     if not response.is_success:
-        raise AssistantError(
-            f"Ollama n'a pas pu supprimer « {model} » (HTTP {response.status_code})."
-        )
+        raise AssistantError(t("ollama.delete_failed", model=model, status=response.status_code))

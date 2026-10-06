@@ -6,12 +6,13 @@ from pypdf.errors import FileNotDecryptedError, PdfReadError
 
 from engine.core.anomalies import Anomaly
 from engine.core.errors import EngineError
+from engine.modules.soumission.messages import t
 from engine.modules.soumission.reader import SubmissionTable, WorkbookContent, read_workbook
 from engine.modules.soumission.settings import SoumissionSettings
 
 XLSX_SUFFIX = ".xlsx"
 SOURCE_SEPARATOR = " > "
-NO_WORKBOOK_WARNING = "Aucun classeur Excel joint à ce PDF."
+NO_WORKBOOK_WARNING = t("attachments.no_workbook")
 
 
 class PdfAttachmentError(EngineError):
@@ -28,13 +29,7 @@ def read_pdf_submission(path: Path, settings: SoumissionSettings) -> WorkbookCon
         tables.extend(content.tables)
         warnings.extend(warning.within(name) for warning in content.warnings)
     if not workbooks:
-        warnings.append(
-            Anomaly(
-                NO_WORKBOOK_WARNING,
-                hint="Traitez le classeur Excel directement, ou demandez un PDF avec le "
-                "classeur joint.",
-            )
-        )
+        warnings.append(Anomaly(NO_WORKBOOK_WARNING, hint=t("attachments.no_workbook.hint")))
     return WorkbookContent(tables=tables, warnings=warnings)
 
 
@@ -53,15 +48,11 @@ def embedded_workbooks(path: Path) -> list[tuple[str, bytes]]:
         raise _protected(path) from error
     except (PdfReadError, OSError) as error:
         raise PdfAttachmentError(
-            "Le PDF est illisible ou endommagé.",
-            file=path,
-            hint="Ré-exportez la soumission en PDF depuis le logiciel d'origine.",
+            t("attachments.unreadable"), file=path, hint=t("attachments.unreadable.hint")
         ) from error
 
 
 def _protected(path: Path) -> PdfAttachmentError:
     return PdfAttachmentError(
-        "Le PDF est protégé par un mot de passe.",
-        file=path,
-        hint="Enregistrez une copie sans protection puis relancez.",
+        t("attachments.protected"), file=path, hint=t("attachments.protected.hint")
     )

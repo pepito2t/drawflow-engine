@@ -3,6 +3,7 @@ from pydantic import field_validator
 from engine.core.fields import KeyValue, mapping_field, ui_field
 from engine.core.naming import FileNameTemplate, file_name_template_field
 from engine.core.settings_models import ModuleSettings
+from engine.modules.soumission.messages import t
 
 SYNONYM_SEPARATOR = ";"
 DEFAULT_COLUMNS = [
@@ -21,21 +22,21 @@ MAX_HEADER_SEARCH_ROWS = 200
 
 class SoumissionSettings(ModuleSettings):
     columns: list[KeyValue] = mapping_field(
-        label="Colonnes normalisées",
-        key_label="Colonne exportée",
-        value_label="En-têtes reconnus (séparés par ;)",
+        label=t("settings.columns.label"),
+        key_label=t("settings.columns.key_label"),
+        value_label=t("settings.columns.value_label"),
         default=DEFAULT_COLUMNS,
-        description="L'en-tête du tableau est repéré grâce à ces libellés (sans accents ni casse).",
+        description=t("settings.columns.description"),
     )
     numeric_columns: str = ui_field(
         "text",
-        label="Colonnes numériques",
+        label=t("settings.numeric_columns.label"),
         default=DEFAULT_NUMERIC_COLUMNS,
-        description="Colonnes converties en nombres (formats 1'234.50 et 1 234,50 acceptés).",
+        description=t("settings.numeric_columns.description"),
     )
     header_search_rows: int = ui_field(
         "number",
-        label="Lignes parcourues pour trouver l'en-tête",
+        label=t("settings.header_search_rows.label"),
         default=30,
         ge=1,
         le=MAX_HEADER_SEARCH_ROWS,
@@ -47,7 +48,7 @@ class SoumissionSettings(ModuleSettings):
     def require_synonyms(cls, columns: list[KeyValue]) -> list[KeyValue]:
         for column in columns:
             if not synonyms_of(column):
-                raise ValueError(f"aucun en-tête reconnu pour « {column.key} »")
+                raise ValueError(t("settings.no_synonyms", column=column.key))
         return columns
 
     def numeric_column_names(self) -> set[str]:

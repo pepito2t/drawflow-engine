@@ -9,6 +9,7 @@ import httpx
 from engine.core.errors import EngineError
 from engine.setup.commands import CommandOutcome, CommandRunner
 from engine.setup.installer_download import DownloadProgress, download_installer
+from engine.setup.messages import t
 from engine.setup.signature import verify_signature
 
 # Unversioned name: the editor redirects it to the latest release, so it never goes stale.
@@ -23,10 +24,6 @@ MSIEXEC_FLAGS = ("/passive", "/norestart")
 MSI_SUCCESS = {0, 3010}
 MSI_CANCELLED = 1602
 MSI_ANOTHER_INSTALL_RUNNING = 1618
-DOWNLOAD_PAGE_HINT = (
-    "Cliquez sur « Page de téléchargement », installez ODA File Converter, puis sur "
-    "« Analyser à nouveau » : Drawflow le détectera."
-)
 
 
 class OdaInstallError(EngineError):
@@ -62,16 +59,12 @@ def _check(outcome: CommandOutcome) -> None:
     if outcome.return_code in MSI_SUCCESS:
         return
     if outcome.return_code == MSI_CANCELLED:
-        raise OdaInstallError(
-            "L'installation d'ODA File Converter a été annulée.",
-            hint="Relancez l'installation et acceptez la demande d'autorisation de Windows.",
-        )
+        raise OdaInstallError(t("oda_installer.cancelled"), hint=t("oda_installer.cancelled.hint"))
     if outcome.return_code == MSI_ANOTHER_INSTALL_RUNNING:
         raise OdaInstallError(
-            "Une autre installation est en cours sur ce poste.",
-            hint="Attendez qu'elle se termine, puis réessayez.",
+            t("oda_installer.another_install"), hint=t("oda_installer.another_install.hint")
         )
     raise OdaInstallError(
-        f"L'installation d'ODA File Converter a échoué (code {outcome.return_code}).",
-        hint=outcome.tail() or DOWNLOAD_PAGE_HINT,
+        t("oda_installer.failed", code=outcome.return_code),
+        hint=outcome.tail() or t("oda_installer.download_page_hint"),
     )

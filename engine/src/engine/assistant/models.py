@@ -9,6 +9,7 @@ import httpx
 
 from engine.assistant.catalog import BYTES_PER_GB, CATALOG, recommend
 from engine.assistant.errors import AssistantError
+from engine.assistant.messages import t
 from engine.core.errors import InvalidInputError
 from engine.core.events import Emit, ProgressEvent, ResultEvent
 from engine.core.settings import load_assistant_settings
@@ -18,10 +19,7 @@ from engine.setup.ollama import delete_model, installed_sizes, is_ollama, pull_m
 # Ollama names: "family[:tag]", optionally prefixed by a namespace ("user/model").
 MODEL_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)?(:[a-z0-9][a-z0-9._-]*)?$")
 PERCENT = 100
-NOT_OLLAMA_HINT = (
-    "Le téléchargement passe par Ollama. Avec LM Studio, téléchargez le modèle depuis "
-    "LM Studio puis choisissez-le dans le panneau de l'assistant."
-)
+NOT_OLLAMA_HINT = t("models.not_ollama_hint")
 
 
 def catalog(
@@ -78,11 +76,11 @@ def pull(
 
     async def download() -> None:
         if not await is_ollama(url, transport):
-            raise AssistantError("Ollama ne répond pas.", hint=NOT_OLLAMA_HINT)
+            raise AssistantError(t("models.ollama_not_responding"), hint=NOT_OLLAMA_HINT)
         await pull_model(url, name, on_percent, transport)
 
     anyio.run(download)
-    emit(ResultEvent(summary=f"Modèle {name} téléchargé."))
+    emit(ResultEvent(summary=t("models.downloaded", model=name)))
 
 
 def remove(
@@ -104,7 +102,6 @@ def _valid_name(model: str) -> str:
     name = model.strip().lower()
     if not MODEL_NAME.fullmatch(name):
         raise InvalidInputError(
-            f"« {model} » n'est pas un nom de modèle valide.",
-            hint="Exemple : qwen3.5:9b (voir ollama.com/library).",
+            t("models.invalid_name", model=model), hint=t("models.invalid_name.hint")
         )
     return name

@@ -1,21 +1,35 @@
 from engine.core.contract import ModuleManifest
+from engine.modules.pdf_report.messages import t
 
 TAB_ORDER = 20
+PROJECT_TAG = "{{ projet }}"
+DATE_TAG = "{{ date }}"
+PLANS_LOOP_TAG = "{%p for plan in plans %}"
+FILE_TAG = "{{ plan.fichier }}"
+REFERENCES_TAG = "{{ plan.references }}"
+EXAMPLE_FIELD_TAG = "{{ plan.indice }}"
 
 MANIFEST = ModuleManifest(
     id="pdf-report",
-    name="Rapport",
-    description="Relève le cartouche et les références des plans PDF et génère un rapport Word.",
+    name=t("manifest.name"),
+    description=t("manifest.description"),
     version="0.1.0",
     order=TAB_ORDER,
     icon="report",
     template_kind="docx",
     instructions=[
-        "Ajoutez des plans PDF et/ou des dossiers de plans (Parcourir ou glisser-déposer).",
-        "Indiquez le nom du projet et, si besoin, un modèle Word à balises.",
-        "Choisissez le dossier de sortie puis cliquez sur « Lancer ».",
-        "Zone du cartouche, champs relevés et nom du fichier se règlent dans Paramètres → Rapport.",
-        "Balises du modèle : {{ projet }}, {{ date }}, boucle {%p for plan in plans %} "
-        "avec {{ plan.fichier }}, {{ plan.references }} et chaque champ (ex. {{ plan.indice }}).",
+        t("manifest.instructions.sources"),
+        t("manifest.instructions.project"),
+        t("manifest.instructions.run"),
+        t("manifest.instructions.settings"),
+        t(
+            "manifest.instructions.tags",
+            project=PROJECT_TAG,
+            date=DATE_TAG,
+            loop=PLANS_LOOP_TAG,
+            file=FILE_TAG,
+            references=REFERENCES_TAG,
+            example=EXAMPLE_FIELD_TAG,
+        ),
     ],
 )

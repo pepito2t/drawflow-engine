@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from engine.assistant.messages import t
+
 MAX_MESSAGE_LENGTH = 20_000
 MAX_HISTORY_MESSAGES = 40
 
@@ -21,7 +23,7 @@ class ChatRequest(BaseModel):
     @model_validator(mode="after")
     def _ends_with_the_user_question(self) -> "ChatRequest":
         if self.messages[-1].role != "user":
-            raise ValueError("le dernier message doit venir de l'utilisateur")
+            raise ValueError(t("conversation.last_message_not_user"))
         return self
 
     def recent_history(self) -> list[ChatMessage]:

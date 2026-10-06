@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from engine.core.fields import ui_field
+from engine.core.messages import t
 
 DEFAULT_BATCH_SIZE = 4
 MAX_BATCH_SIZE = 32
@@ -37,56 +38,48 @@ class ModuleSettings(SettingsSection):
 class GeneralSettings(SettingsSection):
     language: Language = ui_field(
         "enum",
-        label="Langue / Language",
+        label=t("general.language.label"),
         default=DEFAULT_LANGUAGE,
-        description="fr : français · en : English.",
+        description=t("general.language.description"),
     )
     oda_converter_path: Path | None = ui_field(
         "file",
-        label="ODA File Converter",
+        label=t("general.oda_converter_path.label"),
         default=None,
-        description="Chemin de ODAFileConverter.exe, nécessaire pour lire les fichiers DWG.",
+        description=t("general.oda_converter_path.description"),
     )
     cache_folder: Path | None = ui_field(
         "folder",
-        label="Dossier de cache",
+        label=t("general.cache_folder.label"),
         default=None,
-        description="Laisser vide pour utiliser le dossier de cache de l'application.",
+        description=t("general.cache_folder.description"),
     )
     batch_size: int = ui_field(
         "number",
-        label="Fichiers traités en parallèle",
+        label=t("general.batch_size.label"),
         default=DEFAULT_BATCH_SIZE,
         ge=1,
         le=MAX_BATCH_SIZE,
     )
     notification_threshold_seconds: int = ui_field(
         "number",
-        label="Notifier après (secondes)",
+        label=t("general.notification_threshold_seconds.label"),
         default=DEFAULT_NOTIFICATION_THRESHOLD_SECONDS,
-        description=(
-            "Une notification système signale la fin des traitements plus longs que cette durée, "
-            "ou de tout traitement terminé pendant que l'application est en arrière-plan."
-        ),
+        description=t("general.notification_threshold_seconds.description"),
         ge=0,
         le=MAX_NOTIFICATION_THRESHOLD_SECONDS,
     )
     usage_counters: bool = ui_field(
         "bool",
-        label="Compteurs d'utilisation",
+        label=t("general.usage_counters.label"),
         default=True,
-        description=(
-            "Compte les traitements et fichiers sur ce poste (Paramètres → À propos). "
-            "Rien n'est envoyé."
-        ),
+        description=t("general.usage_counters.description"),
     )
     minutes_saved_per_file: int = ui_field(
         "number",
-        label="Minutes gagnées par fichier",
+        label=t("general.minutes_saved_per_file.label"),
         default=DEFAULT_MINUTES_SAVED_PER_FILE,
-        description=(
-            "Estimation utilisée par les compteurs : temps manuel évité pour chaque fichier traité."
-        ),
+        description=t("general.minutes_saved_per_file.description"),
         ge=0,
         le=MAX_MINUTES_SAVED_PER_FILE,
     )
@@ -95,18 +88,15 @@ class GeneralSettings(SettingsSection):
 class AssistantSettings(SettingsSection):
     model_server_url: str = ui_field(
         "text",
-        label="Serveur du modèle",
+        label=t("assistant.model_server_url.label"),
         default=DEFAULT_MODEL_SERVER_URL,
-        description=(
-            "Adresse de l'API compatible OpenAI du modèle local (Ollama, LM Studio, llama.cpp). "
-            "Elle doit désigner ce poste : aucune donnée ne quitte la machine."
-        ),
+        description=t("assistant.model_server_url.description"),
     )
     model: str = ui_field(
         "text",
-        label="Modèle",
+        label=t("assistant.model.label"),
         default=DEFAULT_MODEL_NAME,
-        description="Nom du modèle installé, par exemple qwen3.5:9b pour Ollama.",
+        description=t("assistant.model.description"),
         min_length=1,
     )
 
@@ -115,9 +105,7 @@ class AssistantSettings(SettingsSection):
     def _must_stay_on_this_computer(cls, url: str) -> str:
         parts = urlsplit(url.strip())
         if parts.scheme not in WEB_SCHEMES or not _is_loopback(parts.hostname):
-            raise ValueError(
-                "l'adresse doit commencer par http:// et désigner ce poste (localhost ou 127.0.0.1)"
-            )
+            raise ValueError(t("assistant.model_server_url.invalid"))
         return url.strip().rstrip("/")
 
 
@@ -135,40 +123,35 @@ def _is_loopback(host: str | None) -> bool:
 class MailSettings(SettingsSection):
     client_id: str = ui_field(
         "text",
-        label="Identifiant d'application (Entra ID)",
+        label=t("mail.client_id.label"),
         default="",
-        description=(
-            "Client ID de l'application inscrite dans Microsoft Entra ID pour lire la boîte "
-            "Exchange / Microsoft 365. Vide : la fonctionnalité Courriels est désactivée."
-        ),
+        description=t("mail.client_id.description"),
     )
     tenant: str = ui_field(
         "text",
-        label="Tenant",
+        label=t("mail.tenant.label"),
         default=DEFAULT_MAIL_TENANT,
-        description="« common » pour tout compte professionnel, ou l'identifiant du tenant.",
+        description=t("mail.tenant.description"),
         min_length=1,
     )
     local_folder: Path | None = ui_field(
         "folder",
-        label="Dossier des conversations",
+        label=t("mail.local_folder.label"),
         default=None,
-        description=(
-            "Laisser vide pour conserver les conversations dans le dossier de l'application."
-        ),
+        description=t("mail.local_folder.description"),
     )
     lookback_days: int = ui_field(
         "number",
-        label="Récupérer les messages des derniers (jours)",
+        label=t("mail.lookback_days.label"),
         default=DEFAULT_MAIL_LOOKBACK_DAYS,
         ge=1,
         le=MAX_MAIL_LOOKBACK_DAYS,
     )
     max_conversations: int = ui_field(
         "number",
-        label="Conversations conservées au maximum",
+        label=t("mail.max_conversations.label"),
         default=DEFAULT_MAX_CONVERSATIONS,
-        description="Au-delà, les conversations les plus anciennes sont retirées du dossier local.",
+        description=t("mail.max_conversations.description"),
         ge=1,
         le=MAX_CONVERSATIONS,
     )

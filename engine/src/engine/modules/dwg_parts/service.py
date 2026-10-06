@@ -1,16 +1,16 @@
 from collections.abc import Sequence
 
 from engine.core.events import TableEvent, TableRow
+from engine.modules.dwg_parts.messages import t
 from engine.parts.aggregation import PartLine
 from engine.parts.listing import PartsList
 
 DOCUMENT_TYPE = "liste-pieces"
-PROJECT_HEADER = "Projet"
-FILES_PROJECT = "Fichiers"
-QUANTITY_HEADER = "Quantité"
-SOURCES_HEADER = "Plans"
+PROJECT_HEADER = t("service.project_header")
+FILES_PROJECT = t("service.files_project")
+QUANTITY_HEADER = t("service.quantity_header")
+SOURCES_HEADER = t("service.sources_header")
 PREVIEW_MAX_ROWS = 500
-EMPTY_CELL_ISSUE = "Colonne « {column} » vide"
 
 
 def preview_table(parts_list: PartsList) -> TableEvent:
@@ -19,7 +19,7 @@ def preview_table(parts_list: PartsList) -> TableEvent:
         TableRow(
             cells=[*line.values, _quantity_text(line.quantity), ", ".join(line.sources)],
             issues=[
-                EMPTY_CELL_ISSUE.format(column=column)
+                t("service.empty_cell", column=column)
                 for column, value in zip(parts_list.headers, line.values, strict=True)
                 if not value.strip()
             ],
@@ -37,7 +37,7 @@ def _quantity_text(value: float) -> str:
 def describe_result(parts_list: PartsList, read: int, total: int) -> str:
     quantity = parts_list.total_quantity
     pieces = int(quantity) if float(quantity).is_integer() else round(quantity, 2)
-    return f"{len(parts_list.lines)} ligne(s), {pieces} pièce(s), {read}/{total} plan(s) lu(s)"
+    return t("service.summary", lines=len(parts_list.lines), pieces=pieces, read=read, total=total)
 
 
 def merge_projects(lists: Sequence[tuple[str, PartsList]]) -> PartsList:
