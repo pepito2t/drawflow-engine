@@ -51,6 +51,10 @@ En cas de souci : [Dépannage](#dépannage).
 
 Vous pouvez changer d'onglet ou lancer une autre fonctionnalité pendant un traitement. L'icône **Traitements** (à côté de la roue) montre ceux en cours ; **Annuler** arrête un traitement. Un message signale la fin, et une notification Windows si le traitement a été long ou si Drawflow était en arrière-plan.
 
+### Historique
+
+L'onglet **Historique** liste les derniers traitements (200 au plus) : date, durée, résultat ou erreur, nombre d'avertissements. **Ouvrir le résultat** ouvre le dernier fichier produit ; **Relancer** recharge les mêmes fichiers et relance ; **×** retire une ligne. Commandes `history.open` et `history.rerun` pour le Stream Dock et l'assistant.
+
 ### Adapter une fonctionnalité à votre norme
 
 Chaque fonctionnalité a sa catégorie dans les Paramètres :
@@ -110,7 +114,7 @@ Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **
 
 | Contenu | Emplacement (Windows) |
 |---|---|
-| Paramètres, préréglages, modèles importés, code d'accès, intégrations | `%APPDATA%\ch.drawflow.desktop\` |
+| Paramètres, préréglages, historique des traitements, modèles importés, code d'accès, intégrations | `%APPDATA%\ch.drawflow.desktop\` |
 | Journaux de diagnostic (`engine.log`) | `%APPDATA%\ch.drawflow.desktop\logs\` |
 | Cache des plans DWG convertis | `%LOCALAPPDATA%\drawflow\cache\` (modifiable dans Paramètres → Général) |
 

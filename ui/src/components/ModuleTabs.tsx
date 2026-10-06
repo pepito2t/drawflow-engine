@@ -6,16 +6,23 @@ import type { RunStatus } from "../lib/run-state";
 import { ModuleIconView } from "./ModuleIconView";
 import { Spinner } from "./Spinner";
 
+export interface ExtraTab {
+  id: string;
+  label: string;
+  icon: ReactNode;
+}
+
 interface ModuleTabsProps {
   modules: CatalogModule[];
+  extraTabs: ExtraTab[];
   selectedId: string | null;
-  onSelect: (moduleId: string) => void;
+  onSelect: (tabId: string) => void;
   footer: ReactNode;
 }
 
 export const tabPanelId = (moduleId: string) => `panel-${moduleId}`;
 
-export function ModuleTabs({ modules, selectedId, onSelect, footer }: ModuleTabsProps) {
+export function ModuleTabs({ modules, extraTabs, selectedId, onSelect, footer }: ModuleTabsProps) {
   const { state } = useRunsStore();
 
   return (
@@ -49,6 +56,26 @@ export function ModuleTabs({ modules, selectedId, onSelect, footer }: ModuleTabs
             </button>
           );
         })}
+        {extraTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={tab.id === selectedId}
+            aria-controls={tabPanelId(tab.id)}
+            className={
+              tab.id === selectedId ? "side-tab selected side-tab-extra" : "side-tab side-tab-extra"
+            }
+            onClick={() => {
+              onSelect(tab.id);
+            }}
+          >
+            <span className="side-tab-label">
+              {tab.icon}
+              {tab.label}
+            </span>
+          </button>
+        ))}
       </nav>
       <div className="sidebar-footer">{footer}</div>
     </aside>

@@ -31,7 +31,10 @@ export type EngineRequestName =
   | "assistant.catalog"
   | "assistant.model-delete"
   | "help.guide"
-  | "setup.scan";
+  | "setup.scan"
+  | "history.list"
+  | "history.remove"
+  | "history.clear";
 
 export async function engineRequest(
   request: EngineRequestName,

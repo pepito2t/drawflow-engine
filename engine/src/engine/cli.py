@@ -12,6 +12,7 @@ from engine.core.diagnostics import record_failure
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ErrorEvent, make_stream_emitter
 from engine.core.guide import sections as guide_sections
+from engine.core.history import HISTORY_ACTIONS, HistoryStore, handle_history, run_with_history
 from engine.core.registry import discover_modules, get_module
 from engine.core.runner import read_input_file, run_module
 from engine.core.settings import describe_settings, load_run_settings, save_settings
@@ -87,6 +88,11 @@ def _build_parser() -> argparse.ArgumentParser:
     for action, help_text in PRESET_ACTIONS.items():
         _add_request_parser(presets_commands, action, help_text)
 
+    history_parser = commands.add_parser("history", help="Historique des traitements.")
+    history_commands = history_parser.add_subparsers(dest="history_command", required=True)
+    for action, help_text in HISTORY_ACTIONS.items():
+        _add_request_parser(history_commands, action, help_text)
+
     mcp_parser = commands.add_parser("mcp", help="Serveur MCP de l'assistant (stdio).")
     mcp_parser.add_argument("--settings", type=Path, required=True)
 
@@ -139,6 +145,10 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
         _setup(arguments, emit)
     elif arguments.command == "help":
         _write_json({"sections": [asdict(section) for section in guide_sections()]})
+    elif arguments.command == "history":
+        _write_json(
+            handle_history(arguments.history_command, arguments.settings, _request(arguments))
+        )
     elif arguments.command == "presets":
         _write_json(
             handle_presets(arguments.presets_command, arguments.settings, _request(arguments))
@@ -166,7 +176,15 @@ def _run(arguments: argparse.Namespace, emit: Emit) -> None:
     default_template = None
     if arguments.settings is not None and module.manifest.template_kind is not None:
         default_template = TemplateLibrary(arguments.settings).default_for(module.manifest.id)
-    run_module(module, read_input_file(arguments.input), settings, emit, default_template)
+    raw_inputs = read_input_file(arguments.input)
+    history = HistoryStore(arguments.settings) if arguments.settings is not None else None
+    run_with_history(
+        history,
+        module,
+        raw_inputs,
+        emit,
+        lambda observed: run_module(module, raw_inputs, settings, observed, default_template),
+    )
 
 
 # The MCP SDK costs ~200 ms to import: only the commands that need it pay for it.

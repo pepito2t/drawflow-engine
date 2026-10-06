@@ -3,6 +3,7 @@ import type { CatalogModule } from "../lib/catalog";
 import { COMMANDS } from "../lib/commands";
 import { entryFor, runningModuleIds } from "../lib/runs-store";
 import { cancelRun } from "../lib/tauri/engine";
+import { listHistory } from "../lib/tauri/history";
 import { bringToFront, openOutput } from "../lib/tauri/window";
 import { AI_MODELS_TAB_ID, SETUP_TAB_ID } from "../lib/setup";
 import { useCommand } from "./command-registry";
@@ -16,6 +17,7 @@ interface AppCommandTargets {
   openSettings: (tab?: string) => void;
   toggleAssistant: () => void;
   openHelp: (topic?: string) => void;
+  openHistory: () => void;
 }
 
 /** Registers the app-level commands shared by the UI, the Stream Dock and future integrations. */
@@ -25,6 +27,7 @@ export function useAppCommands({
   openSettings,
   toggleAssistant,
   openHelp,
+  openHistory,
 }: AppCommandTargets): void {
   const { state, dispatch } = useRunsStore();
   const { presets } = usePresets();
@@ -100,6 +103,20 @@ export function useAppCommands({
     await openOutput(lastOutput.current);
   }, []);
   useCommand(COMMANDS.openLastResult, openLastResult);
+
+  useCommand(COMMANDS.openHistory, openHistory);
+
+  const rerunHistory = useCallback(
+    async ({ entryId }: { entryId: string }) => {
+      const entry = (await listHistory()).find((candidate) => candidate.id === entryId);
+      if (!entry) {
+        throw new Error("Ce traitement n'est plus dans l'historique.");
+      }
+      await runFeature({ moduleId: entry.module, inputs: entry.inputs });
+    },
+    [runFeature],
+  );
+  useCommand(COMMANDS.rerunHistory, rerunHistory);
 
   const appState = useCallback(
     () => ({
