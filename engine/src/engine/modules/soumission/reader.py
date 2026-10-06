@@ -8,6 +8,7 @@ from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl.workbook.workbook import Workbook
 
+from engine.core.anomalies import Anomaly
 from engine.core.errors import EngineError
 from engine.core.fields import KeyValue
 from engine.core.text import fold
@@ -38,7 +39,7 @@ class SubmissionTable:
 @dataclass(frozen=True)
 class WorkbookContent:
     tables: list[SubmissionTable] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
+    warnings: list[Anomaly] = field(default_factory=list)
 
 
 def read_workbook(
@@ -47,7 +48,7 @@ def read_workbook(
     workbook = _open(stream, source)
     try:
         tables: list[SubmissionTable] = []
-        warnings: list[str] = []
+        warnings: list[Anomaly] = []
         for sheet in workbook.worksheets:
             rows = list(sheet.iter_rows(values_only=True))
             table, sheet_warnings = _read_sheet(rows, sheet.title, source, settings)
@@ -57,7 +58,13 @@ def read_workbook(
     finally:
         workbook.close()
     if not tables:
-        warnings.append("Aucun tableau de soumission reconnu (en-têtes introuvables).")
+        warnings.append(
+            Anomaly(
+                "Aucun tableau de soumission reconnu (en-têtes introuvables).",
+                hint="Ajoutez les en-têtes de ce fichier aux synonymes de colonnes dans "
+                "Paramètres → Soumission.",
+            )
+        )
     return WorkbookContent(tables=tables, warnings=warnings)
 
 
@@ -74,7 +81,7 @@ def _open(stream: Path | IO[bytes], source: str) -> Workbook:
 
 def _read_sheet(
     rows: Sequence[Sequence[object]], title: str, source: str, settings: SoumissionSettings
-) -> tuple[SubmissionTable | None, list[str]]:
+) -> tuple[SubmissionTable | None, list[Anomaly]]:
     header = _find_header(rows, settings)
     if header is None:
         return None, []
@@ -90,7 +97,13 @@ def _read_sheet(
     table = SubmissionTable(source, title, parsed)
     if not unreadable:
         return table, []
-    return table, [f"Feuille « {title} » : {unreadable} montant(s) illisible(s) gardé(s) en texte."]
+    return table, [
+        Anomaly(
+            f"{unreadable} montant(s) illisible(s) gardé(s) en texte.",
+            location=f"feuille « {title} »",
+            hint="Vérifiez les colonnes converties en nombres dans Paramètres → Soumission.",
+        )
+    ]
 
 
 def _find_header(

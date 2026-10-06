@@ -86,9 +86,9 @@ def _collect[ResultT](
 
 def _report_failure(path: Path, error: Exception, emit: Emit) -> BatchFailure:
     if isinstance(error, EngineError):
-        message = error.message if error.hint is None else f"{error.message} {error.hint}"
+        message, hint = error.message, error.hint
     else:
         traceback.print_exception(error, file=sys.stderr)
-        message = UNEXPECTED_ITEM_ERROR
-    emit(WarningEvent(message=message, file=str(path)))
+        message, hint = UNEXPECTED_ITEM_ERROR, "Consultez les journaux (Paramètres → Installation)."
+    emit(WarningEvent(message=message, file=str(path), hint=hint))
     return BatchFailure(path=path, message=message)

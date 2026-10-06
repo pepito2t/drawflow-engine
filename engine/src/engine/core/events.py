@@ -25,6 +25,8 @@ class WarningEvent(_BaseEvent):
     type: Literal["warning"] = "warning"
     message: str
     file: str | None = None
+    location: str | None = None
+    hint: str | None = None
 
 
 class ResultEvent(_BaseEvent):

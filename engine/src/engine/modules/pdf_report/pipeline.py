@@ -2,11 +2,12 @@ from datetime import datetime
 from functools import partial
 from pathlib import Path
 
+from engine.core.anomalies import emit_anomalies
 from engine.core.batch import process_batch
 from engine.core.collect import collect_files
 from engine.core.contract import ModuleResult, RunContext
 from engine.core.errors import EngineError
-from engine.core.events import LogEvent, WarningEvent
+from engine.core.events import LogEvent
 from engine.core.naming import naming_values, output_target, writing_output
 from engine.modules.pdf_report.docx_render import render_report
 from engine.modules.pdf_report.report import PlanData, build_context
@@ -54,8 +55,7 @@ def run_report(inputs: PdfReportInputs, context: RunContext, moment: datetime) -
 
 def _plan_data(results: list[tuple[Path, PlanExtraction]], context: RunContext) -> list[PlanData]:
     for path, extraction in results:
-        for warning in extraction.warnings:
-            context.emit(WarningEvent(message=warning, file=str(path)))
+        emit_anomalies(context.emit, extraction.warnings, path)
     return [extraction.plan for _, extraction in results]
 
 

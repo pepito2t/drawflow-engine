@@ -9,6 +9,7 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
   file: string | null;
+  location: string | null;
   hint: string | null;
 }
 
@@ -73,7 +74,14 @@ function applyEvent(state: RunState, event: EngineEvent): RunState {
     case "log":
       return appendLog(state, "info", event.message);
     case "warning":
-      return appendLog(state, "warning", event.message, event.file);
+      return appendLog(
+        state,
+        "warning",
+        event.message,
+        event.file,
+        event.hint ?? null,
+        event.location ?? null,
+      );
     case "error":
       return appendLog(state, "error", event.message, event.file, event.hint);
     case "result":
@@ -105,7 +113,8 @@ function appendLog(
   message: string,
   file: string | null = null,
   hint: string | null = null,
+  location: string | null = null,
 ): RunState {
-  const entry: LogEntry = { id: state.log.length, level, message, file, hint };
+  const entry: LogEntry = { id: state.log.length, level, message, file, location, hint };
   return { ...state, log: [...state.log, entry] };
 }

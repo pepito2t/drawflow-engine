@@ -31,7 +31,10 @@ def test_unreadable_amounts_stay_as_text_with_a_warning() -> None:
 
     assert content.tables[0].rows[2]["Quantité"] == "forfait"
     assert content.tables[0].rows[2]["Prix unitaire"] == 2000.0
-    assert content.warnings == ["Feuille « Offre » : 1 montant(s) illisible(s) gardé(s) en texte."]
+    [warning] = content.warnings
+    assert warning.message == "1 montant(s) illisible(s) gardé(s) en texte."
+    assert warning.location == "feuille « Offre »"
+    assert warning.hint is not None
 
 
 def test_header_beyond_the_search_window_is_not_found() -> None:
@@ -42,7 +45,7 @@ def test_header_beyond_the_search_window_is_not_found() -> None:
     )
 
     assert content.tables == []
-    assert "Aucun tableau" in content.warnings[-1]
+    assert "Aucun tableau" in content.warnings[-1].message
 
 
 def test_unreadable_workbook_is_reported(tmp_path: Path) -> None:

@@ -130,9 +130,23 @@ function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps) {
       </div>
       <span className="history-summary">{entry.error ?? entry.summary}</span>
       {entry.warnings.length > 0 && (
-        <span className="muted">
-          {String(entry.warnings.length)} avertissement{entry.warnings.length > 1 ? "s" : ""}
-        </span>
+        <details className="history-warnings">
+          <summary className="muted">
+            {String(entry.warnings.length)} avertissement{entry.warnings.length > 1 ? "s" : ""}
+          </summary>
+          <ul>
+            {entry.warnings.map((warning, index) => (
+              <li key={index}>
+                <span>
+                  {warning.location && <span className="anomaly-location">{warning.location}</span>}
+                  {warning.message}
+                </span>
+                {warning.file && <span className="log-meta">{warning.file}</span>}
+                {warning.hint && <span className="log-meta">{warning.hint}</span>}
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
       <div className="history-actions">
         {output !== null && (

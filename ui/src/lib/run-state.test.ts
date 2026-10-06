@@ -40,8 +40,34 @@ describe("runReducer", () => {
 
     expect(state.status).toBe("failed");
     expect(state.log).toEqual([
-      { id: 0, level: "error", message: "Fichier illisible", file: "a.dwg", hint: "Réessayez" },
+      {
+        id: 0,
+        level: "error",
+        message: "Fichier illisible",
+        file: "a.dwg",
+        location: null,
+        hint: "Réessayez",
+      },
     ]);
+  });
+
+  it("keeps where a warning is and what to do about it", () => {
+    const state = reduce([
+      { type: "started" },
+      stdout({
+        type: "warning",
+        message: "Champs introuvables : REF.",
+        file: "a.pdf",
+        location: "cartouche",
+        hint: "Vérifiez la zone du cartouche.",
+      }),
+    ]);
+
+    expect(state.log[0]).toMatchObject({
+      level: "warning",
+      location: "cartouche",
+      hint: "Vérifiez la zone du cartouche.",
+    });
   });
 
   it("adds a generic error when the engine exits abnormally without explanation", () => {

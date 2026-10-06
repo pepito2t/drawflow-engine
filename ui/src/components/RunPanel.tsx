@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { anomaliesAsText, groupAnomalies, type AnomalyGroup } from "../lib/anomalies";
 import { STATUS_LABELS } from "../lib/run-labels";
 import type { LogEntry, RunState } from "../lib/run-state";
 import { ErrorPanel } from "./ErrorPanel";
@@ -31,7 +33,10 @@ export function RunPanel({ state, onStart, onCancel }: RunPanelProps) {
       </div>
       {isRunning && <RunProgress state={state} />}
       <RunOutcome state={state} />
-      {state.log.length > 0 && <RunLog entries={state.log} />}
+      {!isRunning && <AnomaliesReport groups={groupAnomalies(state.log)} />}
+      {state.log.length > 0 && (
+        <RunLog entries={state.log.filter((entry) => entry.level !== "warning")} />
+      )}
     </section>
   );
 }
@@ -82,6 +87,60 @@ function RunOutcome({ state }: { state: RunState }) {
         </ul>
       )}
     </div>
+  );
+}
+
+const COPIED_FEEDBACK_MS = 1500;
+
+/** Every anomaly of the run, by file: what is off, where, and what to do. */
+function AnomaliesReport({ groups }: { groups: AnomalyGroup[] }) {
+  const [copied, setCopied] = useState(false);
+  const count = groups.reduce((total, group) => total + group.items.length, 0);
+  if (count === 0) {
+    return null;
+  }
+  const copy = () => {
+    navigator.clipboard
+      .writeText(anomaliesAsText(groups))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => {
+          setCopied(false);
+        }, COPIED_FEEDBACK_MS);
+      })
+      .catch((error: unknown) => {
+        console.error("Avertissements non copiés :", error);
+      });
+  };
+  return (
+    <section className="anomalies" aria-label="Avertissements">
+      <div className="anomalies-header">
+        <strong>
+          {String(count)} avertissement{count > 1 ? "s" : ""} à vérifier
+        </strong>
+        <button type="button" onClick={copy}>
+          {copied ? "Copié" : "Copier"}
+        </button>
+      </div>
+      {groups.map((group) => (
+        <div key={group.file ?? ""} className="anomalies-group">
+          <span className="anomalies-file" title={group.file ?? undefined}>
+            {group.fileName}
+          </span>
+          <ul>
+            {group.items.map((item) => (
+              <li key={item.id}>
+                <span>
+                  {item.location && <span className="anomaly-location">{item.location}</span>}
+                  {item.message}
+                </span>
+                {item.hint && <span className="log-meta">{item.hint}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </section>
   );
 }
 

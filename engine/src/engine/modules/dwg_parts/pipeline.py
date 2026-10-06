@@ -2,11 +2,12 @@ from datetime import datetime
 from functools import partial
 from pathlib import Path
 
+from engine.core.anomalies import emit_anomalies
 from engine.core.batch import process_batch
 from engine.core.cache import resolve_cache_root
 from engine.core.contract import ModuleResult, RunContext
 from engine.core.errors import EngineError
-from engine.core.events import LogEvent, WarningEvent
+from engine.core.events import LogEvent
 from engine.core.naming import naming_values, output_target, writing_output
 from engine.modules.dwg_parts.collect import collect_plans
 from engine.modules.dwg_parts.export import export_parts
@@ -39,8 +40,7 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
             "Aucun plan n'a pu être lu.", hint="Consultez les avertissements du journal."
         )
     parts_list = build_parts_list(_flatten(outcome.results, context), settings)
-    for warning in parts_list.warnings:
-        emit(WarningEvent(message=warning))
+    emit_anomalies(emit, parts_list.warnings, None)
     target = _target(inputs, settings, plans, moment)
     emit(LogEvent(message=f"Écriture de {target.name}"))
     with writing_output(target):
@@ -52,8 +52,7 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
 def _flatten(results: list[tuple[Path, FileExtraction]], context: RunContext) -> list[RawPart]:
     parts: list[RawPart] = []
     for path, extraction in results:
-        for warning in extraction.warnings:
-            context.emit(WarningEvent(message=warning, file=str(path)))
+        emit_anomalies(context.emit, extraction.warnings, path)
         parts.extend(extraction.parts)
     return parts
 

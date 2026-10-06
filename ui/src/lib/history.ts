@@ -2,6 +2,29 @@ import { z } from "zod";
 import { CatalogError } from "./catalog";
 import { parseJsonOrNull } from "./json";
 
+const historyWarningSchema = z
+  .union([
+    z.string(),
+    z.object({
+      message: z.string(),
+      file: z.string().nullable().optional(),
+      location: z.string().nullable().optional(),
+      hint: z.string().nullable().optional(),
+    }),
+  ])
+  .transform((raw) =>
+    typeof raw === "string"
+      ? { message: raw, file: null, location: null, hint: null }
+      : {
+          message: raw.message,
+          file: raw.file ?? null,
+          location: raw.location ?? null,
+          hint: raw.hint ?? null,
+        },
+  );
+
+export type HistoryWarning = z.infer<typeof historyWarningSchema>;
+
 const historyEntrySchema = z.object({
   id: z.string(),
   started_at: z.string(),
@@ -11,7 +34,7 @@ const historyEntrySchema = z.object({
   status: z.enum(["succeeded", "failed"]),
   summary: z.string(),
   outputs: z.array(z.string()),
-  warnings: z.array(z.string()),
+  warnings: z.array(historyWarningSchema),
   error: z.string().nullable(),
   duration_ms: z.number(),
 });

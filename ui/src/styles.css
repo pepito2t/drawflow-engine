@@ -1362,3 +1362,66 @@ small {
   border-radius: 0;
   padding-top: 10px;
 }
+
+/* Anomalies of a run */
+
+.anomalies {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius);
+  background: rgb(229 170 69 / 8%);
+}
+
+.anomalies-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.anomalies-header strong {
+  color: var(--color-warning);
+}
+
+.anomalies-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.anomalies-file {
+  font-weight: 600;
+}
+
+.anomalies-group ul,
+.history-warnings ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  max-width: 72ch;
+}
+
+.anomalies-group li,
+.history-warnings li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.anomaly-location {
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-surface-hover);
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.history-warnings summary {
+  cursor: pointer;
+}

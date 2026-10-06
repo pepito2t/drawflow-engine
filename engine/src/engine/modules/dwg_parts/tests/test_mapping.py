@@ -49,7 +49,9 @@ def test_missing_attributes_are_empty_and_reported_once_per_tag() -> None:
     outcome = map_parts([part("A", REF="1"), part("B", REF="2")], settings())
 
     assert outcome.parts[0].values == ("1", "")
-    assert outcome.warnings == ["Attribut « LONGUEUR » absent sur 2 blocs (cellule laissée vide)."]
+    [warning] = outcome.warnings
+    assert warning.message == "Attribut « LONGUEUR » absent sur 2 blocs (cellule laissée vide)."
+    assert warning.hint is not None and "LONGUEUR" in warning.hint
 
 
 def test_quantity_attribute_and_minsert_count_multiply() -> None:
@@ -62,7 +64,7 @@ def test_unreadable_quantity_counts_one_and_warns() -> None:
     outcome = map_parts([part("A", REF="1", LONGUEUR="5", QTE="beaucoup")], settings())
 
     assert outcome.parts[0].quantity == 1.0
-    assert "illisible" in outcome.warnings[-1]
+    assert "illisible" in outcome.warnings[-1].message
 
 
 def test_tags_are_normalized_to_upper_case() -> None:

@@ -4,6 +4,7 @@ from pathlib import Path
 from pypdf import PdfReader
 from pypdf.errors import FileNotDecryptedError, PdfReadError
 
+from engine.core.anomalies import Anomaly
 from engine.core.errors import EngineError
 from engine.modules.soumission.reader import SubmissionTable, WorkbookContent, read_workbook
 from engine.modules.soumission.settings import SoumissionSettings
@@ -20,14 +21,20 @@ class PdfAttachmentError(EngineError):
 def read_pdf_submission(path: Path, settings: SoumissionSettings) -> WorkbookContent:
     """Reads every .xlsx embedded in the PDF as if it were a standalone workbook."""
     tables: list[SubmissionTable] = []
-    warnings: list[str] = []
+    warnings: list[Anomaly] = []
     workbooks = _embedded_workbooks(path)
     for name, data in workbooks:
         content = read_workbook(BytesIO(data), f"{path.name}{SOURCE_SEPARATOR}{name}", settings)
         tables.extend(content.tables)
-        warnings.extend(f"{name} : {warning}" for warning in content.warnings)
+        warnings.extend(warning.within(name) for warning in content.warnings)
     if not workbooks:
-        warnings.append(NO_WORKBOOK_WARNING)
+        warnings.append(
+            Anomaly(
+                NO_WORKBOOK_WARNING,
+                hint="Traitez le classeur Excel directement, ou demandez un PDF avec le "
+                "classeur joint.",
+            )
+        )
     return WorkbookContent(tables=tables, warnings=warnings)
 
 

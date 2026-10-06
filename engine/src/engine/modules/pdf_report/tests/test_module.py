@@ -81,4 +81,5 @@ def test_scanned_pdf_is_flagged(tmp_path: Path) -> None:
     warnings = [event for event in events if event["type"] == "warning"]
     assert warnings[0]["file"] == str(scan)
     assert "scannée" in warnings[0]["message"]
+    assert "scan" in warnings[0]["hint"]
     assert events[-1]["type"] == "result"
