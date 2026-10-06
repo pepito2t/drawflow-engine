@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import {
   toMappingRows,
   type FieldDescriptor,
@@ -17,7 +18,10 @@ const EMPTY_ROW: MappingRow = { key: "", value: "" };
 
 export function MappingField({ field, value, disabled, onChange }: MappingFieldProps) {
   const rows = toMappingRows(value);
-  const labels = field.mappingLabels ?? { key: "Clé", value: "Valeur" };
+  const labels = field.mappingLabels ?? {
+    key: t("mappingField.key"),
+    value: t("mappingField.value"),
+  };
 
   const updateRow = (index: number, update: Partial<MappingRow>) => {
     onChange(rows.map((row, position) => (position === index ? { ...row, ...update } : row)));
@@ -53,7 +57,7 @@ export function MappingField({ field, value, disabled, onChange }: MappingFieldP
           <button
             type="button"
             className="icon-button"
-            aria-label="Supprimer la ligne"
+            aria-label={t("mappingField.removeRow")}
             disabled={disabled}
             onClick={() => {
               onChange(rows.filter((_, position) => position !== index));
@@ -71,7 +75,7 @@ export function MappingField({ field, value, disabled, onChange }: MappingFieldP
           onChange([...rows, EMPTY_ROW]);
         }}
       >
-        Ajouter une ligne
+        {t("mappingField.addRow")}
       </button>
     </div>
   );

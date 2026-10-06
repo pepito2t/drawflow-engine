@@ -1,3 +1,4 @@
+import { t } from "../i18n/settings";
 import { z } from "zod";
 import { CatalogError } from "./catalog";
 import { parseJsonOrNull } from "./json";
@@ -19,12 +20,14 @@ const librarySchema = z.object({
 export type TemplateLibrary = z.infer<typeof librarySchema>;
 export type TemplateKind = z.infer<typeof kindSchema>;
 
-export const TEMPLATE_FILTERS = [{ name: "Modèles Excel ou Word", extensions: ["xlsx", "docx"] }];
+export function templateFileFilters(): { name: string; extensions: string[] }[] {
+  return [{ name: t("templates.filter"), extensions: ["xlsx", "docx"] }];
+}
 
 export function parseTemplateLibrary(rawJson: string): TemplateLibrary {
   const parsed = librarySchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new CatalogError("La liste des modèles reçue du moteur est invalide.");
+    throw new CatalogError(t("templates.invalidList"));
   }
   return parsed.data;
 }

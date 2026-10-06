@@ -1,7 +1,9 @@
+import { plural } from "../i18n";
+import { t } from "../i18n/shell";
 import { useState } from "react";
 import type { TableEvent } from "../lib/events";
 import { anomaliesAsText, groupAnomalies, type AnomalyGroup } from "../lib/anomalies";
-import { STATUS_LABELS } from "../lib/run-labels";
+import { statusLabel } from "../lib/run-labels";
 import { isPreview, type LogEntry, type RunState } from "../lib/run-state";
 import { TablePreview } from "./TablePreview";
 import { ErrorPanel } from "./ErrorPanel";
@@ -24,16 +26,16 @@ export function RunPanel({ state, onStart, onExport, onCancel }: RunPanelProps) 
       <div className="run-controls">
         {isRunning ? (
           <button type="button" onClick={onCancel} disabled={state.cancelRequested}>
-            {state.cancelRequested ? "Annulation…" : "Annuler"}
+            {state.cancelRequested ? t("runPanel.cancelling") : t("runPanel.cancel")}
           </button>
         ) : (
           <button type="button" className="primary" onClick={onStart}>
-            Lancer
+            {t("runPanel.start")}
           </button>
         )}
         <span className={`run-status ${state.status}`}>
-          {isRunning && <Spinner label="Traitement en cours" />}
-          {STATUS_LABELS[state.status]}
+          {isRunning && <Spinner label={t("runPanel.running")} />}
+          {statusLabel(state.status)}
         </span>
       </div>
       {isRunning && <RunProgress state={state} />}
@@ -63,12 +65,12 @@ function RunProgress({ state }: { state: RunState }) {
       {progress ? (
         <progress value={progress.current} max={progress.total} />
       ) : (
-        <progress aria-label="Démarrage" />
+        <progress aria-label={t("runPanel.startingLabel")} />
       )}
       <span className="muted">
         {progress
           ? `${String(progress.current)}/${String(progress.total)} · ${progress.message}`
-          : "Démarrage…"}
+          : t("runPanel.starting")}
       </span>
     </div>
   );
@@ -79,8 +81,8 @@ function RunOutcome({ state }: { state: RunState }) {
     const firstError = state.log.find((entry) => entry.level === "error");
     return (
       <ErrorPanel
-        title="Le traitement a échoué"
-        message={firstError?.message ?? "Erreur inconnue."}
+        title={t("runPanel.failed")}
+        message={firstError?.message ?? t("runPanel.unknownError")}
         file={firstError?.file ?? null}
         hint={firstError?.hint ?? null}
       />
@@ -91,7 +93,7 @@ function RunOutcome({ state }: { state: RunState }) {
   }
   return (
     <div className="success-panel" role="status">
-      <strong>{state.summary ?? "Traitement terminé."}</strong>
+      <strong>{state.summary ?? t("run.finished")}</strong>
       {state.outputs.length > 0 && (
         <ul className="outputs">
           {state.outputs.map((output) => (
@@ -128,13 +130,13 @@ function AnomaliesReport({ groups }: { groups: AnomalyGroup[] }) {
       });
   };
   return (
-    <section className="anomalies" aria-label="Avertissements">
+    <section className="anomalies" aria-label={t("runPanel.anomalies")}>
       <div className="anomalies-header">
         <strong>
-          {String(count)} avertissement{count > 1 ? "s" : ""} à vérifier
+          {plural(count, t("runPanel.anomalyCount.one"), t("runPanel.anomalyCount.other"))}
         </strong>
         <button type="button" onClick={copy}>
-          {copied ? "Copié" : "Copier"}
+          {copied ? t("runPanel.copied") : t("runPanel.copy")}
         </button>
       </div>
       {groups.map((group) => (
@@ -162,12 +164,14 @@ function AnomaliesReport({ groups }: { groups: AnomalyGroup[] }) {
 function RunLog({ entries }: { entries: LogEntry[] }) {
   return (
     <details className="run-log" open>
-      <summary>Journal ({entries.length})</summary>
+      <summary>{t("runPanel.log", { count: entries.length })}</summary>
       <ol>
         {entries.map((entry) => (
           <li key={entry.id} className={`log-entry ${entry.level}`}>
             <span>{entry.message}</span>
-            {entry.file && <span className="log-meta">Fichier : {entry.file}</span>}
+            {entry.file && (
+              <span className="log-meta">{t("runPanel.file", { file: entry.file })}</span>
+            )}
             {entry.hint && <span className="log-meta">{entry.hint}</span>}
           </li>
         ))}

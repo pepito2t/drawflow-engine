@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { z } from "zod";
 
 export const UI_KINDS = [
@@ -142,8 +143,8 @@ function mappingLabelsFor(property: PropertySchema): FieldDescriptor["mappingLab
     return null;
   }
   return {
-    key: property["x-ui-key-label"] ?? "Clé",
-    value: property["x-ui-value-label"] ?? "Valeur",
+    key: property["x-ui-key-label"] ?? t("mappingField.key"),
+    value: property["x-ui-value-label"] ?? t("mappingField.value"),
   };
 }
 

@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { useEffect, useRef } from "react";
 import type { RunOutcome } from "../lib/app-events";
 import type { CatalogModule } from "../lib/catalog";
@@ -46,7 +47,7 @@ export function useRunEvents(state: RunsState, modules: CatalogModule[]): void {
       }
       const outcome = OUTCOMES[status];
       if (previous?.status === "running" && outcome) {
-        const message = describeOutcome(moduleName, entry.run)?.body ?? "Traitement annulé.";
+        const message = describeOutcome(moduleName, entry.run)?.body ?? t("run.cancelled");
         publish({
           type: "runFinished",
           moduleId,

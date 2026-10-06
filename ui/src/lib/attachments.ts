@@ -1,5 +1,5 @@
-const ATTACHMENTS_HEADING = "Fichiers joints :";
-const DEFAULT_QUESTION = "Que peux-tu faire avec ces fichiers ?";
+import { t } from "../i18n/shell";
+
 const PATH_SEPARATORS = /[\\/]/;
 
 /** The paths travel inside the message text: visible to the user, readable by the model. */
@@ -9,7 +9,7 @@ export function withAttachments(question: string, paths: string[]): string {
     return text;
   }
   const list = paths.map((path) => `- ${path}`).join("\n");
-  return `${text || DEFAULT_QUESTION}\n\n${ATTACHMENTS_HEADING}\n${list}`;
+  return `${text || t("attachments.defaultQuestion")}\n\n${t("attachments.heading")}\n${list}`;
 }
 
 export function addAttachments(current: string[], dropped: string[]): string[] {

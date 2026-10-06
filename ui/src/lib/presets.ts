@@ -1,7 +1,9 @@
+import { t } from "../i18n/shell";
 import { z } from "zod";
 import { CatalogError } from "./catalog";
 import { initialValues, toFormValue, type FieldDescriptor, type FormValues } from "./form-schema";
 import { parseJsonOrNull } from "./json";
+import { currentLanguage } from "../i18n";
 
 const presetSchema = z.object({
   id: z.string(),
@@ -17,7 +19,7 @@ export type Preset = z.infer<typeof presetSchema>;
 export function parsePresets(rawJson: string): Preset[] {
   const parsed = presetsResponseSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new CatalogError("La liste des préréglages reçue du moteur est invalide.");
+    throw new CatalogError(t("presets.invalid"));
   }
   return parsed.data.presets;
 }
@@ -25,7 +27,7 @@ export function parsePresets(rawJson: string): Preset[] {
 export function presetsFor(presets: Preset[], moduleId: string): Preset[] {
   return presets
     .filter((preset) => preset.module === moduleId)
-    .sort((left, right) => left.name.localeCompare(right.name, "fr"));
+    .sort((left, right) => left.name.localeCompare(right.name, currentLanguage()));
 }
 
 export function presetFormValues(preset: Preset, fields: FieldDescriptor[]): FormValues {

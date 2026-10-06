@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { Suspense, use, useCallback, useState } from "react";
 import { RunsProvider, useRunsStore } from "../hooks/runs-context";
 import { SetupRunsProvider } from "../hooks/setup-runs-context";
@@ -54,7 +55,7 @@ export function App() {
       <Suspense
         fallback={
           <AppShell engine={{ state: "loading" }}>
-            <Loader label="Démarrage…" />
+            <Loader label={t("app.starting")} />
           </AppShell>
         }
       >
@@ -90,7 +91,7 @@ function CatalogApp() {
       <Suspense
         fallback={
           <AppShell engine={{ state: "loading" }}>
-            <Loader label="Démarrage du moteur…" />
+            <Loader label={t("app.startingEngine")} />
           </AppShell>
         }
       >
@@ -116,7 +117,7 @@ function CatalogFailure({ error, onRetry }: { error: unknown; onRetry: () => voi
     <AppShell engine={{ state: "failed" }}>
       <div className="centered">
         <ErrorPanel
-          title="Impossible de démarrer le moteur"
+          title={t("app.engineStartFailed")}
           message={message}
           hint={hint}
           onRetry={onRetry}
@@ -184,8 +185,8 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
       <button
         type="button"
         className="icon-button"
-        aria-label="Paramètres"
-        title="Paramètres"
+        aria-label={t("app.settings")}
+        title={t("app.settings")}
         onClick={() => {
           openSettings();
         }}
@@ -196,9 +197,9 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
       <button
         type="button"
         className={isAssistantOpen ? "icon-button active" : "icon-button"}
-        aria-label="Assistant"
+        aria-label={t("app.assistant")}
         aria-expanded={isAssistantOpen}
-        title="Assistant"
+        title={t("app.assistant")}
         onClick={toggleAssistant}
       >
         <ChatIcon />
@@ -206,8 +207,8 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
       <button
         type="button"
         className="icon-button"
-        aria-label="Aide"
-        title="Aide"
+        aria-label={t("app.help")}
+        title={t("app.help")}
         onClick={() => {
           openHelp();
         }}
@@ -226,17 +227,17 @@ function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule
         <div className={isAssistantOpen ? "layout with-assistant" : "layout"}>
           <ModuleTabs
             modules={modules}
-            leadingTabs={[{ id: TODAY_TAB_ID, label: "Aujourd'hui", icon: <SunIcon /> }]}
+            leadingTabs={[{ id: TODAY_TAB_ID, label: t("app.todayTab"), icon: <SunIcon /> }]}
             extraTabs={[
-              { id: MAIL_TAB_ID, label: "Courriels", icon: <MailIcon /> },
-              { id: HISTORY_TAB_ID, label: "Historique", icon: <ClockIcon /> },
+              { id: MAIL_TAB_ID, label: t("app.mailTab"), icon: <MailIcon /> },
+              { id: HISTORY_TAB_ID, label: t("app.historyTab"), icon: <ClockIcon /> },
             ]}
             selectedId={selectedId}
             onSelect={select}
             footer={sidebarActions}
           />
           <main className="workspace">
-            {modules.length === 0 && <p className="muted">Aucune fonctionnalité disponible.</p>}
+            {modules.length === 0 && <p className="muted">{t("app.noModules")}</p>}
             {modules.map((module) => (
               <div
                 key={module.manifest.id}

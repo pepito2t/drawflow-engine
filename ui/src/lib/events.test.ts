@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseEventLine, UNREADABLE_EVENT_MESSAGE } from "./events";
+import { parseEventLine, unreadableEventMessage } from "./events";
 
 describe("parseEventLine", () => {
   it("parses a valid progress event", () => {
@@ -18,7 +18,7 @@ describe("parseEventLine", () => {
 
     expect(event).toMatchObject({
       type: "error",
-      message: UNREADABLE_EVENT_MESSAGE,
+      message: unreadableEventMessage(),
       hint: "not json",
     });
   });
@@ -26,7 +26,7 @@ describe("parseEventLine", () => {
   it("rejects unknown event types", () => {
     expect(parseEventLine('{"type":"surprise"}')).toMatchObject({
       type: "error",
-      message: UNREADABLE_EVENT_MESSAGE,
+      message: unreadableEventMessage(),
     });
   });
 

@@ -1,4 +1,5 @@
 import { useCommands } from "../hooks/command-registry";
+import { t } from "../i18n/panels";
 import type { ProposalStatus, RunProposal } from "../lib/assistant-chat";
 import type { CatalogModule } from "../lib/catalog";
 import { COMMAND_ARGUMENTS, COMMANDS } from "../lib/commands";
@@ -42,7 +43,7 @@ export function ProposalCard({ proposal, modules, onStatus }: ProposalCardProps)
   return (
     <div className={`proposal-card ${proposal.status}`}>
       <strong>
-        {isSettings ? "" : "Lancer : "}
+        {isSettings ? "" : t("proposal.launch_prefix")}
         {proposalTitle(proposal)}
       </strong>
       {lines.length > 0 && (
@@ -78,31 +79,29 @@ function ProposalFooter({ proposal, onLaunch, onDismiss }: ProposalFooterProps) 
       return (
         <div className="proposal-actions">
           <button type="button" className="primary" onClick={onLaunch}>
-            {proposal.kind === "synonyms" ? "Appliquer" : "Lancer"}
+            {proposal.kind === "synonyms" ? t("proposal.apply") : t("proposal.launch")}
           </button>
           <button type="button" onClick={onDismiss}>
-            Ignorer
+            {t("proposal.dismiss")}
           </button>
         </div>
       );
     case "launching":
-      return <Spinner label="Lancement" />;
+      return <Spinner label={t("proposal.launching")} />;
     case "launched":
       return (
         <span className="run-status succeeded">
-          {proposal.kind === "synonyms"
-            ? "Appliqué — Paramètres → Soumission"
-            : "Lancé — suivi dans Traitements"}
+          {proposal.kind === "synonyms" ? t("proposal.applied") : t("proposal.launched")}
         </span>
       );
     case "dismissed":
-      return <span className="muted">Ignoré</span>;
+      return <span className="muted">{t("proposal.dismissed")}</span>;
     case "failed":
       return (
         <div className="proposal-actions">
           <span className="assistant-error">{proposal.error}</span>
           <button type="button" onClick={onLaunch}>
-            Réessayer
+            {t("common.retry")}
           </button>
         </div>
       );

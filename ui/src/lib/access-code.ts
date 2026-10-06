@@ -1,3 +1,5 @@
+import { t } from "../i18n/settings";
+
 export type AccessCodeIssue = "mismatch" | "unchanged" | null;
 
 export function checkNewAccessCode(
@@ -11,7 +13,8 @@ export function checkNewAccessCode(
   return next === current ? "unchanged" : null;
 }
 
-export const ACCESS_CODE_ISSUE_MESSAGES: Record<Exclude<AccessCodeIssue, null>, string> = {
-  mismatch: "La confirmation ne correspond pas au nouveau code.",
-  unchanged: "Le nouveau code doit être différent de l'actuel.",
-};
+const ISSUE_KEYS = { mismatch: "accessCode.mismatch", unchanged: "accessCode.unchanged" } as const;
+
+export function accessCodeIssueMessage(issue: Exclude<AccessCodeIssue, null>): string {
+  return t(ISSUE_KEYS[issue]);
+}

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { errorEventSchema, UNREADABLE_EVENT_MESSAGE } from "./events";
+import { errorEventSchema, unreadableEventMessage } from "./events";
 import { parseJsonOrNull } from "./json";
 
 export const assistantEventSchema = z.discriminatedUnion("type", [
@@ -32,5 +32,5 @@ export function parseAssistantLine(line: string): AssistantEvent {
   if (parsed.success) {
     return parsed.data;
   }
-  return { type: "error", message: UNREADABLE_EVENT_MESSAGE, file: null, hint: line };
+  return { type: "error", message: unreadableEventMessage(), file: null, hint: line };
 }

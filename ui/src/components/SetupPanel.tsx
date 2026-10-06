@@ -4,6 +4,7 @@ import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { COMMANDS } from "../lib/commands";
 import { useSetupRun } from "../hooks/use-setup-run";
 import { toReadableError } from "../lib/error-message";
+import { t } from "../i18n/settings";
 import {
   describeSystem,
   isEngineAction,
@@ -24,11 +25,11 @@ import { ErrorPanel } from "./ErrorPanel";
 import { HelpIcon } from "./icons";
 import { Loader } from "./Spinner";
 
-const STATUS_LABELS = {
-  ok: "✓ Prêt",
-  missing: "À configurer",
-  optional: "Facultatif",
-  update: "Mise à jour",
+const STATUS_KEYS = {
+  ok: "setup.status.ok",
+  missing: "setup.status.missing",
+  optional: "setup.status.optional",
+  update: "setup.status.update",
 } as const;
 
 function loadReport(): Promise<SetupReport> {
@@ -46,17 +47,13 @@ export function SetupPanel({ onOpenTab }: { onOpenTab: (tabId: string) => void }
   return (
     <section className="settings-section">
       <div className="setup-header">
-        <h3>Installation</h3>
+        <h3>{t("setup.title")}</h3>
         <div className="setup-header-actions">
-          <button
-            type="button"
-            title="Dossier des journaux à envoyer en cas de problème"
-            onClick={openLogs}
-          >
-            Journaux
+          <button type="button" title={t("setup.logsHint")} onClick={openLogs}>
+            {t("setup.logs")}
           </button>
           <button type="button" onClick={retry}>
-            Analyser à nouveau
+            {t("setup.rescan")}
           </button>
         </div>
       </div>
@@ -65,11 +62,16 @@ export function SetupPanel({ onOpenTab }: { onOpenTab: (tabId: string) => void }
         fallback={(error) => {
           const { message, hint } = toReadableError(error);
           return (
-            <ErrorPanel title="Analyse impossible" message={message} hint={hint} onRetry={retry} />
+            <ErrorPanel
+              title={t("setup.scanError")}
+              message={message}
+              hint={hint}
+              onRetry={retry}
+            />
           );
         }}
       >
-        <Suspense fallback={<Loader label="Analyse du poste…" />}>
+        <Suspense fallback={<Loader label={t("setup.scanning")} />}>
           <SetupChecklist
             reportPromise={promise}
             run={run}
@@ -136,14 +138,14 @@ function SetupChecklist({ reportPromise, run, onStart, onOpenTab }: SetupCheckli
           />
         ))}
       </ul>
-      {pageError && <ErrorPanel title="Page non ouverte" message={pageError} />}
+      {pageError && <ErrorPanel title={t("setup.pageNotOpened")} message={pageError} />}
     </>
   );
 }
 
 async function openPage(action: SetupActionSpec): Promise<void> {
   if (action.url === null) {
-    throw new Error("Aucune page de téléchargement pour cette action.");
+    throw new Error(t("setup.noDownloadPage"));
   }
   await openDownloadPage(action.url);
 }
@@ -164,7 +166,7 @@ function SetupRow({ item, run, disabled, pending, onAction, onConfirm, onCancel 
   const confirming = pending && item.actions.some((a) => a.id === pending.id) ? pending : null;
   return (
     <li className="setup-item">
-      <span className={`setup-status ${item.status}`}>{STATUS_LABELS[item.status]}</span>
+      <span className={`setup-status ${item.status}`}>{t(STATUS_KEYS[item.status])}</span>
       <div className="setup-body">
         <div className="setup-title">
           <strong>{item.label}</strong>
@@ -176,8 +178,8 @@ function SetupRow({ item, run, disabled, pending, onAction, onConfirm, onCancel 
           <div className="setup-confirm">
             <span>
               {confirming.id === "model.pull"
-                ? "Le téléchargement fait plusieurs Go. Continuer ?"
-                : `${item.label} sera installé en acceptant sa licence d'utilisation. Continuer ?`}
+                ? t("setup.confirmPull")
+                : t("setup.confirmLicense", { label: item.label })}
             </span>
             <button
               type="button"
@@ -186,10 +188,10 @@ function SetupRow({ item, run, disabled, pending, onAction, onConfirm, onCancel 
                 onConfirm(confirming);
               }}
             >
-              Confirmer
+              {t("setup.confirm")}
             </button>
             <button type="button" onClick={onCancel}>
-              Annuler
+              {t("setup.cancel")}
             </button>
           </div>
         )}
@@ -220,16 +222,20 @@ function RunLine({ run }: { run: Exclude<SetupRun, { status: "idle" }> }) {
         <div className="setup-run">
           <progress value={run.percent ?? undefined} max={100} />
           <span className="muted">
-            {run.message || "En cours…"}
+            {run.message || t("setup.running")}
             {run.percent !== null && ` · ${String(run.percent)} %`}
           </span>
         </div>
       );
     case "done":
-      return <span className="run-status succeeded">{run.message || "Terminé"}</span>;
+      return <span className="run-status succeeded">{run.message || t("setup.done")}</span>;
     case "failed":
       return (
-        <ErrorPanel title="Action impossible" message={run.error.message} hint={run.error.hint} />
+        <ErrorPanel
+          title={t("setup.actionError")}
+          message={run.error.message}
+          hint={run.error.hint}
+        />
       );
   }
 }
@@ -240,8 +246,8 @@ function HelpLink({ topic }: { topic: string }) {
     <button
       type="button"
       className="icon-button"
-      aria-label="Marche à suivre"
-      title="Marche à suivre"
+      aria-label={t("setup.help")}
+      title={t("setup.help")}
       onClick={() => {
         execute(COMMANDS.openHelp, { topic })
           .then((result) => {

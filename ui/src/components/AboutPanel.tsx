@@ -1,12 +1,14 @@
 import { Suspense, use } from "react";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError } from "../lib/error-message";
+import { t } from "../i18n/settings";
 import { formatSavedTime, totalsOf, type UsageStats } from "../lib/stats";
 import { getAppVersion } from "../lib/tauri/app";
 import { getUsageStats } from "../lib/tauri/history";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { Loader } from "./Spinner";
+import { dateLocale } from "../i18n/panels";
 
 interface AboutData {
   version: string;
@@ -29,7 +31,7 @@ export function AboutPanel({ onOpenGeneral }: { onOpenGeneral: () => void }) {
         const { message, hint, file } = toReadableError(error);
         return (
           <ErrorPanel
-            title="Compteurs indisponibles"
+            title={t("about.unavailable")}
             message={message}
             hint={hint}
             file={file}
@@ -38,7 +40,7 @@ export function AboutPanel({ onOpenGeneral }: { onOpenGeneral: () => void }) {
         );
       }}
     >
-      <Suspense fallback={<Loader label="Chargement…" />}>
+      <Suspense fallback={<Loader label={t("about.loading")} />}>
         <AboutContent dataPromise={promise} onOpenGeneral={onOpenGeneral} />
       </Suspense>
     </ErrorBoundary>
@@ -53,22 +55,22 @@ interface AboutContentProps {
 function AboutContent({ dataPromise, onOpenGeneral }: AboutContentProps) {
   const { version, stats } = use(dataPromise);
   const totals = totalsOf(stats);
-  const since = stats.since ? new Date(stats.since).toLocaleDateString("fr-CH") : null;
+  const since = stats.since ? new Date(stats.since).toLocaleDateString(dateLocale()) : null;
   return (
     <section className="settings-section">
-      <h3>À propos</h3>
+      <h3>{t("about.title")}</h3>
       <p className="muted">Drawflow {version}</p>
-      <h4>Ce que Drawflow a fait sur ce poste</h4>
+      <h4>{t("about.subtitle")}</h4>
       {stats.features.length === 0 ? (
-        <p className="muted">Aucun traitement terminé pour l'instant.</p>
+        <p className="muted">{t("about.empty")}</p>
       ) : (
         <table className="stats-table">
           <thead>
             <tr>
-              <th>Fonctionnalité</th>
-              <th>Traitements</th>
-              <th>Fichiers</th>
-              <th>Temps gagné</th>
+              <th>{t("about.feature")}</th>
+              <th>{t("about.runs")}</th>
+              <th>{t("about.files")}</th>
+              <th>{t("about.savedTime")}</th>
             </tr>
           </thead>
           <tbody>
@@ -83,7 +85,7 @@ function AboutContent({ dataPromise, onOpenGeneral }: AboutContentProps) {
           </tbody>
           <tfoot>
             <tr>
-              <td>Total{since && ` depuis le ${since}`}</td>
+              <td>{since ? t("about.totalSince", { date: since }) : t("about.total")}</td>
               <td>{totals.runs}</td>
               <td>{totals.files}</td>
               <td>{formatSavedTime(totals.minutes_saved)}</td>
@@ -92,11 +94,11 @@ function AboutContent({ dataPromise, onOpenGeneral }: AboutContentProps) {
         </table>
       )}
       <p className="muted">
-        Le temps gagné est une estimation : minutes par fichier réglables dans{" "}
+        {t("about.estimateBefore")}{" "}
         <button type="button" className="link-button" onClick={onOpenGeneral}>
-          Général
+          {t("about.general")}
         </button>
-        , où les compteurs se désactivent. Ces chiffres restent sur ce poste.
+        {t("about.estimateAfter")}
       </p>
     </section>
   );

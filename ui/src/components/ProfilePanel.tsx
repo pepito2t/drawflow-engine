@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { usePresets } from "../hooks/presets-context";
 import { toReadableError, type ReadableError } from "../lib/error-message";
+import { t } from "../i18n/settings";
 import {
   describeProfileChanges,
   parseProfilePreview,
-  PROFILE_FILE_FILTERS,
+  profileFileFilters,
   PROFILE_FILE_SUFFIX,
   type ProfilePreview,
 } from "../lib/profile";
@@ -13,8 +14,7 @@ import { pickPaths, pickSavePath } from "../lib/tauri/dialog";
 import { engineRequest } from "../lib/tauri/engine";
 import { ErrorPanel } from "./ErrorPanel";
 import { Spinner } from "./Spinner";
-
-const DEFAULT_FILE_NAME = `Profil Drawflow${PROFILE_FILE_SUFFIX}`;
+import { dateLocale } from "../i18n/panels";
 
 interface PendingImport {
   source: string;
@@ -38,9 +38,9 @@ export function ProfilePanel({ onImported }: { onImported: () => void }) {
     setError(null);
     setNotice(null);
     pickSavePath({
-      title: "Exporter le profil",
-      defaultPath: DEFAULT_FILE_NAME,
-      filters: PROFILE_FILE_FILTERS,
+      title: t("profile.exportTitle"),
+      defaultPath: `${t("profile.defaultFileName")}${PROFILE_FILE_SUFFIX}`,
+      filters: profileFileFilters(),
     })
       .then(async (target) => {
         if (target === null) {
@@ -49,7 +49,7 @@ export function ProfilePanel({ onImported }: { onImported: () => void }) {
         setIsBusy(true);
         await engineRequest("profile.export", { target });
         publish({ type: "settingsExported", target });
-        setNotice("Profil exporté.");
+        setNotice(t("profile.exported"));
         setIsBusy(false);
       })
       .catch(fail);
@@ -61,8 +61,8 @@ export function ProfilePanel({ onImported }: { onImported: () => void }) {
     pickPaths({
       directory: false,
       multiple: false,
-      title: "Importer un profil",
-      filters: PROFILE_FILE_FILTERS,
+      title: t("profile.importTitle"),
+      filters: profileFileFilters(),
     })
       .then(async ([source]) => {
         if (source === undefined) {
@@ -86,7 +86,7 @@ export function ProfilePanel({ onImported }: { onImported: () => void }) {
       .then(reload)
       .then(() => {
         setPending(null);
-        setNotice("Profil appliqué.");
+        setNotice(t("profile.applied"));
         setIsBusy(false);
         publish({ type: "settingsSaved" });
         onImported();
@@ -96,29 +96,27 @@ export function ProfilePanel({ onImported }: { onImported: () => void }) {
 
   return (
     <section className="settings-section">
-      <h3>Profil</h3>
-      <p className="muted">
-        Le profil réunit toutes les normes, les modèles Excel et Word importés et les préréglages.
-        Exportez-le pour installer un autre poste à l'identique. Le code d'accès et le jeton de
-        l'API locale n'en font pas partie.
-      </p>
+      <h3>{t("profile.title")}</h3>
+      <p className="muted">{t("profile.intro")}</p>
       <div className="run-controls">
         <button type="button" disabled={isBusy} onClick={exportProfile}>
-          Exporter le profil…
+          {t("profile.export")}
         </button>
         <button type="button" disabled={isBusy} onClick={chooseProfile}>
-          Importer un profil…
+          {t("profile.import")}
         </button>
-        {isBusy && <Spinner label="Profil en cours" />}
+        {isBusy && <Spinner label={t("profile.busy")} />}
         {notice && <span className="run-status succeeded">{notice}</span>}
       </div>
       {pending && (
         <div className="profile-preview">
           <p>
-            Profil de Drawflow {pending.preview.app_version}
+            {t("profile.previewOf", { version: pending.preview.app_version })}
             {pending.preview.exported_at &&
-              `, exporté le ${new Date(pending.preview.exported_at).toLocaleDateString("fr-CH")}`}
-            . Appliquer remplace :
+              t("profile.previewExportedAt", {
+                date: new Date(pending.preview.exported_at).toLocaleDateString(dateLocale()),
+              })}
+            {t("profile.previewReplaces")}
           </p>
           <ul>
             {describeProfileChanges(pending.preview).map((line) => (
@@ -127,7 +125,7 @@ export function ProfilePanel({ onImported }: { onImported: () => void }) {
           </ul>
           <div className="run-controls">
             <button type="button" className="primary" disabled={isBusy} onClick={applyProfile}>
-              Appliquer le profil
+              {t("profile.apply")}
             </button>
             <button
               type="button"
@@ -136,14 +134,14 @@ export function ProfilePanel({ onImported }: { onImported: () => void }) {
                 setPending(null);
               }}
             >
-              Annuler
+              {t("profile.cancel")}
             </button>
           </div>
         </div>
       )}
       {error && (
         <ErrorPanel
-          title="Profil non appliqué"
+          title={t("profile.notApplied")}
           message={error.message}
           hint={error.hint}
           file={error.file}

@@ -1,3 +1,4 @@
+import { t } from "../i18n/settings";
 import { z } from "zod";
 import { DEFAULT_LANGUAGE, isLanguage, type Language } from "../i18n";
 import { CatalogError, parseFormFields } from "./catalog";
@@ -29,10 +30,13 @@ export type SettingsValues = Record<string, FormValues>;
 export function parseSettings(rawJson: string): SettingsSection[] {
   const parsed = settingsResponseSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new CatalogError("Les paramètres reçus du moteur sont invalides.");
+    throw new CatalogError(t("settings.invalidResponse"));
   }
   return parsed.data.sections.map((section) => {
-    const fields = parseFormFields(`paramètre « ${section.title} »`, section.schema);
+    const fields = parseFormFields(
+      t("settings.sectionLabel", { title: section.title }),
+      section.schema,
+    );
     return {
       id: section.id,
       title: section.title,

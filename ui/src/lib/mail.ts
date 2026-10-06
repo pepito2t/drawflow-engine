@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { plural } from "../i18n";
+import { dateLocale, t, type PanelKey } from "../i18n/panels";
 import { parseJsonOrNull } from "./json";
 
 const participantSchema = z.object({ name: z.string(), address: z.string() });
@@ -75,38 +77,38 @@ export class MailParseError extends Error {
   override name = "MailParseError";
 }
 
-function parse<T>(schema: z.ZodType<T>, rawJson: string, what: string): T {
+function parse<T>(schema: z.ZodType<T>, rawJson: string, what: PanelKey): T {
   const parsed = schema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new MailParseError(`Réponse du moteur invalide (${what}).`);
+    throw new MailParseError(t("mail.invalid_response", { what: t(what) }));
   }
   return parsed.data;
 }
 
-export const parseMailStatus = (raw: string) => parse(statusSchema, raw, "état des courriels");
-export const parseDeviceLogin = (raw: string) => parse(deviceLoginSchema, raw, "connexion");
-export const parseFetchResult = (raw: string) => parse(fetchResultSchema, raw, "récupération");
+export const parseMailStatus = (raw: string) => parse(statusSchema, raw, "mail.what.status");
+export const parseDeviceLogin = (raw: string) => parse(deviceLoginSchema, raw, "mail.what.login");
+export const parseFetchResult = (raw: string) => parse(fetchResultSchema, raw, "mail.what.fetch");
 export const parseConversations = (raw: string) =>
-  parse(listSchema, raw, "conversations").conversations;
-export const parseMailDetail = (raw: string) => parse(detailSchema, raw, "conversation");
+  parse(listSchema, raw, "mail.what.conversations").conversations;
+export const parseMailDetail = (raw: string) => parse(detailSchema, raw, "mail.what.conversation");
 
 export function describeParticipant(person: MailParticipant): string {
-  return person.name || person.address || "inconnu";
+  return person.name || person.address || t("mail.unknown_participant");
 }
 
 export function describeFetch(result: MailFetchResult): string {
   if (result.added === 0) {
-    return "Aucun nouveau message.";
+    return t("mail.no_new_messages");
   }
-  const messages = result.added > 1 ? "nouveaux messages" : "nouveau message";
-  return `${String(result.added)} ${messages}, ${String(result.conversations)} conversations.`;
+  const params = { conversations: result.conversations };
+  return plural(result.added, t("mail.fetched.one", params), t("mail.fetched.other", params));
 }
 
 export function describeReceived(instant: string): string {
   const date = new Date(instant);
   return Number.isNaN(date.getTime())
     ? instant
-    : date.toLocaleString("fr-CH", { dateStyle: "medium", timeStyle: "short" });
+    : date.toLocaleString(dateLocale(), { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function participantsSummary(conversation: MailConversation, max = 3): string {

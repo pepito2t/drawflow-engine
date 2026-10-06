@@ -1,3 +1,5 @@
+import { plural } from "../i18n";
+import { t } from "../i18n/shell";
 import type { AppEvent } from "./app-events";
 import { COMMANDS, type CommandId } from "./commands";
 
@@ -58,8 +60,8 @@ export function toastFor(event: AppEvent): ToastSpec | null {
     case "featureRunIncomplete":
       return {
         tone: "info",
-        title: `${event.moduleName} : formulaire pré-rempli`,
-        body: `Indiquez ${event.missing.join(", ")}, puis cliquez sur Lancer.`,
+        title: t("toasts.runIncomplete.title", { module: event.moduleName }),
+        body: t("toasts.runIncomplete.body", { fields: event.missing.join(", ") }),
         moduleId: event.moduleId,
         durationMs: null,
         actions: [],
@@ -67,51 +69,52 @@ export function toastFor(event: AppEvent): ToastSpec | null {
     case "updateAvailable":
       return {
         tone: "info",
-        title: `Version ${event.version} disponible`,
-        body: "Voulez-vous mettre à jour maintenant ?",
+        title: t("toasts.updateAvailable.title", { version: event.version }),
+        body: t("toasts.updateAvailable.body"),
         moduleId: null,
         durationMs: null,
         actions: [
-          { label: "Mettre à jour", command: COMMANDS.installUpdate, primary: true },
-          { label: "Plus tard", command: null, primary: false },
+          {
+            label: t("toasts.updateAvailable.install"),
+            command: COMMANDS.installUpdate,
+            primary: true,
+          },
+          { label: t("toasts.later"), command: null, primary: false },
         ],
       };
     case "updateDeferred":
       return {
-        ...plain("warning", "Mise à jour en attente"),
-        body: "Elle pourra être installée une fois les traitements en cours terminés.",
+        ...plain("warning", t("toasts.updateDeferred.title")),
+        body: t("toasts.updateDeferred.body"),
       };
     case "settingsSaved":
-      return plain("success", "Paramètres enregistrés");
+      return plain("success", t("toasts.settingsSaved"));
     case "accessCodeChanged":
-      return plain("success", "Code d'accès modifié");
+      return plain("success", t("toasts.accessCodeChanged"));
     case "presetSaved":
-      return { ...plain("success", "Préréglage enregistré"), body: event.name };
+      return { ...plain("success", t("toasts.presetSaved")), body: event.name };
     case "templateImported":
-      return { ...plain("success", "Modèle importé"), body: event.name };
+      return { ...plain("success", t("toasts.templateImported")), body: event.name };
     case "settingsExported":
-      return { ...plain("success", "Paramètres exportés"), body: event.target };
+      return { ...plain("success", t("toasts.settingsExported")), body: event.target };
     case "mailFetched":
       return {
-        ...plain("success", "Courriels récupérés"),
+        ...plain("success", t("toasts.mailFetched.title")),
         body:
           event.added === 0
-            ? "Aucun nouveau message."
-            : `${String(event.added)} nouveau${event.added > 1 ? "x" : ""} message${event.added > 1 ? "s" : ""}.`,
+            ? t("toasts.mailFetched.none")
+            : plural(event.added, t("toasts.mailFetched.one"), t("toasts.mailFetched.other")),
       };
     case "setupNeeded":
       return {
         tone: "info",
-        title: "Configurer Drawflow",
-        body:
-          event.missing > 1
-            ? `${String(event.missing)} éléments sont à installer ou à configurer.`
-            : "Un élément est à installer ou à configurer.",
+        title: t("toasts.setupNeeded.title"),
+        body: plural(event.missing, t("toasts.setupNeeded.one"), t("toasts.setupNeeded.other")),
         moduleId: null,
         durationMs: null,
         actions: [
-          { label: "Configurer", command: COMMANDS.openSetup, primary: true },
-          { label: "Plus tard", command: null, primary: false },
+          { label: t("toasts.setupNeeded.open"), command: COMMANDS.openSetup, primary: true },
+          { label: t("toasts.later"), command: null, primary: false },
         ],
       };
   }
@@ -124,21 +127,21 @@ function runToast(event: Extract<AppEvent, { type: "runFinished" }>): ToastSpec 
       return {
         ...base,
         tone: "success",
-        title: `${event.moduleName} terminé`,
+        title: t("run.succeededTitle", { module: event.moduleName }),
         durationMs: SHORT_TOAST_MS,
       };
     case "failed":
       return {
         ...base,
         tone: "error",
-        title: `${event.moduleName} : échec`,
+        title: t("run.failedTitle", { module: event.moduleName }),
         durationMs: LONG_TOAST_MS,
       };
     case "cancelled":
       return {
         ...base,
         tone: "info",
-        title: `${event.moduleName} annulé`,
+        title: t("run.cancelledTitle", { module: event.moduleName }),
         durationMs: SHORT_TOAST_MS,
       };
   }

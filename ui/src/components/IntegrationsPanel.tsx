@@ -1,6 +1,7 @@
 import { Suspense, use, useState } from "react";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError, type ReadableError } from "../lib/error-message";
+import { t } from "../i18n/settings";
 import {
   getIntegrationStatus,
   updateIntegration,
@@ -22,7 +23,7 @@ export function IntegrationsPanel() {
         const { message, hint } = toReadableError(error);
         return (
           <ErrorPanel
-            title="API locale indisponible"
+            title={t("integrations.unavailable")}
             message={message}
             hint={hint}
             onRetry={retry}
@@ -30,7 +31,7 @@ export function IntegrationsPanel() {
         );
       }}
     >
-      <Suspense fallback={<Loader label="Chargement…" />}>
+      <Suspense fallback={<Loader label={t("integrations.loading")} />}>
         <IntegrationsEditor statusPromise={promise} />
       </Suspense>
     </ErrorBoundary>
@@ -63,12 +64,8 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
 
   return (
     <section className="settings-section">
-      <h3>API locale</h3>
-      <p className="muted">
-        Le plugin Stream Dock se configure tout seul. Cette page sert aux autres outils qui pilotent
-        Drawflow (accès depuis cet ordinateur uniquement, protégé par un jeton) et au dépannage.
-        Rien ne s'exécute tant que l'application est verrouillée.
-      </p>
+      <h3>{t("integrations.title")}</h3>
+      <p className="muted">{t("integrations.intro")}</p>
       <label className="checkbox-row">
         <input
           type="checkbox"
@@ -78,10 +75,10 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
             apply(event.target.checked);
           }}
         />
-        Activer l'API locale
+        {t("integrations.enable")}
       </label>
       <div className="form-field">
-        <label htmlFor="integration-port">Port</label>
+        <label htmlFor="integration-port">{t("integrations.port")}</label>
         <input
           id="integration-port"
           type="number"
@@ -98,12 +95,12 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
         />
         {!portValid && (
           <small className="required">
-            Port entre {MIN_PORT} et {MAX_PORT}.
+            {t("integrations.portRange", { min: MIN_PORT, max: MAX_PORT })}
           </small>
         )}
       </div>
       <div className="form-field">
-        <label htmlFor="integration-token">Jeton (pour un outil tiers)</label>
+        <label htmlFor="integration-token">{t("integrations.token")}</label>
         <div className="token-row">
           <input
             id="integration-token"
@@ -117,7 +114,7 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
               setShowToken((shown) => !shown);
             }}
           >
-            {showToken ? "Masquer" : "Afficher"}
+            {showToken ? t("integrations.hide") : t("integrations.show")}
           </button>
           <button
             type="button"
@@ -127,7 +124,7 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
               });
             }}
           >
-            Copier
+            {t("integrations.copy")}
           </button>
           <button
             type="button"
@@ -136,17 +133,23 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
               apply(status.enabled, true);
             }}
           >
-            Régénérer
+            {t("integrations.regenerate")}
           </button>
         </div>
       </div>
       <p className={status.error ? "lock-error" : "muted"}>
         {status.error ??
-          (status.address ? `En écoute sur ${status.address}` : "API locale désactivée.")}
+          (status.address
+            ? t("integrations.listening", { address: status.address })
+            : t("integrations.disabled"))}
       </p>
-      {isBusy && <Spinner label="Application" />}
+      {isBusy && <Spinner label={t("integrations.applying")} />}
       {error && (
-        <ErrorPanel title="Modification impossible" message={error.message} hint={error.hint} />
+        <ErrorPanel
+          title={t("integrations.changeError")}
+          message={error.message}
+          hint={error.hint}
+        />
       )}
     </section>
   );

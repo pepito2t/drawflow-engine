@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import type { RunState } from "./run-state";
 
 const MILLISECONDS_PER_SECOND = 1000;
@@ -18,12 +19,15 @@ export function shouldNotify(
 export function describeOutcome(moduleName: string, run: RunState): RunNotification | null {
   switch (run.status) {
     case "succeeded":
-      return { title: `${moduleName} terminé`, body: run.summary ?? "Traitement terminé." };
+      return {
+        title: t("run.succeededTitle", { module: moduleName }),
+        body: run.summary ?? t("run.finished"),
+      };
     case "failed": {
       const firstError = run.log.find((entry) => entry.level === "error");
       return {
-        title: `${moduleName} : échec`,
-        body: firstError?.message ?? "Le traitement a échoué.",
+        title: t("run.failedTitle", { module: moduleName }),
+        body: firstError?.message ?? t("notificationRule.failed"),
       };
     }
     case "idle":

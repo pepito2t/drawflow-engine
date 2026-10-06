@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { useState } from "react";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { usePresets } from "../hooks/presets-context";
@@ -45,7 +46,7 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
   return (
     <div className="preset-bar">
       <select
-        aria-label="Préréglages"
+        aria-label={t("presetBar.title")}
         value={selectedId}
         disabled={disabled}
         onChange={(event) => {
@@ -57,7 +58,7 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
         }}
       >
         <option value={NO_PRESET}>
-          {available.length ? "Charger un préréglage…" : "Aucun préréglage"}
+          {available.length ? t("presetBar.load") : t("presetBar.none")}
         </option>
         {available.map((preset) => (
           <option key={preset.id} value={preset.id}>
@@ -73,14 +74,14 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
             setDraftName(selected?.name ?? "");
           }}
         >
-          Enregistrer comme préréglage
+          {t("presetBar.saveAs")}
         </button>
       ) : (
         <>
           <input
             type="text"
-            aria-label="Nom du préréglage"
-            placeholder="Nom du préréglage"
+            aria-label={t("presetBar.name")}
+            placeholder={t("presetBar.name")}
             autoFocus
             value={draftName}
             onChange={(event) => {
@@ -97,7 +98,7 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
             disabled={!draftName.trim()}
             onClick={confirmSave}
           >
-            Enregistrer
+            {t("presetBar.save")}
           </button>
           <button
             type="button"
@@ -105,7 +106,7 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
               setDraftName(null);
             }}
           >
-            Annuler
+            {t("presetBar.cancel")}
           </button>
         </>
       )}
@@ -119,11 +120,11 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
             });
           }}
         >
-          Supprimer
+          {t("presetBar.remove")}
         </button>
       )}
       {error && (
-        <ErrorPanel title="Préréglage non enregistré" message={error.message} hint={error.hint} />
+        <ErrorPanel title={t("presetBar.saveFailed")} message={error.message} hint={error.hint} />
       )}
     </div>
   );

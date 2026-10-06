@@ -4,6 +4,7 @@ import {
   type ProposalStatus,
   type ToolActivity,
 } from "../lib/assistant-chat";
+import { t } from "../i18n/panels";
 import type { CatalogModule } from "../lib/catalog";
 import { ErrorPanel } from "./ErrorPanel";
 import { CheckIcon, CloseIcon } from "./icons";
@@ -40,11 +41,11 @@ export function AssistantMessage({ entry, modules, onProposal }: AssistantMessag
           }}
         />
       ))}
-      {isThinking && <Spinner label="L'assistant réfléchit" />}
-      {entry.status === "cancelled" && <p className="muted">Réponse interrompue.</p>}
+      {isThinking && <Spinner label={t("assistant.thinking")} />}
+      {entry.status === "cancelled" && <p className="muted">{t("assistant.interrupted")}</p>}
       {entry.error && (
         <ErrorPanel
-          title="L'assistant n'a pas pu répondre"
+          title={t("assistant.answer_failed")}
           message={entry.error.message}
           hint={entry.error.hint}
         />
@@ -56,7 +57,7 @@ export function AssistantMessage({ entry, modules, onProposal }: AssistantMessag
 function ToolLine({ tool }: { tool: ToolActivity }) {
   return (
     <div className={`chat-tool ${tool.status}`}>
-      {tool.status === "running" && <Spinner label="Outil en cours" />}
+      {tool.status === "running" && <Spinner label={t("assistant.tool_running")} />}
       {tool.status === "succeeded" && <CheckIcon size={TOOL_ICON_SIZE} />}
       {tool.status === "failed" && <CloseIcon size={TOOL_ICON_SIZE} />}
       <span>{toolLabel(tool.name)}</span>

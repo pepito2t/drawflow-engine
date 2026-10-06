@@ -6,6 +6,7 @@ import {
   type ModelCatalog,
 } from "../lib/model-catalog";
 import type { SetupRun } from "../lib/setup";
+import { t } from "../i18n/settings";
 import { ErrorPanel } from "./ErrorPanel";
 
 interface ModelRowProps {
@@ -33,13 +34,15 @@ export function ModelRow({
   return (
     <li className="setup-item">
       <span className={`setup-status ${model.installed ? "ok" : "optional"}`}>
-        {model.installed ? "Installé" : formatSize(model.size_gb)}
+        {model.installed ? t("models.installed") : formatSize(model.size_gb)}
       </span>
       <div className="setup-body">
         <strong>
           {model.label}
-          {model.name === catalog.recommended && <span className="badge">Recommandé</span>}
-          {isUsed && <span className="badge">Utilisé</span>}
+          {model.name === catalog.recommended && (
+            <span className="badge">{t("models.badgeRecommended")}</span>
+          )}
+          {isUsed && <span className="badge">{t("models.badgeUsed")}</span>}
         </strong>
         <span className="muted">
           {model.name}
@@ -47,13 +50,13 @@ export function ModelRow({
         </span>
         {tooBig && (
           <span className="assistant-error">
-            Demande {model.min_memory_gb} Go de mémoire : risque d'être très lent sur ce poste.
+            {t("models.tooBig", { memory: model.min_memory_gb ?? "" })}
           </span>
         )}
         {run.status !== "idle" && run.action === model.name && <TaskLine run={run} />}
         {confirmDelete && (
           <div className="setup-confirm">
-            <span>Supprimer {model.name} de ce poste ?</span>
+            <span>{t("models.confirmDelete", { model: model.name })}</span>
             <button
               type="button"
               className="primary"
@@ -62,7 +65,7 @@ export function ModelRow({
                 onRemove(model.name);
               }}
             >
-              Supprimer
+              {t("models.delete")}
             </button>
             <button
               type="button"
@@ -70,7 +73,7 @@ export function ModelRow({
                 setConfirmDelete(false);
               }}
             >
-              Annuler
+              {t("models.cancel")}
             </button>
           </div>
         )}
@@ -85,7 +88,7 @@ export function ModelRow({
               onDownload(model.name);
             }}
           >
-            Télécharger
+            {t("models.download")}
           </button>
         )}
         {model.installed && !isUsed && (
@@ -97,7 +100,7 @@ export function ModelRow({
               onUse(model.name);
             }}
           >
-            Utiliser
+            {t("models.use")}
           </button>
         )}
         {model.installed && catalog.is_ollama && (
@@ -108,7 +111,7 @@ export function ModelRow({
               setConfirmDelete(true);
             }}
           >
-            Supprimer
+            {t("models.delete")}
           </button>
         )}
       </div>
@@ -123,17 +126,20 @@ export function TaskLine({ run }: { run: Exclude<SetupRun, { status: "idle" }> }
         <div className="setup-run">
           <progress value={run.percent ?? undefined} max={100} />
           <span className="muted">
-            {run.action} : {run.message || "en cours…"}
+            {t("models.taskLine", {
+              action: run.action,
+              message: run.message || t("models.taskRunning"),
+            })}
             {run.percent !== null && ` · ${String(run.percent)} %`}
           </span>
         </div>
       );
     case "done":
-      return <span className="run-status succeeded">{run.message || "Terminé"}</span>;
+      return <span className="run-status succeeded">{run.message || t("models.done")}</span>;
     case "failed":
       return (
         <ErrorPanel
-          title="Téléchargement impossible"
+          title={t("models.downloadError")}
           message={run.error.message}
           hint={run.error.hint}
         />

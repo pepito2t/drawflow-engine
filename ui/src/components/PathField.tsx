@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { dropFieldProps } from "../hooks/use-file-drop";
 import {
   isFolderKind,
@@ -36,7 +37,7 @@ export function PathField({ moduleId, field, value, disabled, onChange }: PathFi
   return (
     <div className="path-field" {...dropFieldProps(moduleId, field.name)}>
       <ul id={field.name} className="path-list">
-        {paths.length === 0 && <li className="placeholder">Glisser-déposer ici ou Parcourir…</li>}
+        {paths.length === 0 && <li className="placeholder">{t("pathField.placeholder")}</li>}
         {paths.map((path) => (
           <li key={path} title={path}>
             {path}
@@ -45,7 +46,7 @@ export function PathField({ moduleId, field, value, disabled, onChange }: PathFi
       </ul>
       <div className="path-actions">
         <button type="button" disabled={disabled} onClick={browse}>
-          Parcourir
+          {t("pathField.browse")}
         </button>
         {paths.length > 0 && (
           <button
@@ -55,7 +56,7 @@ export function PathField({ moduleId, field, value, disabled, onChange }: PathFi
               onChange(multiple ? [] : "");
             }}
           >
-            Effacer
+            {t("pathField.clear")}
           </button>
         )}
       </div>

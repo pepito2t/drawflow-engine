@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { toReadableError, type ReadableError } from "../lib/error-message";
+import { t } from "../i18n/settings";
 import type { FormValues } from "../lib/form-schema";
 import type { SettingsSection } from "../lib/settings";
 import {
   importedFormValues,
-  SETTINGS_FILE_FILTERS,
+  settingsFileFilters,
   SETTINGS_FILE_SUFFIX,
 } from "../lib/settings-transfer";
 import { pickPaths, pickSavePath } from "../lib/tauri/dialog";
@@ -30,9 +31,9 @@ export function SectionTransfer({ section, disabled, onImported }: SectionTransf
   const exportSection = () => {
     setError(null);
     pickSavePath({
-      title: `Exporter « ${section.title} »`,
+      title: t("transfer.exportTitle", { title: section.title }),
       defaultPath: `${section.title}${SETTINGS_FILE_SUFFIX}`,
-      filters: SETTINGS_FILE_FILTERS,
+      filters: settingsFileFilters(),
     })
       .then(async (target) => {
         if (target === null) {
@@ -49,8 +50,8 @@ export function SectionTransfer({ section, disabled, onImported }: SectionTransf
     pickPaths({
       directory: false,
       multiple: false,
-      title: "Importer des paramètres",
-      filters: SETTINGS_FILE_FILTERS,
+      title: t("transfer.importTitle"),
+      filters: settingsFileFilters(),
     })
       .then(async ([source]) => {
         if (source === undefined) {
@@ -59,7 +60,7 @@ export function SectionTransfer({ section, disabled, onImported }: SectionTransf
         onImported(
           importedFormValues(await engineRequest("settings.read-import", { source }), section),
         );
-        setNotice("Valeurs importées : vérifiez-les puis cliquez sur « Enregistrer ».");
+        setNotice(t("transfer.imported"));
       })
       .catch(fail);
   };
@@ -68,16 +69,16 @@ export function SectionTransfer({ section, disabled, onImported }: SectionTransf
     <div className="section-transfer">
       <div className="run-controls">
         <button type="button" disabled={disabled} onClick={importSection}>
-          Importer…
+          {t("transfer.import")}
         </button>
         <button type="button" disabled={disabled} onClick={exportSection}>
-          Exporter…
+          {t("transfer.export")}
         </button>
         {notice && <span className="muted">{notice}</span>}
       </div>
       {error && (
         <ErrorPanel
-          title="Import / export impossible"
+          title={t("transfer.error")}
           message={error.message}
           hint={error.hint}
           file={error.file}

@@ -3,6 +3,7 @@ import { useNotificationCenter } from "../hooks/notification-center";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { useSetupRun } from "../hooks/use-setup-run";
 import { toReadableError } from "../lib/error-message";
+import { t } from "../i18n/settings";
 import {
   formatSize,
   OLLAMA_LIBRARY_URL,
@@ -32,9 +33,9 @@ export function AiModelsPanel() {
   return (
     <section className="settings-section">
       <div className="setup-header">
-        <h3>Modèles d'IA</h3>
+        <h3>{t("models.title")}</h3>
         <button type="button" onClick={retry}>
-          Actualiser
+          {t("models.refresh")}
         </button>
       </div>
       <ErrorBoundary
@@ -43,7 +44,7 @@ export function AiModelsPanel() {
           const { message, hint } = toReadableError(error);
           return (
             <ErrorPanel
-              title="Catalogue indisponible"
+              title={t("models.catalogError")}
               message={message}
               hint={hint}
               onRetry={retry}
@@ -51,7 +52,7 @@ export function AiModelsPanel() {
           );
         }}
       >
-        <Suspense fallback={<Loader label="Chargement des modèles…" />}>
+        <Suspense fallback={<Loader label={t("models.loading")} />}>
           <ModelList catalogPromise={promise} run={run} onDownload={download} onChanged={retry} />
         </Suspense>
       </ErrorBoundary>
@@ -95,22 +96,22 @@ function ModelList({ catalogPromise, run, onDownload, onChanged }: ModelListProp
     <>
       <p className="muted">
         {catalog.memory_gb === null
-          ? "Mémoire du poste inconnue."
-          : `Mémoire du poste : ${formatSize(catalog.memory_gb)}.`}{" "}
-        Recommandé : <strong>{catalog.recommended}</strong>.
+          ? t("models.memoryUnknown")
+          : t("models.memory", { size: formatSize(catalog.memory_gb) })}{" "}
+        {t("models.recommendedPrefix")} <strong>{catalog.recommended}</strong>.
       </p>
       {!catalog.is_ollama && (
         <ErrorPanel
-          title="Ollama ne répond pas"
-          message="Les téléchargements passent par Ollama."
-          hint="Installez ou démarrez Ollama depuis Paramètres → Installation. Avec LM Studio, téléchargez les modèles depuis LM Studio."
+          title={t("models.ollamaDown")}
+          message={t("models.ollamaDownMessage")}
+          hint={t("models.ollamaDownHint")}
         />
       )}
       <input
         type="text"
         value={query}
-        placeholder="Rechercher un modèle…"
-        aria-label="Rechercher un modèle"
+        placeholder={t("models.searchPlaceholder")}
+        aria-label={t("models.search")}
         onChange={(event) => {
           setQuery(event.target.value);
         }}
@@ -129,13 +130,13 @@ function ModelList({ catalogPromise, run, onDownload, onChanged }: ModelListProp
           />
         ))}
       </ul>
-      {actionError && <ErrorPanel title="Action impossible" message={actionError} />}
+      {actionError && <ErrorPanel title={t("models.actionError")} message={actionError} />}
       <div className="other-model">
         <input
           type="text"
           value={other}
-          placeholder="Autre modèle de la bibliothèque Ollama (ex. mistral-nemo)"
-          aria-label="Autre modèle"
+          placeholder={t("models.otherPlaceholder")}
+          aria-label={t("models.other")}
           onChange={(event) => {
             setOther(event.target.value);
           }}
@@ -147,7 +148,7 @@ function ModelList({ catalogPromise, run, onDownload, onChanged }: ModelListProp
             onDownload(other.trim());
           }}
         >
-          Télécharger
+          {t("models.download")}
         </button>
         <button
           type="button"
@@ -156,7 +157,7 @@ function ModelList({ catalogPromise, run, onDownload, onChanged }: ModelListProp
             openDownloadPage(OLLAMA_LIBRARY_URL).catch(fail);
           }}
         >
-          Parcourir la bibliothèque
+          {t("models.browseLibrary")}
         </button>
       </div>
       {run.status !== "idle" && !catalog.models.some((model) => model.name === run.action) && (

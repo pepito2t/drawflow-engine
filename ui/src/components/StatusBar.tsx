@@ -1,3 +1,5 @@
+import { plural } from "../i18n";
+import { t } from "../i18n/shell";
 import { Suspense, use, type ReactNode } from "react";
 import { getAppVersion } from "../lib/tauri/app";
 
@@ -51,10 +53,14 @@ function EngineIndicator({ engine }: { engine: EngineStatus }) {
 function describeEngine(engine: EngineStatus): string {
   switch (engine.state) {
     case "loading":
-      return "Démarrage du moteur…";
+      return t("statusBar.engineLoading");
     case "failed":
-      return "Moteur indisponible";
+      return t("statusBar.engineFailed");
     case "ready":
-      return `Moteur prêt · ${String(engine.moduleCount)} fonctionnalité${engine.moduleCount > 1 ? "s" : ""}`;
+      return plural(
+        engine.moduleCount,
+        t("statusBar.engineReady.one"),
+        t("statusBar.engineReady.other"),
+      );
   }
 }

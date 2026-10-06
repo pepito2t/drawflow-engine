@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import type { ReactNode } from "react";
 import { useRunsStore } from "../hooks/runs-context";
 import type { CatalogModule } from "../lib/catalog";
@@ -39,7 +40,7 @@ export function ModuleTabs({
         className="side-tabs"
         role="tablist"
         aria-orientation="vertical"
-        aria-label="Fonctionnalités"
+        aria-label={t("moduleTabs.title")}
       >
         {leadingTabs.map((tab) => (
           <ExtraTabButton
@@ -117,7 +118,7 @@ function ExtraTabButton({ tab, selected, onSelect, separated = false }: ExtraTab
 
 function TabRunBadge({ status, unseen }: { status: RunStatus; unseen: boolean }) {
   if (status === "running") {
-    return <Spinner label="En cours" />;
+    return <Spinner label={t("moduleTabs.running")} />;
   }
   if (!unseen) {
     return null;

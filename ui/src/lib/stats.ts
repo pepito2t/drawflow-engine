@@ -1,3 +1,5 @@
+import { plural } from "../i18n";
+import { t } from "../i18n/settings";
 import { z } from "zod";
 import { parseJsonOrNull } from "./json";
 
@@ -27,7 +29,7 @@ export class StatsError extends Error {
 export function parseUsageStats(rawJson: string): UsageStats {
   const parsed = usageStatsSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new StatsError("Les compteurs reçus du moteur sont invalides.");
+    throw new StatsError(t("stats.invalid"));
   }
   return parsed.data;
 }
@@ -47,16 +49,14 @@ export function totalsOf(stats: UsageStats): FeatureStats {
 /** Working days of eight hours, then hours, then minutes: what a draftsman can picture. */
 export function formatSavedTime(minutes: number): string {
   if (minutes < MINUTES_PER_HOUR) {
-    return `${String(minutes)} min`;
+    return t("stats.minutes", { count: minutes });
   }
   const hours = Math.round(minutes / MINUTES_PER_HOUR);
   if (hours < HOURS_PER_DAY) {
-    return `${String(hours)} h`;
+    return t("stats.hours", { count: hours });
   }
   const days = Math.floor(hours / HOURS_PER_DAY);
   const remaining = hours % HOURS_PER_DAY;
-  const dayLabel = days > 1 ? "jours" : "jour";
-  return remaining === 0
-    ? `${String(days)} ${dayLabel}`
-    : `${String(days)} ${dayLabel} ${String(remaining)} h`;
+  const dayPart = plural(days, t("stats.day.one"), t("stats.day.other"));
+  return remaining === 0 ? dayPart : `${dayPart} ${t("stats.hours", { count: remaining })}`;
 }

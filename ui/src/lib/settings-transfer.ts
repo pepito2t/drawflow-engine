@@ -1,3 +1,4 @@
+import { t } from "../i18n/settings";
 import { z } from "zod";
 import { toFormValue, type FormValues } from "./form-schema";
 import { parseJsonOrNull } from "./json";
@@ -13,18 +14,20 @@ export class SettingsTransferError extends Error {
   override name = "SettingsTransferError";
 }
 
-export const SETTINGS_FILE_FILTERS = [{ name: "Paramètres Drawflow", extensions: ["json"] }];
+export function settingsFileFilters(): { name: string; extensions: string[] }[] {
+  return [{ name: t("transfer.filter"), extensions: ["json"] }];
+}
 export const SETTINGS_FILE_SUFFIX = ".drawflow.json";
 
 /** Turns a validated import into form values for the section being edited. */
 export function importedFormValues(rawJson: string, section: SettingsSection): FormValues {
   const parsed = importSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new SettingsTransferError("Réponse du moteur invalide pour l'import.");
+    throw new SettingsTransferError(t("transfer.invalidResponse"));
   }
   if (parsed.data.section !== section.id) {
     throw new SettingsTransferError(
-      `Ce fichier contient les paramètres « ${parsed.data.title} », pas « ${section.title} ».`,
+      t("transfer.wrongSection", { found: parsed.data.title, expected: section.title }),
     );
   }
   return Object.fromEntries(

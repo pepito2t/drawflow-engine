@@ -15,6 +15,7 @@ import type { CatalogModule } from "../lib/catalog";
 import { AutomationsPanel } from "./AutomationsPanel";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useNotificationCenter } from "../hooks/notification-center";
+import { t } from "../i18n/settings";
 import { ErrorPanel } from "./ErrorPanel";
 import { AboutPanel } from "./AboutPanel";
 import { AccessCodeForm } from "./AccessCodeForm";
@@ -37,15 +38,15 @@ const PROFILE_TAB_ID = "profile";
 const ABOUT_TAB_ID = "about";
 const AUTOMATIONS_TAB_ID = "automations";
 const STATIC_TABS = [
-  { id: SETUP_TAB_ID, title: "Installation" },
-  { id: AI_MODELS_TAB_ID, title: "Modèles d'IA" },
-  { id: TEMPLATES_TAB_ID, title: "Modèles" },
-  { id: AUTOMATIONS_TAB_ID, title: "Automatisations" },
-  { id: ACCESS_CODE_TAB_ID, title: "Code d'accès" },
-  { id: INTEGRATIONS_TAB_ID, title: "API locale" },
-  { id: PROFILE_TAB_ID, title: "Profil" },
-  { id: ABOUT_TAB_ID, title: "À propos" },
-];
+  { id: SETUP_TAB_ID, title: "settings.tab.setup" },
+  { id: AI_MODELS_TAB_ID, title: "settings.tab.aiModels" },
+  { id: TEMPLATES_TAB_ID, title: "settings.tab.templates" },
+  { id: AUTOMATIONS_TAB_ID, title: "settings.tab.automations" },
+  { id: ACCESS_CODE_TAB_ID, title: "settings.tab.accessCode" },
+  { id: INTEGRATIONS_TAB_ID, title: "settings.tab.integrations" },
+  { id: PROFILE_TAB_ID, title: "settings.tab.profile" },
+  { id: ABOUT_TAB_ID, title: "settings.tab.about" },
+] as const;
 
 type SaveState =
   { status: "idle" | "saving" | "saved" } | { status: "failed"; error: ReadableError };
@@ -78,11 +79,11 @@ export function SettingsDialog({ initialTab, modules, onClose }: SettingsDialogP
     >
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <header className="dialog-header">
-          <h2 id="settings-title">Paramètres</h2>
+          <h2 id="settings-title">{t("settings.title")}</h2>
           <button
             type="button"
             className="icon-button"
-            aria-label="Fermer"
+            aria-label={t("settings.close")}
             autoFocus
             onClick={onClose}
           >
@@ -118,7 +119,7 @@ function SettingsContent({ attemptId, promise, retry, initialTab, modules }: Set
         return (
           <div className="dialog-body centered">
             <ErrorPanel
-              title="Impossible de charger les paramètres"
+              title={t("settings.loadError")}
               message={message}
               hint={hint}
               onRetry={retry}
@@ -130,7 +131,7 @@ function SettingsContent({ attemptId, promise, retry, initialTab, modules }: Set
       <Suspense
         fallback={
           <div className="dialog-body">
-            <Loader label="Chargement des paramètres…" />
+            <Loader label={t("settings.loading")} />
           </div>
         }
       >
@@ -187,7 +188,7 @@ function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: Sett
           className="side-tabs"
           role="tablist"
           aria-orientation="vertical"
-          aria-label="Catégories"
+          aria-label={t("settings.categories")}
         >
           {sections.map((section) => (
             <button
@@ -215,7 +216,7 @@ function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: Sett
                 setActiveId(tab.id);
               }}
             >
-              <span>{tab.title}</span>
+              <span>{t(tab.title)}</span>
             </button>
           ))}
         </nav>
@@ -249,7 +250,7 @@ function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: Sett
       <footer className="dialog-footer" hidden={isStaticTab}>
         {saveState.status === "failed" && (
           <ErrorPanel
-            title="Paramètres non enregistrés"
+            title={t("settings.notSaved")}
             message={saveState.error.message}
             hint={saveState.error.hint}
             file={saveState.error.file}
@@ -257,11 +258,11 @@ function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: Sett
         )}
         <div className="run-controls">
           {saveState.status === "saved" && (
-            <span className="run-status succeeded">Paramètres enregistrés</span>
+            <span className="run-status succeeded">{t("settings.saved")}</span>
           )}
-          {isSaving && <Spinner label="Enregistrement" />}
+          {isSaving && <Spinner label={t("settings.saving")} />}
           <button type="button" className="primary" onClick={save} disabled={isSaving}>
-            Enregistrer
+            {t("settings.save")}
           </button>
         </div>
       </footer>
@@ -301,9 +302,7 @@ function SettingsSectionForm({ section, values, disabled, setValues }: SettingsS
           }}
         />
       )}
-      {section.error && (
-        <ErrorPanel title="Valeurs enregistrées invalides" message={section.error} />
-      )}
+      {section.error && <ErrorPanel title={t("settings.invalidValues")} message={section.error} />}
       <ModuleForm
         moduleId={namespace}
         fields={section.fields}

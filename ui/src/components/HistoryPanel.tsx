@@ -2,6 +2,8 @@ import { Suspense, use, useEffect, useState } from "react";
 import { useCommands } from "../hooks/command-registry";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { plural } from "../i18n";
+import { t } from "../i18n/panels";
 import { COMMANDS } from "../lib/commands";
 import { toReadableError } from "../lib/error-message";
 import { describeDuration, describeStart, lastOutput, type HistoryEntry } from "../lib/history";
@@ -11,7 +13,10 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { Loader } from "./Spinner";
 
-const STATUS_LABELS = { succeeded: "Terminé", failed: "Échec" } as const;
+const STATUS_LABELS = {
+  succeeded: "history.status.succeeded",
+  failed: "history.status.failed",
+} as const;
 
 export function HistoryPanel() {
   const { id, promise, retry } = useRetryablePromise(listHistory);
@@ -29,8 +34,8 @@ export function HistoryPanel() {
   return (
     <section className="module-workspace">
       <header>
-        <h1>Historique</h1>
-        <p>Les derniers traitements : rouvrir un résultat, relancer avec les mêmes fichiers.</p>
+        <h1>{t("history.title")}</h1>
+        <p>{t("history.subtitle")}</p>
       </header>
       <ErrorBoundary
         key={id}
@@ -38,7 +43,7 @@ export function HistoryPanel() {
           const { message, hint } = toReadableError(error);
           return (
             <ErrorPanel
-              title="Historique indisponible"
+              title={t("history.unavailable")}
               message={message}
               hint={hint}
               onRetry={retry}
@@ -46,7 +51,7 @@ export function HistoryPanel() {
           );
         }}
       >
-        <Suspense fallback={<Loader label="Chargement de l'historique…" />}>
+        <Suspense fallback={<Loader label={t("history.loading")} />}>
           <HistoryList entriesPromise={promise} onChanged={retry} />
         </Suspense>
       </ErrorBoundary>
@@ -85,7 +90,7 @@ function HistoryList({ entriesPromise, onChanged }: HistoryListProps) {
   };
 
   if (entries.length === 0) {
-    return <p className="muted">Aucun traitement pour l'instant. Lancez une fonctionnalité.</p>;
+    return <p className="muted">{t("history.empty")}</p>;
   }
   return (
     <>
@@ -100,10 +105,10 @@ function HistoryList({ entriesPromise, onChanged }: HistoryListProps) {
           />
         ))}
       </ul>
-      {actionError && <ErrorPanel title="Action impossible" message={actionError} />}
+      {actionError && <ErrorPanel title={t("common.action_failed")} message={actionError} />}
       <div>
         <button type="button" onClick={clear}>
-          Vider l'historique
+          {t("history.clear")}
         </button>
       </div>
     </>
@@ -122,7 +127,7 @@ export function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps
   return (
     <li className="history-item">
       <div className="history-main">
-        <span className={`run-status ${entry.status}`}>{STATUS_LABELS[entry.status]}</span>
+        <span className={`run-status ${entry.status}`}>{t(STATUS_LABELS[entry.status])}</span>
         <strong>{entry.module_name}</strong>
         <span className="muted">
           {describeStart(entry.started_at)} · {describeDuration(entry.duration_ms)}
@@ -132,7 +137,7 @@ export function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps
       {entry.warnings.length > 0 && (
         <details className="history-warnings">
           <summary className="muted">
-            {String(entry.warnings.length)} avertissement{entry.warnings.length > 1 ? "s" : ""}
+            {plural(entry.warnings.length, t("history.warnings.one"), t("history.warnings.other"))}
           </summary>
           <ul>
             {entry.warnings.map((warning, index) => (
@@ -157,7 +162,7 @@ export function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps
               onOpen(output);
             }}
           >
-            Ouvrir le résultat
+            {t("history.open_output")}
           </button>
         )}
         <button
@@ -166,13 +171,13 @@ export function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps
             onRerun(entry);
           }}
         >
-          Relancer
+          {t("history.rerun")}
         </button>
         <button
           type="button"
           className="icon-button"
-          aria-label="Retirer de l'historique"
-          title="Retirer de l'historique"
+          aria-label={t("history.remove")}
+          title={t("history.remove")}
           onClick={() => {
             onRemove(entry);
           }}

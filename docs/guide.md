@@ -20,6 +20,10 @@ La marche à suivre complète, dans l'ordre. Chaque étape renvoie à sa section
 
 En cas de souci : [Dépannage](#dépannage).
 
+### Langue
+
+Paramètres → **Général** → **Langue** : `fr` ou `en`. L'interface change dès l'enregistrement ; la langue suit celle de Windows au premier lancement.
+
 ## L'écran Aujourd'hui
 
 Drawflow s'ouvre sur **Aujourd'hui** : les prérequis manquants (bouton **Configurer**), les préréglages lançables en un clic, et les derniers traitements avec **Ouvrir le résultat** et **Relancer**. Commande `today.open` pour le Stream Dock ; l'assistant lit le même écran (« qu'est-ce qui m'attend ? »).

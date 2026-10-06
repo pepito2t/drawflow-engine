@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { useCallback, useEffect, useRef } from "react";
 import type { CatalogModule } from "../lib/catalog";
 import { COMMANDS } from "../lib/commands";
@@ -55,7 +56,7 @@ export function useAppCommands({
   const openTab = useCallback(
     async ({ moduleId }: { moduleId: string }) => {
       if (!modules.some((module) => module.manifest.id === moduleId)) {
-        throw new Error(`Fonctionnalité inconnue : ${moduleId}`);
+        throw new Error(t("appCommands.unknownFeature", { id: moduleId }));
       }
       selectModule(moduleId);
       await bringToFront();
@@ -68,10 +69,10 @@ export function useAppCommands({
     async ({ presetId }: { presetId: string }) => {
       const preset = presets.find((candidate) => candidate.id === presetId);
       if (!preset) {
-        throw new Error("Ce préréglage n'existe plus.");
+        throw new Error(t("appCommands.presetGone"));
       }
       if (entryFor(state, preset.module).run.status === "running") {
-        throw new Error("Cette fonctionnalité est déjà en cours d'exécution.");
+        throw new Error(t("appCommands.alreadyRunning"));
       }
       await openTab({ moduleId: preset.module });
       publish({ type: "presetRunRequested", presetId, moduleId: preset.module });
@@ -83,7 +84,7 @@ export function useAppCommands({
   const runFeature = useCallback(
     async ({ moduleId, inputs }: { moduleId: string; inputs: Record<string, unknown> }) => {
       if (entryFor(state, moduleId).run.status === "running") {
-        throw new Error("Cette fonctionnalité est déjà en cours d'exécution.");
+        throw new Error(t("appCommands.alreadyRunning"));
       }
       await openTab({ moduleId });
       publish({ type: "featureRunRequested", moduleId, inputs });
@@ -105,7 +106,7 @@ export function useAppCommands({
 
   const openLastResult = useCallback(async () => {
     if (lastOutput.current === null) {
-      throw new Error("Aucun fichier produit depuis l'ouverture de l'application.");
+      throw new Error(t("appCommands.noOutputYet"));
     }
     await openOutput(lastOutput.current);
   }, []);
@@ -135,7 +136,7 @@ export function useAppCommands({
     async ({ entryId }: { entryId: string }) => {
       const entry = (await listHistory()).find((candidate) => candidate.id === entryId);
       if (!entry) {
-        throw new Error("Ce traitement n'est plus dans l'historique.");
+        throw new Error(t("appCommands.historyEntryGone"));
       }
       await runFeature({ moduleId: entry.module, inputs: entry.inputs });
     },
@@ -150,7 +151,7 @@ export function useAppCommands({
       const preset = presets.find((candidate) => candidate.id === automation?.presetId);
       const module = modules.find((candidate) => candidate.manifest.id === preset?.module);
       if (!automation?.enabled || !preset || !module) {
-        throw new Error("Cette automatisation n'existe plus.");
+        throw new Error(t("appCommands.automationGone"));
       }
       await runFeature({
         moduleId: module.manifest.id,

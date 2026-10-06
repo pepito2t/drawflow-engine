@@ -1,3 +1,4 @@
+import { t } from "../i18n/settings";
 import type { CatalogModule } from "./catalog";
 import { isFolderKind, isPathKind, type FieldDescriptor } from "./form-schema";
 import type { Preset } from "./presets";
@@ -22,7 +23,7 @@ export function inputsForNewFile(
 ): Record<string, unknown> {
   const target = fields.find((field) => isPathKind(field.kind) && !isFolderKind(field.kind));
   if (!target) {
-    throw new Error("Cette fonctionnalité ne prend pas de fichier en entrée.");
+    throw new Error(t("automations.noFileInput"));
   }
   const value = target.kind === "files" ? [path] : path;
   return { ...presetInputs, [target.name]: value };
@@ -36,10 +37,10 @@ export function describePresetTarget(preset: Preset, modules: CatalogModule[]): 
 export function validateAutomations(automations: Automation[], presets: Preset[]): string | null {
   for (const automation of automations) {
     if (!automation.folder.trim()) {
-      return "Chaque automatisation doit surveiller un dossier.";
+      return t("automations.folderRequired");
     }
     if (!presets.some((preset) => preset.id === automation.presetId)) {
-      return "Chaque automatisation doit lancer un préréglage existant.";
+      return t("automations.presetRequired");
     }
   }
   return null;

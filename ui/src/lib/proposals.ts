@@ -1,3 +1,4 @@
+import { t } from "../i18n/panels";
 import type { RunProposal } from "./assistant-chat";
 import type { FieldDescriptor } from "./form-schema";
 
@@ -6,8 +7,6 @@ export interface InputLine {
   value: string;
 }
 
-const YES = "oui";
-const NO = "non";
 const LIST_SEPARATOR = ", ";
 
 /** What the user reads before confirming: only the inputs that carry a value. */
@@ -28,9 +27,9 @@ export function describeInputs(
 export function proposalTitle(proposal: RunProposal): string {
   switch (proposal.kind) {
     case "preset":
-      return `${proposal.featureName} — préréglage « ${proposal.label} »`;
+      return t("proposal.preset_title", { feature: proposal.featureName, label: proposal.label });
     case "synonyms":
-      return `Ajouter des en-têtes reconnus (${proposal.featureName})`;
+      return t("proposal.synonyms_title", { feature: proposal.featureName });
     case "feature":
       return proposal.featureName;
   }
@@ -50,7 +49,7 @@ export function describeSynonyms(inputs: Record<string, unknown>): InputLine[] {
 
 function displayValue(raw: unknown): string | null {
   if (typeof raw === "boolean") {
-    return raw ? YES : NO;
+    return raw ? t("proposal.yes") : t("proposal.no");
   }
   if (typeof raw === "number") {
     return String(raw);

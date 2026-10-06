@@ -1,3 +1,4 @@
+import { t } from "../i18n/shell";
 import { z } from "zod";
 import { parseJsonOrNull } from "./json";
 import { describeFields, inputsSchemaSchema, type FieldDescriptor } from "./form-schema";
@@ -31,18 +32,18 @@ export class CatalogError extends Error {
 export function parseCatalog(rawJson: string): CatalogModule[] {
   const parsed = catalogSchema.safeParse(parseJsonOrNull(rawJson));
   if (!parsed.success) {
-    throw new CatalogError("La liste des fonctionnalités reçue du moteur est invalide.");
+    throw new CatalogError(t("catalog.invalidList"));
   }
   return parsed.data.map(({ manifest, inputs_schema }) => ({
     manifest,
-    fields: parseFormFields(`module « ${manifest.id} »`, inputs_schema),
+    fields: parseFormFields(t("catalog.moduleOwner", { id: manifest.id }), inputs_schema),
   }));
 }
 
 export function parseFormFields(owner: string, rawSchema: unknown): FieldDescriptor[] {
   const parsed = inputsSchemaSchema.safeParse(rawSchema);
   if (!parsed.success) {
-    throw new CatalogError(`Le formulaire du ${owner} est invalide.`);
+    throw new CatalogError(t("catalog.invalidForm", { owner }));
   }
   return describeFields(parsed.data);
 }
