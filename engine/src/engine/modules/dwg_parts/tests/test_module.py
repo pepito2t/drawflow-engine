@@ -9,7 +9,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 from engine.core.templates import TemplateLibrary, TemplateUser
-from engine.modules.dwg_parts.tests.plans import build_facade_plan
+from engine.parts.tests.plans import build_facade_plan
 
 GOLDEN_RELATIVE_PATH = Path("fixtures") / "dwg-parts" / "expected" / "liste-pieces.json"
 

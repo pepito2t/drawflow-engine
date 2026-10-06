@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from engine.core.xlsx import CellValue, fit_columns, open_sheet, save_workbook, write_row
-from engine.modules.dwg_parts.aggregation import PartLine
-from engine.modules.dwg_parts.settings import DwgPartsSettings
+from engine.parts.aggregation import PartLine
+from engine.parts.settings import PartsListSettings
 
 QUANTITY_HEADER = "Quantité"
 SOURCES_HEADER = "Plans"
@@ -15,7 +15,7 @@ def export_parts(
     headers: Sequence[str],
     target: Path,
     template: Path | None,
-    settings: DwgPartsSettings,
+    settings: PartsListSettings,
 ) -> None:
     workbook, sheet = open_sheet(template, settings.template_sheet or None)
     header = [*headers, QUANTITY_HEADER, SOURCES_HEADER]

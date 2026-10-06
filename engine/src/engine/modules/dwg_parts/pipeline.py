@@ -9,26 +9,26 @@ from engine.core.contract import ModuleResult, RunContext
 from engine.core.errors import EngineError
 from engine.core.events import LogEvent
 from engine.core.naming import naming_values, output_target, writing_output
-from engine.modules.dwg_parts.collect import collect_plans
 from engine.modules.dwg_parts.export import export_parts
-from engine.modules.dwg_parts.oda import is_dxf, require_oda
-from engine.modules.dwg_parts.reader import RawPart
 from engine.modules.dwg_parts.schema import DwgPartsInputs
 from engine.modules.dwg_parts.service import (
     DOCUMENT_TYPE,
-    build_parts_list,
     describe_result,
     preview_table,
 )
-from engine.modules.dwg_parts.settings import DwgPartsSettings
-from engine.modules.dwg_parts.worker import FileExtraction, extract_file
+from engine.parts.collect import collect_plans
+from engine.parts.listing import build_parts_list
+from engine.parts.oda import is_dxf, require_oda
+from engine.parts.reader import RawPart
+from engine.parts.settings import PartsListSettings
+from engine.parts.worker import FileExtraction, extract_file
 
 OUTPUT_EXTENSION = "xlsx"
 READ_LABEL = "Lecture"
 
 
 def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime) -> ModuleResult:
-    settings = context.settings_as(DwgPartsSettings)
+    settings = context.settings_as(PartsListSettings)
     emit = context.emit
     plans = collect_plans(inputs.files, inputs.folders, recursive=inputs.recursive, emit=emit)
     needs_oda = any(not is_dxf(plan) for plan in plans)
@@ -67,7 +67,7 @@ def _flatten(results: list[tuple[Path, FileExtraction]], context: RunContext) ->
 
 
 def _target(
-    inputs: DwgPartsInputs, settings: DwgPartsSettings, plans: list[Path], moment: datetime
+    inputs: DwgPartsInputs, settings: PartsListSettings, plans: list[Path], moment: datetime
 ) -> Path:
     source = plans[0].stem if len(plans) == 1 else ""
     values = naming_values(moment, projet=inputs.project.strip(), type=DOCUMENT_TYPE, source=source)

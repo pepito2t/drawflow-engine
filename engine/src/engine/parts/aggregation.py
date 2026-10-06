@@ -2,7 +2,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from engine.modules.dwg_parts.mapping import MappedPart
+from engine.parts.mapping import MappedPart
 
 DIGITS = re.compile(r"(\d+)")
 

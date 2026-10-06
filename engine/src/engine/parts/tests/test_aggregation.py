@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from engine.modules.dwg_parts.aggregation import PartLine, aggregate
-from engine.modules.dwg_parts.mapping import MappedPart
+from engine.parts.aggregation import PartLine, aggregate
+from engine.parts.mapping import MappedPart
 
 
 def part(*values: str, quantity: float = 1, source: str = "a.dwg") -> MappedPart:

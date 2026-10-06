@@ -8,7 +8,7 @@ import pytest
 from engine.core.cache import FileCache
 from engine.core.events import Event
 from engine.core.settings_models import GeneralSettings
-from engine.modules.dwg_parts.oda import (
+from engine.parts.oda import (
     DwgConversionError,
     OdaConverter,
     OdaNotConfiguredError,

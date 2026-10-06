@@ -3,10 +3,11 @@ from pathlib import Path
 from engine.core.contract import ModuleResult
 from engine.core.history import HistoryStore, run_with_history
 from engine.core.registry import discover_modules
-from engine.modules.dwg_parts.aggregation import PartLine
-from engine.modules.dwg_parts.service import PartsList, preview_table
+from engine.modules.dwg_parts.service import preview_table
 from engine.modules.soumission.preview import preview_table as preview_submissions
 from engine.modules.soumission.reader import SubmissionTable
+from engine.parts.aggregation import PartLine
+from engine.parts.listing import PartsList
 
 
 def test_parts_preview_points_out_empty_cells() -> None:
