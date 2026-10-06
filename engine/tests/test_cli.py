@@ -133,3 +133,17 @@ def test_run_reports_invalid_stored_settings(tmp_path: Path) -> None:
     assert completed.returncode == EXIT_BUSINESS_ERROR
     [event] = ndjson_events(completed.stdout)
     assert event["hint"] == "Ouvrez Paramètres pour corriger les valeurs indiquées."
+
+
+def test_failures_are_written_to_the_diagnostic_log(tmp_path: Path) -> None:
+    settings = tmp_path / "settings.json"
+    settings.write_text("{pas du json", encoding="utf-8")
+
+    completed = run_cli("settings", "get", "--settings", str(settings))
+
+    assert completed.returncode == EXIT_BUSINESS_ERROR
+
+    log = tmp_path / "logs" / "engine.log"
+    entry = json.loads(log.read_text(encoding="utf-8").splitlines()[-1])
+    assert entry["type"] == "SettingsFileError"
+    assert "JSONDecodeError" in entry["cause"]

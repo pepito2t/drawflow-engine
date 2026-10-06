@@ -922,6 +922,11 @@ small {
   justify-content: space-between;
 }
 
+.setup-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .setup-list {
   display: flex;
   flex-direction: column;

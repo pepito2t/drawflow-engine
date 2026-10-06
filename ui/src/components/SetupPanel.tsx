@@ -18,6 +18,7 @@ import {
   OPEN_MODELS_ACTION,
 } from "../lib/setup";
 import { openDownloadPage, runSetupAction, scanSetup } from "../lib/tauri/setup";
+import { openLogsFolder } from "../lib/tauri/window";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { HelpIcon } from "./icons";
@@ -37,13 +38,27 @@ function loadReport(): Promise<SetupReport> {
 export function SetupPanel({ onOpenTab }: { onOpenTab: (tabId: string) => void }) {
   const { id, promise, retry } = useRetryablePromise(loadReport);
   const { run, start } = useSetupRun("setup", retry);
+  const openLogs = () => {
+    openLogsFolder().catch((error: unknown) => {
+      console.error("Dossier des journaux non ouvert :", error);
+    });
+  };
   return (
     <section className="settings-section">
       <div className="setup-header">
         <h3>Installation</h3>
-        <button type="button" onClick={retry}>
-          Analyser à nouveau
-        </button>
+        <div className="setup-header-actions">
+          <button
+            type="button"
+            title="Dossier des journaux à envoyer en cas de problème"
+            onClick={openLogs}
+          >
+            Journaux
+          </button>
+          <button type="button" onClick={retry}>
+            Analyser à nouveau
+          </button>
+        </div>
       </div>
       <ErrorBoundary
         key={id}

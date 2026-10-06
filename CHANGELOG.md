@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Journal de diagnostic** : chaque échec du moteur est enregistré dans `logs\engine.log` avec sa cause exacte (réponse du serveur de modèle, erreur système, trace interne) ; bouton **Journaux** dans Paramètres → Installation pour ouvrir le dossier (#157).
+
 ## 0.9.1 — 2026-10-06
 
 - Correctif : quand le serveur du modèle refuse une demande, l'assistant affiche le message du serveur ; un modèle trop gros pour la mémoire du poste est signalé comme tel, avec le conseil de choisir le modèle recommandé. Le modèle par défaut est celui qui tient dans la mémoire du poste (plus `qwen3.5:9b` en dur). Un lancement depuis le Stream Dock ou l'assistant avec un champ obligatoire vide pré-remplit le formulaire au lieu d'échouer (#155).

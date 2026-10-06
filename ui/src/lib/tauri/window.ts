@@ -11,3 +11,7 @@ export async function bringToFront(): Promise<void> {
 export function openOutput(path: string): Promise<void> {
   return invoke<undefined>("open_output", { path });
 }
+
+export function openLogsFolder(): Promise<void> {
+  return invoke<undefined>("open_logs_folder");
+}

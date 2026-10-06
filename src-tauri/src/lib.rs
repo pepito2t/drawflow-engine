@@ -32,6 +32,7 @@ pub fn run() {
             access::lock_status,
             updates::updater_configured,
             outputs::open_output,
+            outputs::open_logs_folder,
             integrations::integration_status,
             integrations::integration_update,
             integrations::integration_reply,
