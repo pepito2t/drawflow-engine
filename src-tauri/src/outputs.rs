@@ -24,6 +24,17 @@ struct ResultLine {
     outputs: Vec<String>,
 }
 
+#[derive(Deserialize)]
+struct HistoryListing {
+    entries: Vec<HistoryOutputs>,
+}
+
+#[derive(Deserialize)]
+struct HistoryOutputs {
+    #[serde(default)]
+    outputs: Vec<String>,
+}
+
 impl KnownOutputs {
     pub fn remember_from_line(&self, line: &str) {
         if !line.contains("\"result\"") {
@@ -37,6 +48,16 @@ impl KnownOutputs {
         }
         if let Ok(mut known) = self.0.lock() {
             known.extend(event.outputs);
+        }
+    }
+
+    /// Past runs listed from the history may be reopened too.
+    pub fn remember_from_history(&self, json: &str) {
+        let Ok(listing) = serde_json::from_str::<HistoryListing>(json) else {
+            return;
+        };
+        if let Ok(mut known) = self.0.lock() {
+            known.extend(listing.entries.into_iter().flat_map(|entry| entry.outputs));
         }
     }
 
@@ -96,5 +117,16 @@ mod tests {
 
         assert!(outputs.contains("C:\\Sortie\\liste é.xlsx").unwrap());
         assert!(!outputs.contains("C:\\Windows\\System32\\calc.exe").unwrap());
+    }
+
+    #[test]
+    fn history_listings_make_past_outputs_known() {
+        let outputs = KnownOutputs::default();
+        outputs.remember_from_history(
+            r#"{"entries":[{"id":"a","outputs":["C:\\Sortie\\ancien.xlsx"]},{"id":"b"}]}"#,
+        );
+        outputs.remember_from_history("pas du json");
+
+        assert!(outputs.contains("C:\\Sortie\\ancien.xlsx").unwrap());
     }
 }

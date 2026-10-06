@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Historique des traitements** : onglet Historique (date, durée, résultat, avertissements), **Ouvrir le résultat**, **Relancer**, retrait d'une ligne ou vidage ; conservé entre deux lancements (200 entrées), commandes `history.open` / `history.rerun` (#160).
+
 ## 0.9.2 — 2026-10-06
 
 - **Journal de diagnostic** : chaque échec du moteur est enregistré dans `logs\engine.log` avec sa cause exacte (réponse du serveur de modèle, erreur système, trace interne) ; bouton **Journaux** dans Paramètres → Installation pour ouvrir le dossier (#157).

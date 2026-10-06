@@ -147,3 +147,23 @@ def test_failures_are_written_to_the_diagnostic_log(tmp_path: Path) -> None:
     entry = json.loads(log.read_text(encoding="utf-8").splitlines()[-1])
     assert entry["type"] == "SettingsFileError"
     assert "JSONDecodeError" in entry["cause"]
+
+
+def test_runs_are_added_to_the_history(tmp_path: Path) -> None:
+    settings = tmp_path / "settings.json"
+    inputs = write_inputs(
+        tmp_path,
+        {
+            "files": [str(tmp_path / "absent.dwg")],
+            "project": "P",
+            "output_folder": str(tmp_path / "out"),
+        },
+    )
+
+    run_cli("run", "dwg-parts", "--input", str(inputs), "--settings", str(settings))
+    listed = run_cli("history", "list", "--settings", str(settings))
+
+    [entry] = json.loads(listed.stdout)["entries"]
+    assert entry["module"] == "dwg-parts"
+    assert entry["status"] == "failed"
+    assert entry["inputs"]["project"] == "P"

@@ -110,6 +110,12 @@ pub enum EngineRequest {
     HelpGuide,
     #[serde(rename = "setup.scan")]
     SetupScan,
+    #[serde(rename = "history.list")]
+    HistoryList,
+    #[serde(rename = "history.remove")]
+    HistoryRemove,
+    #[serde(rename = "history.clear")]
+    HistoryClear,
 }
 
 impl EngineRequest {
@@ -131,6 +137,9 @@ impl EngineRequest {
             Self::AssistantModelDelete => ("assistant", "model-delete"),
             Self::HelpGuide => ("help", "guide"),
             Self::SetupScan => ("setup", "scan"),
+            Self::HistoryList => ("history", "list"),
+            Self::HistoryRemove => ("history", "remove"),
+            Self::HistoryClear => ("history", "clear"),
         }
     }
 }
@@ -150,6 +159,12 @@ pub async fn engine_request(
     let arguments = request_arguments(request, settings, input, version);
     let output = query_engine(&app, arguments).await;
     drop(input_file);
+    if request == EngineRequest::HistoryList {
+        if let Ok(listed) = &output {
+            app.state::<KnownOutputs>()
+                .remember_from_history(&listed.stdout);
+        }
+    }
     output
 }
 

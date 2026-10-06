@@ -17,6 +17,8 @@ export const COMMAND_ARGUMENTS = {
   "help.open": z.object({ topic: z.string().optional() }),
   "update.install": z.object({}),
   "app.state": z.object({}),
+  "history.open": z.object({}),
+  "history.rerun": z.object({ entryId: z.string().min(1) }),
 } as const;
 
 export type CommandId = keyof typeof COMMAND_ARGUMENTS;
@@ -36,6 +38,8 @@ export const COMMANDS = {
   openHelp: "help.open",
   installUpdate: "update.install",
   appState: "app.state",
+  openHistory: "history.open",
+  rerunHistory: "history.rerun",
 } as const satisfies Record<string, CommandId>;
 
 export type CommandResult = { ok: true; data?: unknown } | { ok: false; error: string };
