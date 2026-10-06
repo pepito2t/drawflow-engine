@@ -1,5 +1,6 @@
 import importlib
 import pkgutil
+from functools import cache
 from typing import Any
 
 import engine.modules as modules_package
@@ -11,6 +12,11 @@ AnyModule = EngineModule[Any]
 
 
 def discover_modules() -> dict[str, AnyModule]:
+    return dict(_discovered())
+
+
+@cache
+def _discovered() -> tuple[tuple[str, AnyModule], ...]:
     found: dict[str, AnyModule] = {}
     prefix = f"{modules_package.__name__}."
     for info in pkgutil.iter_modules(modules_package.__path__, prefix=prefix):
@@ -22,7 +28,7 @@ def discover_modules() -> dict[str, AnyModule]:
                 f"Deux modules utilisent l'identifiant « {module.manifest.id} »."
             )
         found[module.manifest.id] = module
-    return dict(sorted(found.items(), key=lambda item: (item[1].manifest.order, item[0])))
+    return tuple(sorted(found.items(), key=lambda item: (item[1].manifest.order, item[0])))
 
 
 def get_module(module_id: str) -> AnyModule:
