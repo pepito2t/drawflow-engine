@@ -16,8 +16,12 @@ from engine.assistant.tools import (
     describe_templates,
     help_section,
     help_topics,
+    inspect_submission,
     propose_feature_run,
     propose_preset_run,
+)
+from engine.assistant.tools import (
+    propose_column_synonyms as propose_column_synonyms_run,
 )
 from engine.core.errors import EngineError
 from engine.core.registry import discover_modules
@@ -73,6 +77,24 @@ def build_server(settings: Path) -> FastMCP:
     )
     def read_help(topic: str) -> dict[str, Any]:
         return _as_tool_result(lambda: help_section(topic))
+
+    @server.tool(
+        description="Inspecte une soumission (XLSX, ou PDF avec classeur joint) : en-têtes "
+        "trouvés dans chaque feuille, colonnes déjà reconnues, colonnes normalisées et leurs "
+        "en-têtes connus. À utiliser quand une soumission n'est pas reconnue.",
+        annotations=READ_ONLY,
+    )
+    def inspect_submission_headers(path: str) -> dict[str, Any]:
+        return _as_tool_result(lambda: inspect_submission(settings, path))
+
+    @server.tool(
+        description="Propose d'ajouter des en-têtes reconnus à des colonnes normalisées de la "
+        'soumission, ex. {"Quantité": ["Nbre"]}. Rien n\'est enregistré : l\'utilisateur '
+        "voit une carte et doit cliquer sur Appliquer.",
+        annotations=READ_ONLY,
+    )
+    def propose_column_synonyms(additions: dict[str, list[str]]) -> dict[str, Any]:
+        return _as_tool_result(lambda: propose_column_synonyms_run(settings, additions))
 
     @server.tool(
         description="Propose de lancer un préréglage. Rien n'est lancé : l'utilisateur voit "

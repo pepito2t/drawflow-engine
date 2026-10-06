@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Soumission : en-têtes inconnus associés par l'assistant** — quand un fichier n'est pas reconnu, l'avertissement cite les en-têtes trouvés ; l'assistant peut inspecter le fichier (`inspect_submission_headers`) et proposer d'ajouter ces en-têtes aux colonnes (`propose_column_synonyms`), appliqué d'un clic (#169).
+
 ## 0.12.0 — 2026-10-06
 
 - **Aperçu avant export** (liste de pièces, soumission) : le tableau s'affiche avant l'écriture du fichier Excel, lignes à vérifier surlignées avec leur raison, filtre « Anomalies seulement », puis **Exporter** ou **Annuler**. Case « Aperçu avant export » dans le formulaire, mémorisée par les préréglages (#164).

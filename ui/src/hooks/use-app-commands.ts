@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { CatalogModule } from "../lib/catalog";
 import { COMMANDS } from "../lib/commands";
 import { entryFor, runningModuleIds } from "../lib/runs-store";
-import { cancelRun } from "../lib/tauri/engine";
+import { cancelRun, engineRequest } from "../lib/tauri/engine";
 import { listHistory } from "../lib/tauri/history";
 import { bringToFront, openOutput } from "../lib/tauri/window";
 import { AI_MODELS_TAB_ID, SETUP_TAB_ID } from "../lib/setup";
@@ -103,6 +103,15 @@ export function useAppCommands({
     await openOutput(lastOutput.current);
   }, []);
   useCommand(COMMANDS.openLastResult, openLastResult);
+
+  const addSynonyms = useCallback(
+    async ({ columns }: { columns: Record<string, string[]> }) => {
+      await engineRequest("settings.add-synonyms", { columns });
+      publish({ type: "settingsSaved" });
+    },
+    [publish],
+  );
+  useCommand(COMMANDS.addSynonyms, addSynonyms);
 
   useCommand(COMMANDS.openHistory, openHistory);
 

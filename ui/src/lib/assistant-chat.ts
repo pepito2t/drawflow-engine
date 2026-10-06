@@ -16,7 +16,7 @@ export type ProposalStatus = "pending" | "launching" | "launched" | "dismissed" 
 
 export interface RunProposal {
   id: string;
-  kind: "preset" | "feature";
+  kind: "preset" | "feature" | "synonyms";
   feature: string;
   featureName: string;
   label: string;

@@ -10,6 +10,7 @@ from engine.core.presets import PresetStore
 from engine.core.registry import discover_modules, get_module
 from engine.core.settings import export_section, read_section_import
 from engine.core.templates import TemplateLibrary, TemplateUser
+from engine.modules.soumission.headers import add_synonyms
 
 TEMPLATE_ACTIONS = {
     "list": "Liste les modèles importés et les modèles par défaut (JSON).",
@@ -23,6 +24,7 @@ PRESET_ACTIONS = {
     "remove": "Supprime un préréglage.",
 }
 SETTINGS_FILE_ACTIONS = {
+    "add-synonyms": "Ajoute des en-têtes reconnus aux colonnes de la soumission (JSON).",
     "export": "Exporte une catégorie de paramètres en JSON.",
     "read-import": "Valide un export de paramètres sans l'enregistrer.",
 }
@@ -34,6 +36,10 @@ class _Request(BaseModel):
 
 class SourceRequest(_Request):
     source: Path
+
+
+class SynonymsRequest(_Request):
+    columns: dict[str, list[str]]
 
 
 class TemplateIdRequest(_Request):
@@ -85,6 +91,8 @@ def handle_presets(action: str, settings: Path, raw: dict[str, Any]) -> dict[str
 
 def handle_settings_file(action: str, settings: Path, raw: dict[str, Any]) -> dict[str, Any]:
     modules = discover_modules()
+    if action == "add-synonyms":
+        return add_synonyms(settings, _parse(SynonymsRequest, raw).columns)
     if action == "export":
         request = _parse(ExportRequest, raw)
         export_section(settings, request.section, modules, request.target)
