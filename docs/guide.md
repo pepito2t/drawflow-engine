@@ -92,6 +92,7 @@ Il peut aussi **proposer un lancement** (« lance la soumission sur C:\Chantier\
 
 - Prérequis : un modèle local (voir [Installer les prérequis](#installer-les-prérequis)). L'adresse du serveur doit désigner ce poste : aucune donnée ne sort de la machine.
 - **Paramètres → Modèles d'IA** recommande le modèle adapté à la mémoire du poste, et permet de chercher, télécharger, utiliser ou supprimer un modèle (ou d'en télécharger un autre de la bibliothèque Ollama par son nom).
+- **Glissez un fichier dans le panneau** (plan, PDF, soumission, Word) : il apparaît comme pièce jointe du message ; l'assistant le lit sur le poste, dit ce qu'il contient et propose la fonctionnalité adaptée. Rien n'est copié ni envoyé.
 - La liste en haut du panneau change de modèle. **Arrêter** interrompt une réponse, **+** démarre une nouvelle conversation. La conversation en cours est conservée sur le poste entre deux lancements (sans les cartes de lancement).
 
 ## Piloter avec un Stream Dock

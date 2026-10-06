@@ -4,6 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Fichiers glissés dans l'assistant** : pièces jointes visibles dans le message ; outil `inspect_file` (blocs d'un plan, pages et texte d'un PDF, feuilles d'un XLSX, paragraphes d'un DOCX) et proposition de la fonctionnalité adaptée (#159).
 - **Comparaison d'indices** : nouvelle fonctionnalité qui compare deux indices d'un jeu de plans DWG/DXF (ajouts, suppressions, quantités modifiées, plans présents dans chaque indice), avec aperçu avant export et fichier Excel à onglets. Les noms de plans incrémentés (`01_`, `_02`) sont rapprochés automatiquement (#166).
 
 ## 0.13.0 — 2026-10-06
