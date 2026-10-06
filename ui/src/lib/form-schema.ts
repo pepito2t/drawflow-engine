@@ -100,6 +100,13 @@ export function initialValues(fields: FieldDescriptor[]): FormValues {
   return Object.fromEntries(fields.map((field) => [field.name, field.defaultValue]));
 }
 
+/** Labels of the required fields still empty: a run started with them would only fail. */
+export function missingRequired(fields: FieldDescriptor[], values: FormValues): string[] {
+  return fields
+    .filter((field) => field.required && isEmpty(values[field.name]))
+    .map((field) => field.label);
+}
+
 export function toEngineInputs(fields: FieldDescriptor[], values: FormValues): FormValues {
   const entries = fields
     .map((field): [string, FormValue | undefined] => [field.name, values[field.name]])

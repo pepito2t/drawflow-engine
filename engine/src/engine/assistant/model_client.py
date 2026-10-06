@@ -44,6 +44,22 @@ class _PendingCall:
 REASONING_EFFORT = "none"
 
 
+MEMORY_MARKERS = ("memory", "mémoire")
+SERVER_ERROR_MAX_LENGTH = 300
+
+
+def _server_error(response: httpx.Response) -> str:
+    """Ollama answers {"error": {"message": …}} or {"error": "…"}; others plain text."""
+    try:
+        payload = response.json()
+    except ValueError:
+        return response.text.strip()[:SERVER_ERROR_MAX_LENGTH]
+    error = payload.get("error") if isinstance(payload, dict) else None
+    if isinstance(error, dict):
+        error = error.get("message")
+    return str(error).strip()[:SERVER_ERROR_MAX_LENGTH] if error else ""
+
+
 class ModelClient:
     def __init__(
         self,
@@ -99,14 +115,23 @@ class ModelClient:
             raise self._unreachable() from error
         if response.is_success:
             return response
+        await response.aread()
+        detail = _server_error(response)
         await response.aclose()
         if response.status_code == HTTP_NOT_FOUND:
             raise ModelUnavailableError(
                 f"Le modèle « {self.model} » est introuvable sur le serveur local.",
                 hint=f"Installez-le (par exemple : ollama pull {self.model}). {SETTINGS_HINT}",
             )
+        if any(marker in detail.lower() for marker in MEMORY_MARKERS):
+            raise AssistantError(
+                f"Le modèle « {self.model} » est trop gros pour la mémoire de ce poste.",
+                hint="Choisissez un modèle plus petit dans Paramètres → Modèles d'IA : le modèle "
+                "recommandé pour ce poste y est indiqué.",
+            )
+        suffix = f" : {detail}" if detail else "."
         raise AssistantError(
-            f"Le serveur du modèle a refusé la demande (HTTP {response.status_code}).",
+            f"Le serveur du modèle a refusé la demande (HTTP {response.status_code}){suffix}",
             hint=SETTINGS_HINT,
         )
 
