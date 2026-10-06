@@ -9,6 +9,8 @@ from engine.core.fields import ui_field
 DEFAULT_BATCH_SIZE = 4
 MAX_BATCH_SIZE = 32
 DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10
+DEFAULT_MINUTES_SAVED_PER_FILE = 5
+MAX_MINUTES_SAVED_PER_FILE = 600
 MAX_NOTIFICATION_THRESHOLD_SECONDS = 3600
 DEFAULT_MODEL_SERVER_URL = "http://127.0.0.1:11434/v1"
 DEFAULT_MODEL_NAME = "qwen3.5:9b"
@@ -54,6 +56,25 @@ class GeneralSettings(SettingsSection):
         ),
         ge=0,
         le=MAX_NOTIFICATION_THRESHOLD_SECONDS,
+    )
+    usage_counters: bool = ui_field(
+        "bool",
+        label="Compteurs d'utilisation",
+        default=True,
+        description=(
+            "Compte les traitements et fichiers sur ce poste (Paramètres → À propos). "
+            "Rien n'est envoyé."
+        ),
+    )
+    minutes_saved_per_file: int = ui_field(
+        "number",
+        label="Minutes gagnées par fichier",
+        default=DEFAULT_MINUTES_SAVED_PER_FILE,
+        description=(
+            "Estimation utilisée par les compteurs : temps manuel évité pour chaque fichier traité."
+        ),
+        ge=0,
+        le=MAX_MINUTES_SAVED_PER_FILE,
     )
 
 

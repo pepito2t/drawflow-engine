@@ -124,11 +124,16 @@ Code initial : `0000`, à changer dans **Paramètres → Code d'accès**. Après
 
 Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **Plus tard**). La mise à jour attend la fin des traitements en cours puis redémarre l'application.
 
+## Ce que Drawflow vous a fait gagner
+
+Paramètres → **À propos** compte les traitements terminés et les fichiers traités sur ce poste, par fonctionnalité, et en déduit un temps gagné (minutes par fichier réglables dans Général, compteurs désactivables). Rien n'est envoyé nulle part.
+
 ## Où sont les fichiers
 
 | Contenu | Emplacement (Windows) |
 |---|---|
 | Paramètres, préréglages, historique des traitements, modèles importés, code d'accès, intégrations | `%APPDATA%\ch.drawflow.desktop\` |
+| Compteurs d'utilisation (`stats.json`) | `%APPDATA%\ch.drawflow.desktop\` |
 | Journaux de diagnostic (`engine.log`) | `%APPDATA%\ch.drawflow.desktop\logs\` |
 | Cache des plans DWG convertis | `%LOCALAPPDATA%\drawflow\cache\` (modifiable dans Paramètres → Général) |
 

@@ -116,6 +116,8 @@ pub enum EngineRequest {
     HistoryRemove,
     #[serde(rename = "history.clear")]
     HistoryClear,
+    #[serde(rename = "history.stats")]
+    HistoryStats,
 }
 
 impl EngineRequest {
@@ -140,6 +142,7 @@ impl EngineRequest {
             Self::HistoryList => ("history", "list"),
             Self::HistoryRemove => ("history", "remove"),
             Self::HistoryClear => ("history", "clear"),
+            Self::HistoryStats => ("history", "stats"),
         }
     }
 }

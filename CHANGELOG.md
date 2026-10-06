@@ -4,6 +4,7 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Compteurs locaux** (Paramètres → À propos) : traitements, fichiers et temps estimé gagné par fonctionnalité, calculés sur ce poste et désactivables ; minutes par fichier réglables (#133).
 ## 0.15.0 — 2026-10-06
 
 - **Liste de pièces multi-projets** : option « Un projet par dossier » — colonne Projet et onglet Total toutes origines confondues (#168).

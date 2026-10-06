@@ -4,6 +4,7 @@ import json
 import time
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -15,6 +16,7 @@ from engine.core.errors import EngineError, InvalidInputError, OutputWriteError
 from engine.core.events import Emit, Event, WarningEvent
 from engine.core.json_files import write_json_atomically
 from engine.core.registry import AnyModule
+from engine.core.stats import StatsStore, count_files
 
 HISTORY_FILE = "history.json"
 MAX_ENTRIES = 200
@@ -25,6 +27,7 @@ HISTORY_ACTIONS = {
     "list": "Traitements passés, du plus récent au plus ancien (JSON).",
     "remove": "Retire un traitement de l'historique (JSON).",
     "clear": "Vide l'historique (JSON).",
+    "stats": "Compteurs locaux : traitements, fichiers, temps estimé gagné (JSON).",
 }
 
 RunStatus = Literal["succeeded", "failed"]
@@ -101,12 +104,19 @@ class HistoryStore:
             ) from error
 
 
+@dataclass(frozen=True)
+class UsageCounters:
+    store: StatsStore
+    minutes_per_file: int
+
+
 def run_with_history(
     history: HistoryStore | None,
     module: AnyModule,
     raw_inputs: dict[str, Any],
     emit: Emit,
     run: Callable[[Emit], ModuleResult],
+    counters: UsageCounters | None = None,
 ) -> ModuleResult:
     """Runs the module and records the outcome; the run's own error is still raised."""
     if history is None:
@@ -153,7 +163,20 @@ def run_with_history(
             outputs=[str(path) for path in result.outputs],
         )
     )
+    if counters is not None:
+        _count(counters, module, raw_inputs, emit)
     return result
+
+
+def _count(counters: UsageCounters, module: AnyModule, inputs: dict[str, Any], emit: Emit) -> None:
+    try:
+        counters.store.record(
+            module.manifest.id, module.manifest.name, count_files(inputs), counters.minutes_per_file
+        )
+    except EngineError as error:
+        # The output is already written: a broken counter file must not fail the run.
+        file = str(error.file) if error.file is not None else None
+        emit(WarningEvent(message=error.message, file=file, hint=error.hint))
 
 
 def handle_history(action: str, settings_file: Path, request: dict[str, Any]) -> dict[str, Any]:
@@ -169,4 +192,6 @@ def handle_history(action: str, settings_file: Path, request: dict[str, Any]) ->
     if action == "clear":
         store.clear()
         return {"cleared": True}
+    if action == "stats":
+        return StatsStore(settings_file).read().model_dump(mode="json")
     raise InvalidInputError(f"Action d'historique inconnue : {action}.")
