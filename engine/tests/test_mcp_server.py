@@ -11,6 +11,7 @@ from mcp.types import CallToolResult, ErrorData, TextContent
 
 from engine.assistant.mcp_server import server_parameters
 from engine.assistant.toolbox import McpToolBox, ToolOutcome
+from engine.assistant.tools import describe_today
 from engine.core.presets import PresetStore
 from engine.core.registry import get_module
 
@@ -18,6 +19,7 @@ MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
 EXPECTED_TOOLS = {
     "list_features",
     "list_help_topics",
+    "read_today",
     "list_presets",
     "list_templates",
     "propose_feature",
@@ -141,3 +143,28 @@ def test_assistant_reads_the_guide_through_mcp(tmp_path: Path) -> None:
 
     assert outcome.ok
     assert "Installer le plugin" in outcome.text
+
+
+def test_today_summarizes_recent_runs_and_presets(tmp_path: Path) -> None:
+    from engine.core.history import HistoryEntry, HistoryStore
+
+    settings = tmp_path / "settings.json"
+    HistoryStore(settings).record(
+        HistoryEntry(
+            id="abc123abc123",
+            started_at="2026-10-06T08:00:00+00:00",
+            module="dwg-parts",
+            module_name="Liste de pièces",
+            inputs={},
+            status="succeeded",
+            summary="3 lignes",
+            outputs=["C:/Sortie/liste.xlsx"],
+            duration_ms=10,
+        )
+    )
+
+    today = describe_today(settings)
+
+    assert today["recent_runs"][0]["feature_name"] == "Liste de pièces"
+    assert today["recent_runs"][0]["outputs"] == ["C:/Sortie/liste.xlsx"]
+    assert today["presets"] == []

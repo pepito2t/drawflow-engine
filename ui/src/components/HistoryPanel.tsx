@@ -110,14 +110,14 @@ function HistoryList({ entriesPromise, onChanged }: HistoryListProps) {
   );
 }
 
-interface HistoryRowProps {
+export interface HistoryRowProps {
   entry: HistoryEntry;
   onOpen: (path: string) => void;
   onRerun: (entry: HistoryEntry) => void;
   onRemove: (entry: HistoryEntry) => void;
 }
 
-function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps) {
+export function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps) {
   const output = lastOutput(entry);
   return (
     <li className="history-item">

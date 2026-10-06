@@ -4,6 +4,8 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
+- **Écran Aujourd'hui** à l'ouverture : prérequis à configurer, préréglages lançables en un clic, derniers traitements (ouvrir, relancer). Commande `today.open` ; outil `read_today` pour l'assistant (#165).
+
 ## 0.11.0 — 2026-10-06
 
 - **Avertissements lisibles** : à la fin d'un traitement, un rapport par fichier indique l'anomalie, l'endroit (feuille, cartouche, bloc) et le conseil pour la corriger ; bouton **Copier** ; détail conservé dans l'Historique. Les messages des trois fonctionnalités ont été réécrits dans ce sens (#162).
