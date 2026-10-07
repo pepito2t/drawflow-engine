@@ -1,6 +1,7 @@
 import re
+from typing import Self
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 
 from engine.core.fields import KeyValue, mapping_field, ui_field
 from engine.core.naming import FileNameTemplate, file_name_template_field
@@ -63,6 +64,30 @@ class PdfReportSettings(ModuleSettings):
     def validate_reference_pattern(cls, pattern: str) -> str:
         _compile(pattern, t("settings.references_owner"))
         return pattern
+
+    @model_validator(mode="after")
+    def validate_title_block_area(self) -> Self:
+        if self.title_block_left >= self.title_block_right:
+            raise ValueError(
+                t(
+                    "settings.title_block_no_width",
+                    left=_percent(self.title_block_left),
+                    right=_percent(self.title_block_right),
+                )
+            )
+        if self.title_block_top >= self.title_block_bottom:
+            raise ValueError(
+                t(
+                    "settings.title_block_no_height",
+                    top=_percent(self.title_block_top),
+                    bottom=_percent(self.title_block_bottom),
+                )
+            )
+        return self
+
+
+def _percent(value: float) -> str:
+    return f"{value:g}"
 
 
 def _compile(pattern: str, owner: str) -> re.Pattern[str]:

@@ -49,6 +49,14 @@ t = define_messages(
         ),
         "settings.references_owner": "références",
         "settings.invalid_regex": "expression régulière invalide pour « {owner} » : {error}",
+        "settings.title_block_no_width": (
+            "zone du cartouche vide : le bord gauche ({left} %) doit être inférieur "
+            "au bord droit ({right} %)"
+        ),
+        "settings.title_block_no_height": (
+            "zone du cartouche vide : le bord haut ({top} %) doit être inférieur "
+            "au bord bas ({bottom} %)"
+        ),
         "reader.inaccessible": "Le PDF est inaccessible.",
         "reader.protected": "Le PDF est protégé par un mot de passe.",
         "reader.protected.hint": "Enregistrez une copie sans protection puis relancez.",
@@ -131,6 +139,14 @@ t = define_messages(
         "settings.invalid_tag": "invalid tag “{tag}”: lowercase letters, digits and _ only",
         "settings.references_owner": "references",
         "settings.invalid_regex": "invalid regular expression for “{owner}”: {error}",
+        "settings.title_block_no_width": (
+            "empty title block area: the left edge ({left} %) must be less than "
+            "the right edge ({right} %)"
+        ),
+        "settings.title_block_no_height": (
+            "empty title block area: the top edge ({top} %) must be less than "
+            "the bottom edge ({bottom} %)"
+        ),
         "reader.inaccessible": "The PDF cannot be opened.",
         "reader.protected": "The PDF is password-protected.",
         "reader.protected.hint": "Save an unprotected copy, then run again.",
