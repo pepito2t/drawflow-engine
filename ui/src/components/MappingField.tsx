@@ -1,6 +1,7 @@
 import { t } from "../i18n/shell";
 import {
   fieldInputId,
+  fieldLabelId,
   toMappingRows,
   type FieldDescriptor,
   type FormValue,
@@ -30,7 +31,12 @@ export function MappingField({ moduleId, field, value, disabled, onChange }: Map
   };
 
   return (
-    <div className="mapping-field" id={fieldInputId(moduleId, field.name)}>
+    <div
+      className="mapping-field"
+      id={fieldInputId(moduleId, field.name)}
+      role="group"
+      aria-labelledby={fieldLabelId(moduleId, field.name)}
+    >
       <div className="mapping-row mapping-header">
         <span>{labels.key}</span>
         <span>{labels.value}</span>

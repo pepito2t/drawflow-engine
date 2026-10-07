@@ -104,6 +104,17 @@ export function fieldInputId(namespace: string, fieldName: string): string {
   return `${namespace}${INPUT_ID_SEPARATOR}${fieldName}`;
 }
 
+const LABEL_ID_SUFFIX = "-label";
+
+export function fieldLabelId(namespace: string, fieldName: string): string {
+  return `${fieldInputId(namespace, fieldName)}${LABEL_ID_SUFFIX}`;
+}
+
+/** Path lists and mappings hold several controls: a group named by the label, not a single input. */
+export function isGroupKind(kind: UiKind): boolean {
+  return kind === "mapping" || isPathKind(kind);
+}
+
 export function initialValues(fields: FieldDescriptor[]): FormValues {
   return Object.fromEntries(fields.map((field) => [field.name, field.defaultValue]));
 }

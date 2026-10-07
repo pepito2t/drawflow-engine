@@ -1,5 +1,7 @@
 import {
   fieldInputId,
+  fieldLabelId,
+  isGroupKind,
   isPathKind,
   toTextValue,
   type FieldDescriptor,
@@ -27,7 +29,10 @@ export function ModuleForm({ moduleId, fields, values, disabled, onChange }: Mod
     >
       {fields.map((field) => (
         <div key={field.name} className="form-field">
-          <label htmlFor={fieldInputId(moduleId, field.name)}>
+          <label
+            id={fieldLabelId(moduleId, field.name)}
+            htmlFor={isGroupKind(field.kind) ? undefined : fieldInputId(moduleId, field.name)}
+          >
             {field.label}
             {field.required && <span className="required"> *</span>}
           </label>
