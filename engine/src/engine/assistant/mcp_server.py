@@ -101,6 +101,8 @@ def serve(settings: Path) -> None:
     # On Windows, while the stdio loop blocks reading stdin, an import that probes the console
     # (isatty) waits on the same pipe forever: every module is imported before the loop starts.
     discover_modules()
+    import engine.modules.soumission.headers  # noqa: F401  (lazy elsewhere, see tools.py)
+
     build_server(settings).run("stdio")
 
 
