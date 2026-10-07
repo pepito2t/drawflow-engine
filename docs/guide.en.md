@@ -173,6 +173,18 @@ Settings → **About** counts the completed runs and the files processed on this
 | Diagnostic logs (`engine.log`) | `%APPDATA%\ch.drawflow.desktop\logs\` |
 | Cache of converted DWG drawings | `%LOCALAPPDATA%\drawflow\cache\` (can be changed in Settings → General) |
 
+## Console and sending logs to support
+
+The **console** lists what happens in Drawflow: run messages, warnings, errors, installations, assistant. Its main use is passing an error on to support.
+
+1. Click **Console** at the bottom of the window. A red number shows the errors you have not seen yet.
+2. To keep only what matters, choose **Errors** or **Warnings and errors**, a source, or type a word in **Search**.
+3. Select the useful lines: click a line, **Shift+click** for a range, **Ctrl+click** to add one. **Ctrl+A** selects every line shown.
+4. Click **Copy selection** (or **Ctrl+C**), or **Copy all** for every line matching the filters.
+5. Paste (**Ctrl+V**) into an email to support. The first line gives the Drawflow version, the system and the date.
+
+**Detach** opens the console in its own window, to keep next to the application; closing it loses nothing. **Clear** empties the console. Tokens and keys are masked before they appear; the access code never does. On a Stream Dock, a command key `console.copy-errors` copies the latest errors directly.
+
 ## Troubleshooting
 
 | Problem | Solution |
@@ -182,6 +194,6 @@ Settings → **About** counts the completed runs and the files processed on this
 | "The local model does not respond" | Settings → Setup → **Start**, or launch LM Studio |
 | "The model … cannot be found" | Settings → Setup → **Download**, or choose an installed model in the panel |
 | "The settings file is unreadable" | It is never overwritten: restore a backup or delete `settings.json` |
-| Another error, or an error that keeps coming back | Settings → Setup → **Logs**: send `engine.log` (every failure is recorded there with the exact cause, for example Ollama's reply) |
+| Another error, or an error that keeps coming back | **Console** → **Errors** → **Copy all**, then paste into an email to support (see [Console](#console-and-sending-logs-to-support)); if needed, Settings → Setup → **Logs**: send `engine.log` (every failure is recorded there with the exact cause, for example Ollama's reply) |
 | Stream Dock keys "Offline" | Launch Drawflow and check that the local API is enabled (Settings → Local API) |
 | Stream Dock keys "Invalid token" | Drawflow is open but refuses the key: copy the token from Settings → Local API into the key settings, or clear the fields if Drawflow runs under the same Windows account |

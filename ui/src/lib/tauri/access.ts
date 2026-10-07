@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./invoke";
 import { z } from "zod";
 
 const lockStatusSchema = z.object({ required: z.boolean(), unlocked: z.boolean() });

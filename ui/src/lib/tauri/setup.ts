@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./invoke";
 import type { EngineMessageHandler, InvalidMessageHandler } from "../engine-message";
 import type { EngineSetupAction } from "../setup";
 import { engineRequest } from "./engine";
@@ -13,7 +13,7 @@ export function runSetupAction(
   onMessage: EngineMessageHandler,
   onInvalid: InvalidMessageHandler,
 ): Promise<string> {
-  const onEvent = engineChannel(onMessage, onInvalid);
+  const onEvent = engineChannel(onMessage, onInvalid, { source: "setup", module: action });
   return invoke<string>("run_setup_action", { action, onEvent });
 }
 

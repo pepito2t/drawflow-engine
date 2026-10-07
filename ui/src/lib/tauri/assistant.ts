@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./invoke";
 import type { ConversationMessage } from "../assistant-chat";
 import type { EngineMessageHandler, InvalidMessageHandler } from "../engine-message";
 import { engineRequest } from "./engine";
@@ -9,7 +9,7 @@ export function startAssistantChat(
   onMessage: EngineMessageHandler,
   onInvalid: InvalidMessageHandler,
 ): Promise<void> {
-  const onEvent = engineChannel(onMessage, onInvalid);
+  const onEvent = engineChannel(onMessage, onInvalid, { source: "assistant" });
   return invoke<undefined>("assistant_chat", { conversation: { messages }, onEvent });
 }
 
@@ -42,6 +42,6 @@ export function pullModel(
   onMessage: EngineMessageHandler,
   onInvalid: InvalidMessageHandler,
 ): Promise<string> {
-  const onEvent = engineChannel(onMessage, onInvalid);
+  const onEvent = engineChannel(onMessage, onInvalid, { source: "setup", module: model });
   return invoke<string>("pull_model", { model, onEvent });
 }

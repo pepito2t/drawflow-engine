@@ -5,12 +5,15 @@ import { SetupRunsProvider } from "../hooks/setup-runs-context";
 import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { CommandProvider } from "../hooks/command-registry";
+import { ConsoleProvider } from "../hooks/console-context";
 import { NotificationProvider } from "../hooks/notification-center";
 import { HistoryProvider } from "../hooks/history-context";
 import { SettingsFeedProvider } from "../hooks/settings-feed";
 import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
 import { useAppCommands } from "../hooks/use-app-commands";
+import { useConsoleCommands } from "../hooks/use-console-commands";
+import { useConsoleNotifications } from "../hooks/use-console-notifications";
 import { useGlobalShortcuts } from "../hooks/use-global-shortcuts";
 import { useIntegrationBridge } from "../hooks/use-integration-bridge";
 import { useLanguage } from "../hooks/use-language";
@@ -92,7 +95,11 @@ function LockGate({ statusPromise }: { statusPromise: Promise<LockStatus> }) {
       </AppShell>
     );
   }
-  return <CatalogApp />;
+  return (
+    <ConsoleProvider>
+      <CatalogApp />
+    </ConsoleProvider>
+  );
 }
 
 function CatalogApp() {
@@ -204,6 +211,8 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
   });
   useIntegrationBridge();
   useGlobalShortcuts();
+  useConsoleCommands();
+  useConsoleNotifications();
 
   const sidebarActions = (
     <>

@@ -26,6 +26,9 @@ export const PLUGIN_COMMANDS: readonly PluginCommand[] = [
   { id: "models.open", label: "command.models.open" },
   { id: "help.open", label: "command.help.open" },
   { id: "update.install", label: "command.update.install" },
+  { id: "console.toggle", label: "command.console.toggle" },
+  { id: "console.detach", label: "command.console.detach" },
+  { id: "console.copy-errors", label: "command.console.copy-errors" },
 ];
 
 export function commandLabel(language: Language, commandId: string): string | null {

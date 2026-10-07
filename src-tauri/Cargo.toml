@@ -33,6 +33,7 @@ password-hash = { version = "0.6", features = ["getrandom"] }
 getrandom = "0.4"
 notify = "8"
 sha2 = "0.11"
+tauri-plugin-clipboard-manager = "2.4"
 
 [lints.clippy]
 unwrap_used = "deny"

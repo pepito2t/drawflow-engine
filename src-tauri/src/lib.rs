@@ -2,6 +2,7 @@ mod access;
 mod assistant;
 mod automations;
 mod bounded_set;
+mod console;
 mod error;
 mod integrations;
 mod outputs;
@@ -13,11 +14,14 @@ mod updates;
 
 use access::AccessLock;
 use assistant::AssistantTurn;
+use console::{ConsoleLevel, ConsoleLog};
 use integrations::IntegrationState;
 use sidecar::{EngineRuns, OneShotChildren};
 use std::time::Duration;
 
-use tauri::{Manager, RunEvent};
+use tauri::{Manager, RunEvent, WindowEvent};
+
+const MAIN_WINDOW_LABEL: &str = "main";
 
 /// Quitting must stay quick: whatever has not stopped by then is killed.
 const EXIT_STOP_TIMEOUT: Duration = Duration::from_secs(2);
@@ -29,6 +33,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .setup(updates::register_updater)
         .manage(EngineRuns::default())
         .manage(OneShotChildren::default())
@@ -37,6 +42,7 @@ pub fn run() {
         .manage(IntegrationState::default())
         .manage(automations::AutomationState::default())
         .manage(outputs::KnownOutputs::default())
+        .manage(ConsoleLog::default())
         .invoke_handler(tauri::generate_handler![
             access::lock_status,
             updates::updater_configured,
@@ -61,14 +67,22 @@ pub fn run() {
             assistant::assistant_cancel,
             setup::run_setup_action,
             setup::open_download_page,
-            setup::pull_model
+            setup::pull_model,
+            console::console_append,
+            console::console_entries,
+            console::console_clear,
+            console::console_open_window
         ])
         .build(tauri::generate_context!());
     match app {
-        Ok(app) => app.run(|handle, event| {
-            if let RunEvent::Exit = event {
-                stop_engine_processes(handle);
-            }
+        Ok(app) => app.run(|handle, event| match event {
+            RunEvent::Exit => stop_engine_processes(handle),
+            RunEvent::WindowEvent {
+                label,
+                event: WindowEvent::Destroyed,
+                ..
+            } if label == MAIN_WINDOW_LABEL => console::close_window(handle),
+            _ => {}
         }),
         Err(error) => {
             eprintln!("Drawflow n'a pas pu démarrer : {error}");
@@ -82,12 +96,15 @@ pub fn run() {
 pub(crate) fn stop_engine_processes(handle: &tauri::AppHandle) {
     let runs = handle.state::<EngineRuns>();
     for error in tauri::async_runtime::block_on(runs.cancel_all(EXIT_STOP_TIMEOUT)) {
-        eprintln!("Arrêt d'un traitement impossible : {error}");
+        let message = format!("Arrêt d'un traitement impossible : {error}");
+        console::report(handle, ConsoleLevel::Error, message);
     }
     for error in handle.state::<OneShotChildren>().kill_all() {
-        eprintln!("Arrêt d'une requête du moteur impossible : {error}");
+        let message = format!("Arrêt d'une requête du moteur impossible : {error}");
+        console::report(handle, ConsoleLevel::Error, message);
     }
     if let Err(error) = handle.state::<AssistantTurn>().stop() {
-        eprintln!("Arrêt de l'assistant impossible : {error}");
+        let message = format!("Arrêt de l'assistant impossible : {error}");
+        console::report(handle, ConsoleLevel::Error, message);
     }
 }
