@@ -1,4 +1,6 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { uiErrorDraft } from "../lib/console-capture";
+import { recordConsoleEntry } from "../lib/tauri/console";
 
 interface ErrorBoundaryProps {
   fallback: (error: unknown) => ReactNode;
@@ -16,6 +18,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
     return { error };
+  }
+
+  override componentDidCatch(error: unknown, info: ErrorInfo): void {
+    recordConsoleEntry(uiErrorDraft(error, info.componentStack));
   }
 
   override render() {

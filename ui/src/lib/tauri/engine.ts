@@ -1,21 +1,35 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./invoke";
 import { t } from "../../i18n/shell";
 import type { EngineMessageHandler, InvalidMessageHandler } from "../engine-message";
-import { unwrapEngineOutput } from "../engine-output";
+import { engineFailureDraft } from "../console-capture";
+import { EngineCommandError, unwrapEngineOutput } from "../engine-output";
 import type { FormValues } from "../form-schema";
 import { parseBridgeError, translateBridgeError } from "./bridge-error";
+import { recordConsoleEntry } from "./console";
 import { engineChannel } from "./engine-channel";
 
+/** A failed one-shot engine command is reported to the console before reaching the caller. */
+function unwrapLogged(request: string, raw: unknown): string {
+  try {
+    return unwrapEngineOutput(raw);
+  } catch (error: unknown) {
+    if (error instanceof EngineCommandError) {
+      recordConsoleEntry(engineFailureDraft(request, error));
+    }
+    throw error;
+  }
+}
+
 export async function listModules(): Promise<string> {
-  return unwrapEngineOutput(await invoke("list_modules"));
+  return unwrapLogged("list-modules", await invoke("list_modules"));
 }
 
 export async function getSettings(): Promise<string> {
-  return unwrapEngineOutput(await invoke("get_settings"));
+  return unwrapLogged("settings.get", await invoke("get_settings"));
 }
 
 export async function saveSettings(values: Record<string, FormValues>): Promise<string> {
-  return unwrapEngineOutput(await invoke("save_settings", { values }));
+  return unwrapLogged("settings.set", await invoke("save_settings", { values }));
 }
 
 export type EngineRequestName =
@@ -57,7 +71,7 @@ export async function engineRequest(
   request: EngineRequestName,
   payload: Record<string, unknown> = {},
 ): Promise<string> {
-  return unwrapEngineOutput(await invoke("engine_request", { request, payload }));
+  return unwrapLogged(request, await invoke("engine_request", { request, payload }));
 }
 
 export function runModule(
@@ -66,7 +80,7 @@ export function runModule(
   onMessage: EngineMessageHandler,
   onInvalid: InvalidMessageHandler,
 ): Promise<string> {
-  const onEvent = engineChannel(onMessage, onInvalid);
+  const onEvent = engineChannel(onMessage, onInvalid, { source: "engine", module: moduleId });
   return invoke<string>("run_module", { moduleId, inputs, onEvent });
 }
 

@@ -2,6 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./components/App";
 import { detectLanguage, setLanguage } from "./i18n";
+import { captureGlobalErrors } from "./lib/console-capture";
+import { recordConsoleEntry } from "./lib/tauri/console";
 import "./styles.css";
 
 const rootElement = document.getElementById("root");
@@ -10,9 +12,8 @@ if (!rootElement) {
 }
 
 setLanguage(detectLanguage());
+captureGlobalErrors(window, recordConsoleEntry);
 
 createRoot(rootElement).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <StrictMode><App /></StrictMode>,
 );
