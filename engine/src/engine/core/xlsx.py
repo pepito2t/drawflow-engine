@@ -11,6 +11,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from engine.core.errors import EngineError, OutputWriteError
 from engine.core.messages import t
+from engine.core.paths import extended_path, write_failure_text
 
 FORMULA_PREFIX = "="
 MAX_COLUMN_WIDTH = 60
@@ -87,12 +88,13 @@ def fit_columns(sheet: Worksheet, rows: Sequence[Sequence[CellValue]]) -> None:
 
 def save_workbook(workbook: Workbook, target: Path) -> None:
     try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        workbook.save(target)
+        extended_path(target.parent).mkdir(parents=True, exist_ok=True)
+        workbook.save(extended_path(target))
     except OSError as error:
-        raise OutputWriteError(
-            t("xlsx.save_failed"), file=target, hint=t("xlsx.save_failed_hint")
-        ) from error
+        message, hint = write_failure_text(
+            target, error, t("xlsx.save_failed"), t("xlsx.save_failed_hint")
+        )
+        raise OutputWriteError(message, file=target, hint=hint) from error
 
 
 def _keep_text_literal(cell: Cell, value: CellValue) -> None:
