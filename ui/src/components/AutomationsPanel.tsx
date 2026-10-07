@@ -14,6 +14,7 @@ import {
 import { pickPaths } from "../lib/tauri/dialog";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
+import { CloseIcon } from "./icons";
 import { Loader, Spinner } from "./Spinner";
 
 export function AutomationsPanel({ modules }: { modules: CatalogModule[] }) {
@@ -151,7 +152,7 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
                 setAutomations((current) => current.filter((item) => item.id !== automation.id));
               }}
             >
-              ×
+              <CloseIcon size={14} />
             </button>
           </li>
         ))}
