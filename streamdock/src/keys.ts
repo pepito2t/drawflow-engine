@@ -1,4 +1,5 @@
 import { BEHAVIORS, type Settings } from "./behaviors";
+import { commandChoices } from "./commands";
 import { DEFAULT_TIMERS, type Timers } from "./drawflow-client";
 import type { HostEvent, StreamDockHost } from "./host";
 import type { DrawflowHub } from "./hub";
@@ -132,18 +133,26 @@ export class KeyController {
 
   private answerInspector(action: string, context: string, request: Settings): void {
     const source = request.event;
-    const items =
-      source === "getPresets"
-        ? this.presetItems()
-        : source === "getModules"
-          ? this.moduleItems()
-          : null;
+    const items = typeof source === "string" ? this.inspectorItems(source) : null;
     if (typeof source === "string" && items !== null) {
       this.host.sendToPropertyInspector(action, context, {
         event: source,
         items,
         connection: this.hub.connection,
       });
+    }
+  }
+
+  private inspectorItems(source: string): InspectorItem[] | null {
+    switch (source) {
+      case "getPresets":
+        return this.presetItems();
+      case "getModules":
+        return this.moduleItems();
+      case "getCommands":
+        return commandChoices(this.hub.language);
+      default:
+        return null;
     }
   }
 

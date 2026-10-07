@@ -171,4 +171,22 @@ describe("KeyController", () => {
       payload: { event: "getModules", items: [], connection: "offline" },
     });
   });
+
+  it("answers the settings panel with the commands it can send, even offline", () => {
+    const { host } = setup();
+
+    host.receive({
+      event: "sendToPlugin",
+      action: "ch.drawflow.command",
+      context: "k4",
+      payload: { event: "getCommands" },
+    });
+
+    const answer = host.sent.at(-1) as { payload: { items: { label: string; value: string }[] } };
+    expect(answer.payload.items).toContainEqual({ label: "Paramètres", value: "settings.open" });
+    expect(answer.payload.items).toContainEqual({
+      label: "Relever les courriels",
+      value: "mail.fetch",
+    });
+  });
 });

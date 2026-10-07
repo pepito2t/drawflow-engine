@@ -2,7 +2,7 @@
   "Name": "Drawflow",
   "Version": "0.20.0",
   "Author": "Drawflow",
-  "Description": "Pilotez Drawflow : préréglages, onglets, annulation, dernier résultat et suivi des traitements.",
+  "Description": "Pilotez Drawflow : préréglages, onglets, commandes, annulation, dernier résultat et suivi des traitements.",
   "Category": "Drawflow",
   "CategoryIcon": "imgs/category.png",
   "Icon": "imgs/plugin.png",
@@ -107,6 +107,25 @@
       "States": [
         {
           "Image": "imgs/runs.png",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/key.html"
+    },
+    {
+      "UUID": "ch.drawflow.command",
+      "Name": "Commande",
+      "Tooltip": "Envoie une commande de Drawflow : ouvrir un écran, relever les courriels, installer la mise à jour…",
+      "Icon": "imgs/command-icon.png",
+      "States": [
+        {
+          "Image": "imgs/command.png",
           "TitleAlignment": "middle",
           "ShowTitle": false
         }

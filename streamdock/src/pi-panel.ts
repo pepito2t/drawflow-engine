@@ -26,6 +26,13 @@ export const CHOICE_BY_ACTION: Readonly<Record<string, ChoiceConfig>> = {
     placeholder: "key.tab.choose",
     empty: "pi.status.noModules",
   },
+  "ch.drawflow.command": {
+    setting: "commandId",
+    source: "getCommands",
+    label: "pi.command",
+    placeholder: "key.command.choose",
+    empty: "pi.status.noCommands",
+  },
 };
 
 export interface ChoiceOption {

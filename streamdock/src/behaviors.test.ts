@@ -40,6 +40,45 @@ describe("key texts", () => {
   });
 });
 
+describe("command key", () => {
+  const behavior = BEHAVIORS["ch.drawflow.command"];
+
+  it("shows the label of the chosen command in the language of Stream Dock", () => {
+    const { hub } = readyHub("en");
+
+    expect(behavior?.face(hub, { commandId: "mail.fetch" })).toMatchObject({
+      tone: "idle",
+      label: "Fetch mail",
+    });
+    expect(behavior?.face(hub, {}).label).toBe("Choose a command");
+    expect(behavior?.face(hub, { commandId: "gone.command" }).label).toBe("Unknown command");
+  });
+
+  it("sends the chosen command without argument and reports the answer", async () => {
+    const { hub, socket } = readyHub();
+
+    const pressed = behavior?.press(hub, { commandId: "settings.open" });
+    const request = socket.sent.at(-1) as { id: string; command: string; args: unknown };
+    expect(request).toMatchObject({ command: "settings.open", args: {} });
+    socket.receive({ type: "result", id: request.id, ok: false, error: "Fermée" });
+
+    await expect(pressed).resolves.toEqual({ failed: "Fermée" });
+  });
+
+  it("refuses to send a command that is not chosen or no longer known", async () => {
+    const { hub, socket } = readyHub();
+
+    await expect(behavior?.press(hub, {})).resolves.toEqual({
+      failed: "Choisissez une commande dans les réglages de la touche",
+    });
+    await expect(behavior?.press(hub, { commandId: "gone.command" })).resolves.toEqual({
+      failed: expect.stringContaining("n'existe plus") as string,
+    });
+    const sentCommands = socket.sent.filter((message) => message.type === "command");
+    expect(sentCommands.map((message) => message.command)).toEqual(["app.state"]);
+  });
+});
+
 describe("runs-counter key", () => {
   it("reloads the state from Drawflow when pressed", async () => {
     const { hub, socket } = readyHub();

@@ -1,3 +1,4 @@
+import { commandLabel } from "./commands";
 import type { DrawflowHub } from "./hub";
 import { translate, type MessageKey } from "./i18n";
 import { faceFor, type KeyFace } from "./key-image";
@@ -113,10 +114,31 @@ const runsCounter: KeyBehavior = {
   },
 };
 
+const genericCommand: KeyBehavior = {
+  face(hub, settings) {
+    const commandId = text(settings, "commandId");
+    const label = commandId === null ? null : commandLabel(hub.language, commandId);
+    const shown = label ?? message(hub, commandId ? "key.command.gone" : "key.command.choose");
+    return faceFor(hub.language, hub.connection, shown, null);
+  },
+  async press(hub, settings) {
+    const commandId = text(settings, "commandId");
+    if (commandId === null) {
+      return { failed: message(hub, "error.commandNotChosen") };
+    }
+    if (commandLabel(hub.language, commandId) === null) {
+      return { failed: message(hub, "error.commandGone") };
+    }
+    const result = await hub.command(commandId);
+    return result.ok ? "ok" : { failed: result.error };
+  },
+};
+
 export const BEHAVIORS: Readonly<Record<string, KeyBehavior>> = {
   "ch.drawflow.preset": preset,
   "ch.drawflow.open-tab": openTab,
   "ch.drawflow.cancel-all": cancelAll,
   "ch.drawflow.open-last": openLast,
   "ch.drawflow.runs-counter": runsCounter,
+  "ch.drawflow.command": genericCommand,
 };
