@@ -5,7 +5,15 @@
   "scripts": {
     "tauri": "tauri",
     "sidecar:build": "./scripts/build-sidecar.sh",
-    "dev": "pnpm sidecar:build && tauri dev"
+    "dev": "pnpm sidecar:build && tauri dev",
+    "check": "pnpm run check:engine && pnpm run check:ui && pnpm run check:rust && pnpm run check:streamdock",
+    "check:engine": "cd engine && uv run ruff check . && uv run ruff format --check . && uv run mypy --strict src && uv run pytest",
+    "check:ui": "pnpm --filter ui lint && pnpm --filter ui typecheck && pnpm --filter ui test",
+    "check:rust": "cd src-tauri && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test",
+    "check:streamdock": "cd streamdock && pnpm lint && pnpm typecheck && pnpm test",
+    "smoke": "uv run --project engine python scripts/smoke-sidecar.py src-tauri/binaries/engine-*",
+    "version:check": "uv run --project engine python scripts/version.py check",
+    "version:bump": "uv run --project engine python scripts/version.py bump"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.1"
