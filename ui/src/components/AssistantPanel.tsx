@@ -12,6 +12,12 @@ import { CloseIcon, PlusIcon, SendIcon, StopIcon } from "./icons";
 
 const ASSISTANT_DROP_NAMESPACE = "assistant";
 const ATTACHMENTS_FIELD = "attachments";
+const BOTTOM_TOLERANCE_PX = 8;
+
+function isScrolledToBottom(element: HTMLElement): boolean {
+  const remaining = element.scrollHeight - element.scrollTop - element.clientHeight;
+  return remaining <= BOTTOM_TOLERANCE_PX;
+}
 
 const SUGGESTIONS = [
   "assistant.suggestion.features",
@@ -37,10 +43,14 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
   useFileDrop(ASSISTANT_DROP_NAMESPACE, onDrop);
   const messagesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Reading back through earlier answers must not be interrupted by each streamed word.
+  const followsLatest = useRef(true);
 
   useEffect(() => {
     const list = messagesRef.current;
-    list?.scrollTo({ top: list.scrollHeight });
+    if (list && followsLatest.current) {
+      list.scrollTo({ top: list.scrollHeight });
+    }
   }, [state.entries]);
 
   useEffect(() => {
@@ -53,6 +63,7 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
     if ((!question.trim() && attachments.length === 0) || isAnswering) {
       return;
     }
+    followsLatest.current = true;
     ask(withAttachments(question, attachments));
     setDraft("");
     setAttachments([]);
@@ -92,7 +103,14 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
         </div>
       </header>
       <AssistantConnection onOpenSettings={onOpenSettings} />
-      <div className="assistant-messages" ref={messagesRef} aria-live="polite">
+      <div
+        className="assistant-messages"
+        ref={messagesRef}
+        aria-live="polite"
+        onScroll={(event) => {
+          followsLatest.current = isScrolledToBottom(event.currentTarget);
+        }}
+      >
         {state.entries.length === 0 && (
           <div className="assistant-empty">
             <p className="muted">{t("assistant.intro")}</p>
