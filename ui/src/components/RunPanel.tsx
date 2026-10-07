@@ -2,6 +2,7 @@ import { plural } from "../i18n";
 import { t } from "../i18n/shell";
 import { t as panelText } from "../i18n/panels";
 import { useState } from "react";
+import { useThrottledValue } from "../hooks/use-throttled-value";
 import type { TableEvent } from "../lib/events";
 import { anomaliesAsText, groupAnomalies, type AnomalyGroup } from "../lib/anomalies";
 import { toReadableError } from "../lib/error-message";
@@ -69,8 +70,15 @@ export function RunPanel({ state, missingFields, onStart, onExport, onCancel }: 
   );
 }
 
+/** Screen readers hear the progress at a sustainable pace rather than on every file. */
+const PROGRESS_ANNOUNCE_INTERVAL_MS = 3_000;
+
 function RunProgress({ state }: { state: RunState }) {
   const { progress } = state;
+  const text = progress
+    ? `${String(progress.current)}/${String(progress.total)} · ${progress.message}`
+    : t("runPanel.starting");
+  const announced = useThrottledValue(text, PROGRESS_ANNOUNCE_INTERVAL_MS);
   return (
     <div className="progress">
       {progress ? (
@@ -78,10 +86,11 @@ function RunProgress({ state }: { state: RunState }) {
       ) : (
         <progress aria-label={t("runPanel.startingLabel")} />
       )}
-      <span className="muted">
-        {progress
-          ? `${String(progress.current)}/${String(progress.total)} · ${progress.message}`
-          : t("runPanel.starting")}
+      <span className="muted" aria-hidden="true">
+        {text}
+      </span>
+      <span className="sr-only" aria-live="polite">
+        {announced}
       </span>
     </div>
   );
