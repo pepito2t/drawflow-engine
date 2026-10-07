@@ -175,7 +175,11 @@ export class DrawflowClient {
         this.setState(parsed.locked ? "locked" : "ready");
         return;
       case "error":
-        this.refuse();
+        if (this.state === "offline") {
+          this.refuse();
+        } else {
+          console.error("Drawflow a rejeté un message du plugin :", parsed.message);
+        }
         return;
       case "result":
         this.resolve(
@@ -190,7 +194,7 @@ export class DrawflowClient {
     }
   }
 
-  /** Drawflow only sends `error` instead of `welcome`: the token is wrong, retrying is pointless. */
+  /** An `error` instead of `welcome` means the token is wrong: retrying is pointless. */
   private refuse(): void {
     const socket = this.socket;
     this.socket = null;

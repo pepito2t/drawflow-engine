@@ -170,6 +170,15 @@ describe("DrawflowClient", () => {
     });
   });
 
+  it("stays connected when Drawflow rejects a message after the welcome", () => {
+    const { client, socket } = readyClient();
+
+    socket.receive({ type: "error", message: "Message non reconnu." });
+
+    expect(client.state).toBe("ready");
+    expect(socket.closed).toBe(false);
+  });
+
   it("tries again only once the settings change after a refusal", () => {
     const { client, sockets } = setup();
     client.configure({ port: 51717, token: "wrong" });
