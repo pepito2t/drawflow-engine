@@ -103,6 +103,10 @@ def _unpack(archive: bytes, staging: Path, plugin_id: str) -> None:
                 target.write_bytes(plugin_zip.read(member))
     except zipfile.BadZipFile as error:
         raise StreamDockError(t("stream_dock.unreadable")) from error
+    except OSError as error:
+        raise StreamDockError(
+            t("stream_dock.write_failed"), file=staging, hint=t("stream_dock.write_failed.hint")
+        ) from error
     if not (staging / "manifest.json").is_file():
         raise StreamDockError(t("stream_dock.incomplete"))
 
@@ -146,5 +150,11 @@ def _swap_in(staging: Path, target: Path, plugin_id: str) -> None:
 
 
 def _remove(folder: Path) -> None:
-    if folder.exists():
+    if not folder.exists():
+        return
+    try:
         shutil.rmtree(folder)
+    except OSError as error:
+        raise StreamDockError(
+            t("stream_dock.remove_failed"), file=folder, hint=t("stream_dock.in_use.hint")
+        ) from error

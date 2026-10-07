@@ -15,7 +15,7 @@ from engine.core.settings import load_general_settings
 from engine.setup.actions import SetupContext, SetupError, run_action
 from engine.setup.commands import CommandOutcome, run_command, start_detached
 from engine.setup.installer_download import InstallerDownloadError
-from engine.setup.ollama import delete_model, pull_model
+from engine.setup.ollama import delete_model, installed_sizes, pull_model
 from engine.testing.fake_machine import LOCALAPPDATA, PROGRAM_FILES, FakeMachine
 
 ODA = PROGRAM_FILES / "ODA" / "ODAFileConverter 26.4.0" / "ODAFileConverter.exe"
@@ -239,6 +239,15 @@ def test_deleting_a_model_while_ollama_is_down_is_a_readable_error() -> None:
         anyio.run(
             delete_model, "http://127.0.0.1:11434/v1", "qwen3:4b", httpx.MockTransport(refuse)
         )
+
+
+def test_listing_models_while_ollama_goes_down_is_a_readable_error() -> None:
+    def refuse(_: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused")
+
+    with pytest.raises(AssistantError, match="ne répond plus") as caught:
+        anyio.run(installed_sizes, "http://127.0.0.1:11434/v1", httpx.MockTransport(refuse))
+    assert caught.value.hint is not None
 
 
 def test_missing_program_and_timeout_are_readable_setup_errors(tmp_path: Path) -> None:

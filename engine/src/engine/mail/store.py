@@ -152,17 +152,26 @@ class ConversationStore:
                 continue
             known = previous.get(conversation_id)
             conversations.append(_summarize(conversation_id, messages, known))
-        write_json_atomically(
-            self.folder / INDEX_FILE, [item.model_dump(mode="json") for item in conversations]
-        )
+        index = self.folder / INDEX_FILE
+        try:
+            write_json_atomically(index, [item.model_dump(mode="json") for item in conversations])
+        except OSError as error:
+            raise OutputWriteError(
+                t("store.index_save_failed"), file=index, hint=t("store.save_failed.hint")
+            ) from error
         return sorted(conversations, key=lambda item: item.last_received_at, reverse=True)
 
     def register(self, conversation_id: str) -> None:
         folder = self._folder(conversation_id)
-        folder.mkdir(parents=True, exist_ok=True)
         marker = folder / CONVERSATION_FILE
-        if not marker.is_file():
-            write_json_atomically(marker, {"id": conversation_id})
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            if not marker.is_file():
+                write_json_atomically(marker, {"id": conversation_id})
+        except OSError as error:
+            raise OutputWriteError(
+                t("store.conversation_save_failed"), file=marker, hint=t("store.save_failed.hint")
+            ) from error
 
     def remove(self, conversation_id: str) -> None:
         folder = self._folder(conversation_id)

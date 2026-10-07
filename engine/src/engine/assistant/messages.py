@@ -50,6 +50,12 @@ t = define_messages(
         "inspect.file_too_large": "Fichier trop volumineux pour être inspecté.",
         "inspect.unsupported_type": "Type de fichier non pris en charge.",
         "inspect.unsupported_type.hint": "Drawflow lit les DWG, DXF, PDF, XLSX et DOCX.",
+        "inspect.plan_not_read": (
+            "Plan DWG pas encore converti : lancez la fonctionnalité Liste de pièces sur ce "
+            "fichier, puis inspectez-le à nouveau."
+        ),
+        "inspect.unreadable_document": "Le document Word est illisible.",
+        "inspect.unreadable_document.hint": "Vérifiez qu'il s'ouvre dans Word (format .docx).",
         "mcp_server.instructions": (
             "Drawflow automatise le travail d'un dessinateur en façade : listes de pièces depuis "
             "des plans DWG, rapports DOCX depuis des PDF et soumissions. Ces outils décrivent les "
@@ -201,6 +207,12 @@ t = define_messages(
         "inspect.file_too_large": "File too large to be inspected.",
         "inspect.unsupported_type": "Unsupported file type.",
         "inspect.unsupported_type.hint": "Drawflow reads DWG, DXF, PDF, XLSX and DOCX files.",
+        "inspect.plan_not_read": (
+            "DWG plan not converted yet: run the Parts list feature on this file, then inspect "
+            "it again."
+        ),
+        "inspect.unreadable_document": "The Word document cannot be read.",
+        "inspect.unreadable_document.hint": "Check that it opens in Word (.docx format).",
         "mcp_server.instructions": (
             "Drawflow automates the work of a facade draughtsman: parts lists from DWG drawings, "
             "DOCX reports from PDFs and submissions. These tools describe the available features, "

@@ -7,6 +7,7 @@ from urllib.parse import parse_qs
 import httpx
 import pytest
 
+from engine.core.errors import OutputWriteError
 from engine.core.registry import discover_modules
 from engine.core.settings import save_settings
 from engine.mail import service
@@ -195,6 +196,22 @@ def test_unconfigured_mailbox_is_refused(tmp_path: Path) -> None:
         settings_file = tmp_path / "s" / "settings.json"
         save_settings(settings_file, {"mail": {"client_id": CLIENT_ID}}, MODULES)
         service.fetch(settings_file)
+
+
+def test_unwritable_store_folder_is_a_readable_error_naming_the_file(tmp_path: Path) -> None:
+    store = ConversationStore(tmp_path / "mail")
+    store.register("c1")
+    (store.folder / "conversations.json").mkdir()
+
+    with pytest.raises(OutputWriteError, match="index") as index_error:
+        store.rebuild_index()
+    assert index_error.value.file == store.folder / "conversations.json"
+
+    blocked = ConversationStore(tmp_path / "fichier")
+    (tmp_path / "fichier").write_text("", encoding="utf-8")
+    with pytest.raises(OutputWriteError, match="dossier") as register_error:
+        blocked.register("c2")
+    assert register_error.value.file is not None and register_error.value.hint is not None
 
 
 def test_store_prunes_oldest_conversations_and_cleans_subjects(tmp_path: Path) -> None:

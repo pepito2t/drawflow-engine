@@ -39,6 +39,12 @@ t = define_messages(
         ),
         "store.conversation_gone": "Cette conversation n'est plus dans Drawflow.",
         "store.message_save_failed": "Impossible d'enregistrer un message.",
+        "store.index_save_failed": "Impossible d'enregistrer l'index des conversations.",
+        "store.conversation_save_failed": "Impossible de créer le dossier d'une conversation.",
+        "store.save_failed.hint": (
+            "Vérifiez que le dossier des conversations est accessible en écriture et que le "
+            "disque n'est pas plein."
+        ),
         "store.attachment_save_failed": "Impossible d'enregistrer une pièce jointe.",
         "store.remove_failed": "Impossible de supprimer la conversation.",
         "store.export_failed": "Impossible d'exporter la conversation.",
@@ -83,6 +89,11 @@ t = define_messages(
         "store.index_unreadable.hint": "Delete it to rebuild it at the next fetch.",
         "store.conversation_gone": "This conversation is no longer in Drawflow.",
         "store.message_save_failed": "A message could not be saved.",
+        "store.index_save_failed": "The conversation index could not be saved.",
+        "store.conversation_save_failed": "A conversation folder could not be created.",
+        "store.save_failed.hint": (
+            "Check that the conversations folder is writable and that the disk is not full."
+        ),
         "store.attachment_save_failed": "An attachment could not be saved.",
         "store.remove_failed": "The conversation could not be removed.",
         "store.export_failed": "The conversation could not be exported.",
