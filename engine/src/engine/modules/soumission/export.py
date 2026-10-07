@@ -1,13 +1,12 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from engine.core.xlsx import CellValue, fit_columns, open_sheet, save_workbook, write_row
+from engine.core.xlsx import CellValue, open_sheet, save_workbook, write_table
 from engine.modules.soumission.messages import t
 from engine.modules.soumission.reader import SubmissionTable
 
 SOURCE_HEADER = t("export.source_header")
 SHEET_HEADER = t("export.sheet_header")
-HEADER_ROW = 1
 
 
 def export_submissions(
@@ -21,10 +20,6 @@ def export_submissions(
         for table in tables
         for row in table.rows
     ]
-    write_row(sheet, HEADER_ROW, header, bold=True)
-    for offset, row in enumerate(rows, start=1):
-        write_row(sheet, HEADER_ROW + offset, row)
-    sheet.freeze_panes = f"A{HEADER_ROW + 1}"
-    fit_columns(sheet, [header, *rows])
+    write_table(sheet, header, rows)
     save_workbook(workbook, target)
     return len(rows)

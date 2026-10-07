@@ -16,6 +16,7 @@ FORMULA_PREFIX = "="
 MAX_COLUMN_WIDTH = 60
 MIN_COLUMN_WIDTH = 8
 COLUMN_PADDING = 2
+QUANTITY_DECIMALS = 2
 
 type CellValue = str | int | float
 
@@ -50,6 +51,31 @@ def write_row(
         _keep_text_literal(cell, value)
         if bold:
             cell.font = Font(bold=True)
+
+
+def write_table(
+    sheet: Worksheet,
+    headers: Sequence[CellValue],
+    rows: Sequence[Sequence[CellValue]],
+    *,
+    header_row: int = 1,
+    fit: bool = True,
+) -> None:
+    """Bold header then one row per line; `fit` is off when a template owns the layout."""
+    write_row(sheet, header_row, headers, bold=True)
+    for offset, row in enumerate(rows, start=1):
+        write_row(sheet, header_row + offset, row)
+    if fit:
+        sheet.freeze_panes = f"A{header_row + 1}"
+        fit_columns(sheet, [headers, *rows])
+
+
+def quantity_cell(value: float) -> CellValue:
+    return int(value) if value.is_integer() else value
+
+
+def quantity_text(value: float) -> str:
+    return str(int(value)) if value.is_integer() else str(round(value, QUANTITY_DECIMALS))
 
 
 def fit_columns(sheet: Worksheet, rows: Sequence[Sequence[CellValue]]) -> None:

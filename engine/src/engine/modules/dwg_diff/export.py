@@ -1,9 +1,7 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from openpyxl.worksheet.worksheet import Worksheet
-
-from engine.core.xlsx import CellValue, fit_columns, open_sheet, save_workbook, write_row
+from engine.core.xlsx import CellValue, open_sheet, quantity_cell, save_workbook, write_table
 from engine.modules.dwg_diff.messages import t
 from engine.modules.dwg_diff.service import (
     DELTA_HEADER,
@@ -26,7 +24,6 @@ SHEETS = (
 PLANS_SHEET = t("export.sheet.plans")
 PLAN_HEADERS = (t("export.plan_header"), t("export.before_header"), t("export.after_header"))
 PRESENT, ABSENT = t("export.present"), t("export.absent")
-HEADER_ROW = 1
 
 
 def export_diff(report: DiffReport, target: Path) -> None:
@@ -37,9 +34,9 @@ def export_diff(report: DiffReport, target: Path) -> None:
         sheet = first if index == 0 else workbook.create_sheet(title)
         lines: Sequence[DiffLine] = getattr(report, attribute)
         rows = [_row(line) for line in lines]
-        _write(sheet, _headers(report), rows)
+        write_table(sheet, _headers(report), rows)
     plans_sheet = workbook.create_sheet(PLANS_SHEET)
-    _write(plans_sheet, PLAN_HEADERS, [_plan_row(plan) for plan in report.plans])
+    write_table(plans_sheet, PLAN_HEADERS, [_plan_row(plan) for plan in report.plans])
     save_workbook(workbook, target)
 
 
@@ -57,9 +54,9 @@ def _headers(report: DiffReport) -> list[CellValue]:
 def _row(line: DiffLine) -> list[CellValue]:
     return [
         *line.values,
-        _quantity(line.before),
-        _quantity(line.after),
-        _quantity(line.delta),
+        quantity_cell(line.before),
+        quantity_cell(line.after),
+        quantity_cell(line.delta),
         join_plans(line.plans_before),
         join_plans(line.plans_after),
     ]
@@ -67,17 +64,3 @@ def _row(line: DiffLine) -> list[CellValue]:
 
 def _plan_row(plan: PlanStatus) -> list[CellValue]:
     return [plan.name, PRESENT if plan.in_before else ABSENT, PRESENT if plan.in_after else ABSENT]
-
-
-def _quantity(value: float) -> CellValue:
-    return int(value) if value.is_integer() else value
-
-
-def _write(
-    sheet: Worksheet, headers: Sequence[CellValue], rows: Sequence[Sequence[CellValue]]
-) -> None:
-    write_row(sheet, HEADER_ROW, headers, bold=True)
-    for offset, row in enumerate(rows, start=1):
-        write_row(sheet, HEADER_ROW + offset, row)
-    sheet.freeze_panes = f"A{HEADER_ROW + 1}"
-    fit_columns(sheet, [headers, *rows])

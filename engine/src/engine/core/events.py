@@ -36,6 +36,9 @@ class TableRow(BaseModel):
     issues: list[str] = Field(default_factory=list)
 
 
+PREVIEW_MAX_ROWS = 500
+
+
 class TableEvent(_BaseEvent):
     """The table about to be exported, so the user can check it before any file is written."""
 
