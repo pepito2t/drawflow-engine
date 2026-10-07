@@ -173,6 +173,18 @@ Paramètres → **À propos** compte les traitements terminés et les fichiers t
 | Journaux de diagnostic (`engine.log`) | `%APPDATA%\ch.drawflow.desktop\logs\` |
 | Cache des plans DWG convertis | `%LOCALAPPDATA%\drawflow\cache\` (modifiable dans Paramètres → Général) |
 
+## Console et envoi des journaux au support
+
+La **console** liste ce qui se passe dans Drawflow : messages des traitements, avertissements, erreurs, installations, assistant. Elle sert surtout à transmettre une erreur au support.
+
+1. Cliquez sur **Console** en bas de la fenêtre. Un chiffre rouge indique les erreurs que vous n'avez pas encore vues.
+2. Pour ne garder que l'essentiel, choisissez **Erreurs** ou **Avertissements et erreurs**, une source, ou tapez un mot dans **Rechercher**.
+3. Sélectionnez les lignes utiles : clic sur une ligne, **Maj+clic** pour une plage, **Ctrl+clic** pour en ajouter. **Ctrl+A** sélectionne toutes les lignes affichées.
+4. Cliquez sur **Copier la sélection** (ou **Ctrl+C**), ou sur **Tout copier** pour toutes les lignes correspondant aux filtres.
+5. Collez (**Ctrl+V**) dans un courriel au support. La première ligne indique la version de Drawflow, le système et la date.
+
+**Détacher** ouvre la console dans sa propre fenêtre, à garder à côté de l'application ; la fermer ne perd rien. **Effacer** vide la console. Les jetons et clés sont masqués avant d'apparaître ; le code d'accès n'y figure jamais. Sur un Stream Dock, une touche de commande `console.copy-errors` copie directement les dernières erreurs.
+
 ## Dépannage
 
 | Problème | Solution |
@@ -182,6 +194,6 @@ Paramètres → **À propos** compte les traitements terminés et les fichiers t
 | « Le modèle local ne répond pas » | Paramètres → Installation → **Démarrer**, ou lancez LM Studio |
 | « Le modèle … est introuvable » | Paramètres → Installation → **Télécharger**, ou choisissez un modèle installé dans le panneau |
 | « Le fichier de paramètres est illisible » | Il n'est jamais écrasé : restaurez une sauvegarde ou supprimez `settings.json` |
-| Autre erreur, ou erreur qui se répète | Paramètres → Installation → **Journaux** : envoyez `engine.log` (chaque échec y est noté avec la cause exacte, par exemple la réponse d'Ollama) |
+| Autre erreur, ou erreur qui se répète | **Console** → **Erreurs** → **Tout copier**, puis collez dans un courriel au support (voir [Console](#console-et-envoi-des-journaux-au-support)) ; au besoin, Paramètres → Installation → **Journaux** : envoyez `engine.log` (chaque échec y est noté avec la cause exacte, par exemple la réponse d'Ollama) |
 | Touches Stream Dock « Hors ligne » | Lancez Drawflow et vérifiez que l'API locale est activée (Paramètres → API locale) |
 | Touches Stream Dock « Jeton invalide » | Drawflow est ouverte mais refuse la touche : copiez le jeton depuis Paramètres → API locale dans les réglages de la touche, ou videz les champs si Drawflow tourne sous le même compte Windows |
