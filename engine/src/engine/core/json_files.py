@@ -5,6 +5,8 @@ import uuid
 from pathlib import Path
 from typing import TextIO
 
+from engine.core.paths import extended_path
+
 TEMPORARY_SUFFIX = ".tmp"
 # Windows refuses to replace a file another process is replacing at that instant.
 REPLACE_ATTEMPTS = 5
@@ -44,7 +46,7 @@ def replace_file(temporary: Path, path: Path) -> None:
     """Moves `temporary` over `path`, waiting out a Windows lock held by another process."""
     for attempt in range(REPLACE_ATTEMPTS):
         try:
-            temporary.replace(path)
+            extended_path(temporary).replace(extended_path(path))
             return
         except PermissionError:
             if attempt == REPLACE_ATTEMPTS - 1:

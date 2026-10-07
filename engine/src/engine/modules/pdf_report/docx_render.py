@@ -9,6 +9,7 @@ from docxtpl import DocxTemplate
 from jinja2 import Environment, StrictUndefined, TemplateError, UndefinedError
 
 from engine.core.errors import EngineError, OutputWriteError
+from engine.core.paths import extended_path, write_failure_text
 from engine.modules.pdf_report.messages import t
 
 DEFAULT_TEMPLATE_NAME = "rapport-par-defaut.docx"
@@ -87,9 +88,10 @@ def _open(template: Path) -> DocxTemplate:
 
 def _save(document: DocxTemplate, target: Path) -> None:
     try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        document.save(str(target))
+        extended_path(target.parent).mkdir(parents=True, exist_ok=True)
+        document.save(str(extended_path(target)))
     except OSError as error:
-        raise OutputWriteError(
-            t("docx.save_failed"), file=target, hint=t("docx.save_failed.hint")
-        ) from error
+        message, hint = write_failure_text(
+            target, error, t("docx.save_failed"), t("docx.save_failed.hint")
+        )
+        raise OutputWriteError(message, file=target, hint=hint) from error

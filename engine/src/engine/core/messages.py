@@ -131,6 +131,12 @@ t = define_messages(
         "naming.output_finalize_failed_hint": (
             "Vérifiez qu'aucun programme ne bloque le dossier de sortie, puis relancez."
         ),
+        "paths.too_long": "Le chemin du fichier de sortie est trop long.",
+        "paths.too_long_hint": (
+            "Le chemin compte {length} caractères alors que Windows et la plupart des programmes "
+            "s'arrêtent à {limit}. Choisissez un dossier de sortie moins profond ou raccourcissez "
+            "le modèle de nom (Paramètres)."
+        ),
         "cache.invalid_entry": "Entrée de cache invalide, nouveau calcul.",
         "cache.folder_unreachable": "Le dossier de cache est inaccessible.",
         "cache.folder_unreachable_hint": "Choisissez un autre dossier de cache dans Paramètres.",
@@ -316,6 +322,11 @@ t = define_messages(
         "naming.output_finalize_failed": "The output file could not be finalized.",
         "naming.output_finalize_failed_hint": (
             "Check that no program is locking the output folder, then run again."
+        ),
+        "paths.too_long": "The output file path is too long.",
+        "paths.too_long_hint": (
+            "The path has {length} characters while Windows and most programs stop at {limit}. "
+            "Choose a shallower output folder or shorten the file name template (Settings)."
         ),
         "cache.invalid_entry": "Invalid cache entry, computing again.",
         "cache.folder_unreachable": "The cache folder cannot be accessed.",

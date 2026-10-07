@@ -12,6 +12,7 @@ from engine.core.errors import EngineError, OutputWriteError
 from engine.core.fields import ui_field
 from engine.core.json_files import replace_file
 from engine.core.messages import t
+from engine.core.paths import WINDOWS_MAX_PATH_LENGTH, extended_path, write_failure_text
 from engine.core.shutdown import hooks
 
 NAMING_VARIABLES: dict[str, str] = {
@@ -25,6 +26,10 @@ NAMING_VARIABLES: dict[str, str] = {
 DATE_FORMAT = "%Y%m%d"
 TIME_FORMAT = "%H%M"
 MAX_STEM_LENGTH = 150
+# Below this, a name stops being recognizable: the extended-length prefix takes over instead.
+MIN_STEM_LENGTH = 40
+UNIQUE_INDEX_RESERVE = len(" (999)")
+PATH_SEPARATOR = "\\"
 FORBIDDEN_CHARACTERS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 EDGE_CHARACTERS = " ._-"
 RESERVED_WINDOWS_NAMES = frozenset(
@@ -84,13 +89,19 @@ def naming_values(moment: datetime, **values: str) -> dict[str, str]:
     }
 
 
-def render_file_name(template: str, values: Mapping[str, str], extension: str) -> str:
+def render_file_name(
+    template: str,
+    values: Mapping[str, str],
+    extension: str,
+    *,
+    max_stem_length: int = MAX_STEM_LENGTH,
+) -> str:
     """Fills the template; missing variables are left empty and stray separators collapsed."""
     filled = "".join(
         literal + (values.get(variable, "") if variable is not None else "")
         for literal, variable, _, _ in Formatter().parse(template)
     )
-    return f"{_safe_stem(filled)}.{extension.lstrip('.')}"
+    return f"{_safe_stem(filled, max_stem_length)}.{extension.lstrip('.')}"
 
 
 class OutputFolderError(EngineError):
@@ -98,29 +109,41 @@ class OutputFolderError(EngineError):
 
 
 def output_target(folder: Path, template: str, values: Mapping[str, str], extension: str) -> Path:
-    return unique_output_path(folder, render_file_name(template, values, extension))
+    stem_length = stem_length_for(folder, extension)
+    file_name = render_file_name(template, values, extension, max_stem_length=stem_length)
+    return unique_output_path(folder, file_name)
+
+
+def stem_length_for(folder: Path, extension: str) -> int:
+    """Caps the name so the whole path stays openable by Windows tools when the folder allows."""
+    suffixes = f".{extension.lstrip('.')}{PARTIAL_SUFFIX}"
+    reserved = len(PATH_SEPARATOR) + UNIQUE_INDEX_RESERVE + len(suffixes)
+    room = WINDOWS_MAX_PATH_LENGTH - len(str(folder.absolute())) - reserved
+    return min(MAX_STEM_LENGTH, max(MIN_STEM_LENGTH, room))
 
 
 def unique_output_path(folder: Path, file_name: str) -> Path:
     """Reserves the name atomically: two runs writing to the same folder never share it."""
     stem, suffix = Path(file_name).stem, Path(file_name).suffix
     try:
-        folder.mkdir(parents=True, exist_ok=True)
+        extended_path(folder).mkdir(parents=True, exist_ok=True)
         index = 1
         while True:
             name = file_name if index == 1 else f"{stem} ({index}){suffix}"
             try:
-                (folder / name).touch(exist_ok=False)
+                extended_path(folder / name).touch(exist_ok=False)
             except FileExistsError:
                 index += 1
                 continue
             return folder / name
     except OSError as error:
-        raise OutputFolderError(
+        message, hint = write_failure_text(
+            folder / file_name,
+            error,
             t("naming.output_folder_unreachable"),
-            file=folder,
-            hint=t("naming.output_folder_unreachable_hint"),
-        ) from error
+            t("naming.output_folder_unreachable_hint"),
+        )
+        raise OutputFolderError(message, file=folder, hint=hint) from error
 
 
 @contextmanager
@@ -133,8 +156,8 @@ def writing_output(target: Path) -> Iterator[Path]:
     partial = target.with_name(f"{target.name}{PARTIAL_SUFFIX}")
 
     def discard() -> None:
-        partial.unlink(missing_ok=True)
-        target.unlink(missing_ok=True)
+        extended_path(partial).unlink(missing_ok=True)
+        extended_path(target).unlink(missing_ok=True)
 
     try:
         with hooks.registered(discard):
@@ -149,16 +172,18 @@ def _finalize(partial: Path, target: Path) -> None:
     try:
         replace_file(partial, target)
     except OSError as error:
-        raise OutputWriteError(
+        message, hint = write_failure_text(
+            target,
+            error,
             t("naming.output_finalize_failed"),
-            file=target,
-            hint=t("naming.output_finalize_failed_hint"),
-        ) from error
+            t("naming.output_finalize_failed_hint"),
+        )
+        raise OutputWriteError(message, file=target, hint=hint) from error
 
 
-def _safe_stem(raw: str) -> str:
+def _safe_stem(raw: str, max_length: int) -> str:
     stem = FORBIDDEN_CHARACTERS.sub(FORBIDDEN_REPLACEMENT, raw)
-    stem = _collapse_separators(stem)[:MAX_STEM_LENGTH].strip(EDGE_CHARACTERS)
+    stem = _collapse_separators(stem)[:max_length].strip(EDGE_CHARACTERS)
     if not stem:
         return FALLBACK_STEM
     if stem.upper() in RESERVED_WINDOWS_NAMES:
