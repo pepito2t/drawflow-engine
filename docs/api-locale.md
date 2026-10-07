@@ -30,7 +30,7 @@ Réponse :
 { "type": "welcome", "version": 1, "locked": false }
 ```
 
-Jeton ou version invalide : `{ "type": "error", "message": "…" }` puis la connexion est **abandonnée sans trame `Close`** (fin de flux TCP). Un client qui reçoit `error` avant `welcome` doit considérer son jeton comme refusé et ne pas se reconnecter en boucle avec le même.
+Jeton ou version invalide : `{ "type": "error", "code": "invalidToken", "message": "…" }` puis la connexion est **abandonnée sans trame `Close`** (fin de flux TCP). Un client qui reçoit `error` avant `welcome` doit considérer son jeton comme refusé et ne pas se reconnecter en boucle avec le même.
 
 ### Refus et limites
 
@@ -53,12 +53,25 @@ Réponse (même `id`) :
 ```json
 { "type": "result", "id": "42", "ok": true, "data": { } }
 { "type": "result", "id": "42", "ok": false, "error": "Ce préréglage n'existe plus." }
+{ "type": "result", "id": "42", "ok": false, "code": "locked", "error": "Drawflow is locked: enter the access code in the application." }
 ```
 
-- **Délai de réponse : 15 s.** Au-delà, le serveur répond `ok: false` avec `"Drawflow n'a pas répondu à temps."` ; la commande a pu être exécutée quand même.
+- **Délai de réponse : 15 s.** Au-delà, le serveur répond `ok: false` avec le code `noReply` ; la commande a pu être exécutée quand même.
 - Les commandes sont traitées **en parallèle** : les réponses peuvent arriver dans un autre ordre que les envois, et les événements continuent d'être diffusés pendant qu'une commande attend. Le client associe chaque réponse à sa commande par `id`.
-- Message qui n'est ni `hello` ni `command` : `{ "type": "error", "message": "Message non reconnu." }`, connexion conservée.
-- Application verrouillée : `ok: false` avec un message invitant à saisir le code d'accès.
+- Message qui n'est ni `hello` ni `command` : `{ "type": "error", "code": "unknownMessage", "message": "…" }`, connexion conservée.
+- Application verrouillée : `ok: false` avec le code `locked`.
+
+### Codes d'erreur
+
+Les erreurs produites par Drawflow lui-même portent un champ `code` stable, à traduire côté client. `message` (pour `error`) et `error` (pour `result`) restent présents : texte anglais de secours pour les clients qui ne connaissent pas le code. Un `result` en échec **sans** `code` vient d'une commande de l'application : son `error` est déjà rédigé dans la langue de l'application et s'affiche tel quel. Un client doit afficher le texte reçu pour tout code qu'il ne connaît pas.
+
+| Code | Message | Signification |
+|---|---|---|
+| `invalidToken` | `error` | Jeton ou version de protocole refusés ; la connexion est abandonnée |
+| `unknownMessage` | `error` | Message qui n'est ni `hello` ni `command` |
+| `locked` | `result` | Application verrouillée : saisir le code d'accès dans Drawflow |
+| `noReply` | `result` | L'application n'a pas répondu dans les 15 s |
+| `statePoisoned`, `appError` | `result` | Erreur interne de Drawflow : redémarrer l'application |
 
 | Commande | Arguments | Effet |
 |---|---|---|
