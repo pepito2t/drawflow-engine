@@ -6,12 +6,15 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic.fields import FieldInfo
 
 from engine.core.errors import EngineError, OutputWriteError
+from engine.core.fields import UI_KIND_SCHEMA_KEY
 from engine.core.json_files import write_json_atomically
 from engine.core.messages import t
 
 STATS_FILE = "stats.json"
+FILE_KINDS = {"file", "files"}
 
 
 class StatsError(EngineError):
@@ -35,13 +38,22 @@ class UsageStats(BaseModel):
     features: list[FeatureStats] = Field(default_factory=list)
 
 
-def count_files(inputs: dict[str, Any]) -> int:
-    """Paths among the inputs; a value is a file when it has an extension."""
+def count_files(model: type[BaseModel], inputs: dict[str, Any]) -> int:
+    """Paths given in the module's file fields; templates and free text never count."""
     total = 0
-    for value in inputs.values():
+    for name, field in model.model_fields.items():
+        if _ui_kind(field) not in FILE_KINDS:
+            continue
+        value = inputs.get(name)
         candidates = value if isinstance(value, list) else [value]
-        total += sum(1 for item in candidates if isinstance(item, str) and Path(item).suffix)
+        total += sum(1 for item in candidates if isinstance(item, str) and item)
     return total
+
+
+def _ui_kind(field: FieldInfo) -> str | None:
+    extra = field.json_schema_extra
+    kind = extra.get(UI_KIND_SCHEMA_KEY) if isinstance(extra, dict) else None
+    return kind if isinstance(kind, str) else None
 
 
 class StatsStore:

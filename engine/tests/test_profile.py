@@ -99,10 +99,29 @@ def test_profile_with_invalid_settings_changes_nothing(tmp_path: Path) -> None:
         broken.writestr("presets.json", "[]")
     target = _workstation(tmp_path / "B")
 
-    with pytest.raises(InvalidSettingsError, match="Général"):
+    with pytest.raises(InvalidSettingsError, match="Général") as caught:
         import_profile(archive, target, MODULES, APP_VERSION)
 
     assert load_general_settings(target).batch_size == 7
+    assert caught.value.hint is not None
+    assert "Fichiers traités en parallèle" in caught.value.hint
+    assert "input_value" not in caught.value.hint
+
+
+def test_unreadable_template_in_the_profile_is_refused_before_any_write(tmp_path: Path) -> None:
+    archive = _archive_with_presets(tmp_path, [])
+    with zipfile.ZipFile(archive, "a") as writer:
+        writer.writestr("templates/Rapport.docx", "pas un document Word")
+    target = _workstation(tmp_path / "B")
+
+    with pytest.raises(InvalidSettingsError, match=r"Rapport\.docx"):
+        read_profile(archive, target, MODULES, APP_VERSION)
+    with pytest.raises(InvalidSettingsError, match=r"Rapport\.docx"):
+        import_profile(archive, target, MODULES, APP_VERSION)
+
+    assert [template.id for template in TemplateLibrary(target).templates()] == [
+        "Liste entreprise.xlsx"
+    ]
 
 
 def _corrupted_copy(archive: Path, member: str) -> Path:

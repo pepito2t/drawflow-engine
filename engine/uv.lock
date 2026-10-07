@@ -246,14 +246,18 @@ name = "engine"
 version = "0.20.0"
 source = { editable = "." }
 dependencies = [
+    { name = "anyio" },
     { name = "docxtpl" },
     { name = "ezdxf" },
     { name = "httpx" },
+    { name = "jinja2" },
     { name = "mcp" },
     { name = "openpyxl" },
+    { name = "pdfminer-six" },
     { name = "pdfplumber" },
     { name = "pydantic" },
     { name = "pypdf" },
+    { name = "python-docx" },
 ]
 
 [package.dev-dependencies]
@@ -268,14 +272,18 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anyio", specifier = ">=4.15,<5" },
     { name = "docxtpl", specifier = ">=0.20.2,<0.21" },
     { name = "ezdxf", specifier = ">=1.4.4,<2" },
     { name = "httpx", specifier = ">=0.28,<1" },
+    { name = "jinja2", specifier = ">=3.1.6,<4" },
     { name = "mcp", specifier = ">=1,<2" },
     { name = "openpyxl", specifier = ">=3.1.5,<4" },
+    { name = "pdfminer-six", specifier = ">=20260107,<20270101" },
     { name = "pdfplumber", specifier = ">=0.11.10,<0.12" },
     { name = "pydantic", specifier = ">=2.13,<3" },
     { name = "pypdf", specifier = ">=6,<7" },
+    { name = "python-docx", specifier = ">=1.2,<2" },
 ]
 
 [package.metadata.requires-dev]

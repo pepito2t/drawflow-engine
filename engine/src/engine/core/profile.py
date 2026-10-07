@@ -23,6 +23,7 @@ from engine.core.settings import (
     section_specs,
 )
 from engine.core.templates import DEFAULTS_FILE, SUFFIX_KINDS, TemplateLibrary
+from engine.core.validation import describe_validation_error
 
 PROFILE_FORMAT = "drawflow-profile"
 PROFILE_VERSION = 1
@@ -205,6 +206,14 @@ def _templates(archive: zipfile.ZipFile, source: Path) -> list[_Template]:
             raise InvalidSettingsError(
                 t("profile.template_too_large", name=template.name), file=source
             )
+        # A .docx or .xlsx is a zip: anything else would land in the library unreadable.
+        with archive.open(template.member) as member:
+            if not zipfile.is_zipfile(member):
+                raise InvalidSettingsError(
+                    t("profile.template_unreadable", name=template.name),
+                    file=source,
+                    hint=t("profile.template_unreadable_hint"),
+                )
     return templates
 
 
@@ -249,7 +258,7 @@ def _validated_sections(
             raise InvalidSettingsError(
                 t("profile.section_invalid", title=spec.title),
                 file=source,
-                hint=str(error.errors()[0].get("msg", "")),
+                hint=describe_validation_error(spec.model, error),
             ) from error
         sections.append(spec)
     return sections, document

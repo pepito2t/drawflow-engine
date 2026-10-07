@@ -117,8 +117,10 @@ def test_endless_tool_calls_stop_with_a_readable_error() -> None:
 def test_conversation_must_end_with_a_user_message(tmp_path: Path) -> None:
     raw = {"messages": [{"role": "assistant", "content": "Bonjour"}]}
 
-    with pytest.raises(InvalidInputError):
+    with pytest.raises(InvalidInputError) as caught:
         service.chat(tmp_path / "settings.json", raw, lambda _: None)
+
+    assert caught.value.hint is not None and "input_value" not in caught.value.hint
 
 
 def test_chat_uses_the_real_drawflow_mcp_server(tmp_path: Path) -> None:

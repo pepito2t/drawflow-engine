@@ -1,5 +1,6 @@
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
+from datetime import date
 from itertools import islice
 from pathlib import Path
 from typing import IO
@@ -22,6 +23,7 @@ from engine.modules.soumission.settings import (
 )
 
 HEADER_PUNCTUATION = " .:"
+DATE_FORMAT = "%d.%m.%Y"
 MIN_TEXT_CELLS = 2
 MAX_CANDIDATES = 5
 MAX_LOCATION_TEXTS = 8
@@ -174,9 +176,16 @@ def _normalize_row(
             amount = parse_amount(value)
             if amount is None:
                 unreadable += 1
-                row[column] = str(value).strip()
+                row[column] = _cell_text(value)
                 continue
             row[column] = amount
         else:
-            row[column] = str(value).strip()
+            row[column] = _cell_text(value)
     return row, unreadable
+
+
+def _cell_text(value: object) -> str:
+    # openpyxl hands date cells over as datetime: shown without the midnight time.
+    if isinstance(value, date):
+        return value.strftime(DATE_FORMAT)
+    return str(value).strip()

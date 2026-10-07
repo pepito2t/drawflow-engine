@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from engine.modules.pdf_report.reader import PageText, TextLine
 from engine.modules.pdf_report.settings import PdfReportSettings
 from engine.modules.pdf_report.zone import Zone, lines_in_zone
@@ -33,3 +36,19 @@ def test_zone_is_configurable() -> None:
     )
 
     assert [found.text for found in lines_in_zone(PAGE, zone)] == ["Note générale"]
+
+
+@pytest.mark.parametrize(
+    ("values", "expected"),
+    [
+        ({"title_block_left": 80, "title_block_right": 20}, "gauche (80 %)"),
+        ({"title_block_top": 100, "title_block_bottom": 100}, "haut (100 %)"),
+    ],
+)
+def test_an_empty_title_block_area_is_refused_with_the_edges_named(
+    values: dict[str, float], expected: str
+) -> None:
+    with pytest.raises(ValidationError, match="cartouche vide") as caught:
+        PdfReportSettings.model_validate(values)
+
+    assert expected in str(caught.value)

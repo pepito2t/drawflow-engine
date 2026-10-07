@@ -6,7 +6,9 @@ from pathlib import Path
 import pytest
 from openpyxl import Workbook
 
+from engine.core.errors import InvalidInputError
 from engine.core.templates import TemplateError, TemplateLibrary, TemplateUser
+from engine.requests import handle_templates
 
 PARTS = TemplateUser("dwg-parts", "Liste de pièces", "xlsx")
 REPORT = TemplateUser("pdf-report", "Rapport", "docx")
@@ -85,6 +87,14 @@ def test_removing_a_template_clears_its_default(tmp_path: Path, library: Templat
 def test_template_ids_cannot_escape_the_library(library: TemplateLibrary) -> None:
     with pytest.raises(TemplateError):
         library.remove("../settings.json")
+
+
+def test_malformed_request_names_the_field_without_technical_details(tmp_path: Path) -> None:
+    with pytest.raises(InvalidInputError) as caught:
+        handle_templates("import", tmp_path / "settings.json", {"source": "C:/x.xlsx", "extra": 1})
+
+    assert caught.value.hint is not None
+    assert "extra" in caught.value.hint and "input_value" not in caught.value.hint
 
 
 def test_cli_lists_features_accepting_templates(tmp_path: Path) -> None:

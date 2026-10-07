@@ -11,6 +11,7 @@ from engine.core.profile import export_profile, import_profile, read_profile
 from engine.core.registry import discover_modules, get_module
 from engine.core.settings import export_section, read_section_import
 from engine.core.templates import TemplateLibrary, TemplateUser
+from engine.core.validation import describe_validation_error
 from engine.messages import t
 
 TEMPLATE_ACTIONS = {
@@ -176,4 +177,6 @@ def _parse[RequestT: _Request](model: type[RequestT], raw: dict[str, Any]) -> Re
     try:
         return model.model_validate(raw)
     except ValidationError as error:
-        raise InvalidInputError(t("requests.invalid"), hint=str(error)) from error
+        raise InvalidInputError(
+            t("requests.invalid"), hint=describe_validation_error(model, error)
+        ) from error

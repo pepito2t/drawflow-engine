@@ -3,7 +3,7 @@ from pathlib import Path
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from engine.core.xlsx import CellValue, fit_columns, open_sheet, save_workbook, write_row
+from engine.core.xlsx import CellValue, open_sheet, quantity_cell, save_workbook, write_table
 from engine.modules.dwg_parts.messages import t
 from engine.parts.aggregation import PartLine
 from engine.parts.settings import PartsListSettings
@@ -42,17 +42,8 @@ def _write_sheet(
 ) -> None:
     header = [*headers, QUANTITY_HEADER, SOURCES_HEADER]
     rows = [_row(line) for line in lines]
-    write_row(sheet, header_row, header, bold=True)
-    for offset, row in enumerate(rows, start=1):
-        write_row(sheet, header_row + offset, row)
-    if fit:
-        sheet.freeze_panes = f"A{header_row + 1}"
-        fit_columns(sheet, [header, *rows])
+    write_table(sheet, header, rows, header_row=header_row, fit=fit)
 
 
 def _row(line: PartLine) -> list[CellValue]:
-    return [*line.values, _quantity(line.quantity), SOURCES_SEPARATOR.join(line.sources)]
-
-
-def _quantity(value: float) -> CellValue:
-    return int(value) if value.is_integer() else value
+    return [*line.values, quantity_cell(line.quantity), SOURCES_SEPARATOR.join(line.sources)]

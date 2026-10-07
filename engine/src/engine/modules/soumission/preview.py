@@ -2,12 +2,10 @@
 
 from collections.abc import Collection, Sequence
 
-from engine.core.events import TableEvent, TableRow
+from engine.core.events import PREVIEW_MAX_ROWS, TableEvent, TableRow
 from engine.modules.soumission.export import SHEET_HEADER, SOURCE_HEADER
 from engine.modules.soumission.messages import t
 from engine.modules.soumission.reader import SubmissionTable
-
-PREVIEW_MAX_ROWS = 500
 
 
 def preview_table(

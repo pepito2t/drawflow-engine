@@ -161,6 +161,11 @@ t = define_messages(
         ),
         "profile.newer_version_hint": "Mettez Drawflow à jour, puis réimportez le profil.",
         "profile.template_too_large": "Le modèle « {name} » du profil est trop volumineux.",
+        "profile.template_unreadable": "Le modèle « {name} » du profil est illisible.",
+        "profile.template_unreadable_hint": (
+            "Vérifiez le modèle sur le poste d'origine (il doit s'ouvrir dans Excel ou Word), "
+            "puis réexportez le profil."
+        ),
         "profile.member_unreadable": "Le profil est incomplet ou illisible ({member}).",
         "profile.corrupt": "Le fichier de profil est endommagé ; rien n'a été modifié.",
         "profile.corrupt_hint": "Réexportez le profil depuis le poste d'origine.",
@@ -337,6 +342,11 @@ t = define_messages(
         ),
         "profile.newer_version_hint": "Update Drawflow, then import the profile again.",
         "profile.template_too_large": 'The template "{name}" in the profile is too large.',
+        "profile.template_unreadable": 'The template "{name}" in the profile is unreadable.',
+        "profile.template_unreadable_hint": (
+            "Check the template on the original computer (it must open in Excel or Word), "
+            "then export the profile again."
+        ),
         "profile.member_unreadable": "The profile is incomplete or unreadable ({member}).",
         "profile.corrupt": "The profile file is damaged; nothing was changed.",
         "profile.corrupt_hint": "Export the profile again from the original computer.",

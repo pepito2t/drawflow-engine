@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
-from engine.core.events import TableEvent, TableRow
+from engine.core.events import PREVIEW_MAX_ROWS, TableEvent, TableRow
+from engine.core.xlsx import quantity_text
 from engine.modules.dwg_parts.messages import t
 from engine.parts.aggregation import PartLine
 from engine.parts.listing import PartsList
@@ -10,14 +11,13 @@ PROJECT_HEADER = t("service.project_header")
 FILES_PROJECT = t("service.files_project")
 QUANTITY_HEADER = t("service.quantity_header")
 SOURCES_HEADER = t("service.sources_header")
-PREVIEW_MAX_ROWS = 500
 
 
 def preview_table(parts_list: PartsList) -> TableEvent:
     """What the Excel file would contain, with every empty cell pointed out."""
     rows = [
         TableRow(
-            cells=[*line.values, _quantity_text(line.quantity), ", ".join(line.sources)],
+            cells=[*line.values, quantity_text(line.quantity), ", ".join(line.sources)],
             issues=[
                 t("service.empty_cell", column=column)
                 for column, value in zip(parts_list.headers, line.values, strict=True)
@@ -28,10 +28,6 @@ def preview_table(parts_list: PartsList) -> TableEvent:
     ]
     headers = [*parts_list.headers, QUANTITY_HEADER, SOURCES_HEADER]
     return TableEvent(headers=headers, rows=rows, total=len(parts_list.lines))
-
-
-def _quantity_text(value: float) -> str:
-    return str(int(value)) if value.is_integer() else str(round(value, 2))
 
 
 def describe_result(parts_list: PartsList, read: int, total: int) -> str:

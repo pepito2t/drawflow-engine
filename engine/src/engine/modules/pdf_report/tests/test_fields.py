@@ -30,6 +30,13 @@ def test_values_follow_their_label_accent_and_case_insensitively() -> None:
     assert result.values["auteur"] == "TMBK"
 
 
+def test_label_after_a_sharp_s_keeps_its_position() -> None:
+    rules = [KeyValue(key="masse", value="Maße")]
+    lines = [line("Straße 5, Größe L, Maße 3 x 4 m", 0)]
+
+    assert extract_fields(lines, rules).values["masse"] == "3 x 4 m"
+
+
 def test_value_on_the_next_line_below_the_label() -> None:
     assert extract_fields(TITLE_BLOCK, DEFAULT_FIELDS).values["echelle"] == "1:50"
 

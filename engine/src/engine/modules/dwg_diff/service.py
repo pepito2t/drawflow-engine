@@ -4,13 +4,13 @@ import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
-from engine.core.events import TableEvent, TableRow
+from engine.core.events import PREVIEW_MAX_ROWS, TableEvent, TableRow
 from engine.core.text import fold
+from engine.core.xlsx import quantity_text
 from engine.modules.dwg_diff.messages import t
 from engine.parts.listing import PartsList
 
 DOCUMENT_TYPE = "comparaison"
-PREVIEW_MAX_ROWS = 500
 STATUS_HEADER = t("service.status_header")
 QUANTITY_BEFORE_HEADER = t("service.quantity_before_header")
 QUANTITY_AFTER_HEADER = t("service.quantity_after_header")
@@ -119,8 +119,8 @@ def preview_table(report: DiffReport) -> TableEvent:
             cells=[
                 status,
                 *line.values,
-                _quantity(line.before),
-                _quantity(line.after),
+                quantity_text(line.before),
+                quantity_text(line.after),
                 _delta(line.delta),
             ],
             issues=[] if status == UNCHANGED else [_issue(status, line)],
@@ -187,19 +187,17 @@ def _plan_names(parts_list: PartsList, increment: re.Pattern[str]) -> set[str]:
     return {strip_increment(plan, increment) for line in parts_list.lines for plan in line.sources}
 
 
-def _quantity(value: float) -> str:
-    return str(int(value)) if value.is_integer() else str(round(value, 2))
-
-
 def _delta(value: float) -> str:
-    text = _quantity(abs(value))
+    text = quantity_text(abs(value))
     return f"+{text}" if value > 0 else f"-{text}" if value < 0 else "0"
 
 
 def _issue(status: str, line: DiffLine) -> str:
     if status == CHANGED:
         return t(
-            "service.quantity_changed", before=_quantity(line.before), after=_quantity(line.after)
+            "service.quantity_changed",
+            before=quantity_text(line.before),
+            after=quantity_text(line.after),
         )
     return status
 

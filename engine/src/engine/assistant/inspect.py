@@ -1,6 +1,7 @@
 """A quick look at a file handed to the assistant: what it is, and which feature fits it."""
 
 from collections import Counter
+from contextlib import closing
 from itertools import islice
 from pathlib import Path
 from typing import Any
@@ -79,14 +80,12 @@ def _plan(path: Path, settings: Path) -> dict[str, Any]:
 
 
 def _pdf(path: Path) -> dict[str, Any]:
-    from engine.modules.pdf_report.reader import read_pages
+    from engine.modules.pdf_report.reader import count_pages, read_pages
 
-    pages = 0
-    first_lines: list[str] = []
-    for page in read_pages(path):
-        pages += 1
-        if page.number == 1:
-            first_lines = [line.text for line in page.lines[:MAX_PDF_LINES]]
+    pages = count_pages(path)
+    with closing(read_pages(path)) as reader:
+        first_page = next(reader, None)
+    first_lines = [line.text for line in first_page.lines[:MAX_PDF_LINES]] if first_page else []
     text = "\n".join(first_lines)[:MAX_TEXT_CHARS]
     return {"pages": pages, "first_page_text": text, "scanned": pages > 0 and not text}
 

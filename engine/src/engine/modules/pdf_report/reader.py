@@ -1,10 +1,12 @@
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
 import pdfplumber
 from pdfminer.pdfdocument import PDFPasswordIncorrect
 from pdfminer.pdfparser import PDFSyntaxError
+from pdfplumber.pdf import PDF
 from pdfplumber.utils.exceptions import PdfminerException
 
 from engine.core.errors import EngineError
@@ -35,14 +37,25 @@ class PageText:
     lines: list[TextLine]
 
 
-def read_pages(path: Path) -> Iterator[PageText]:
+def read_pages(path: Path) -> Generator[PageText, None, None]:
     """Yields one page at a time so large plan sets never sit in memory together."""
+    with _opened(path) as pdf:
+        for number, page in enumerate(pdf.pages, start=1):
+            words = page.extract_words(use_text_flow=True)
+            yield PageText(number, float(page.width), float(page.height), _group_lines(words))
+            page.close()
+
+
+def count_pages(path: Path) -> int:
+    with _opened(path) as pdf:
+        return len(pdf.pages)
+
+
+@contextmanager
+def _opened(path: Path) -> Iterator[PDF]:
     try:
         with pdfplumber.open(path) as pdf:
-            for number, page in enumerate(pdf.pages, start=1):
-                words = page.extract_words(use_text_flow=True)
-                yield PageText(number, float(page.width), float(page.height), _group_lines(words))
-                page.close()
+            yield pdf
     except (PdfminerException, PDFSyntaxError, PDFPasswordIncorrect) as error:
         raise _readable_error(path, error) from error
     except OSError as error:

@@ -2,9 +2,11 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import BaseModel
 
 from engine.core.contract import ModuleResult
 from engine.core.events import Event, WarningEvent
+from engine.core.fields import ui_field
 from engine.core.history import HistoryStore, UsageCounters, handle_history, run_with_history
 from engine.core.registry import discover_modules
 from engine.core.stats import StatsError, StatsStore, count_files
@@ -30,9 +32,25 @@ def _run_once(tmp_path: Path, events: list[Event]) -> None:
     )
 
 
-def test_files_are_counted_from_path_inputs() -> None:
-    assert count_files(INPUTS) == 2
-    assert count_files({"folder": "C:/Plans", "recursive": True, "report": "C:/r.pdf"}) == 1
+class _Inputs(BaseModel):
+    files: list[str] = ui_field("files", label="Plans", default=[])
+    report: str | None = ui_field("file", label="Rapport", default=None)
+    template: str | None = ui_field("template", label="Modèle", default=None)
+    folder: str | None = ui_field("folder", label="Dossier", default=None)
+    project: str = ui_field("text", label="Projet", default="")
+
+
+def test_only_file_fields_of_the_schema_are_counted() -> None:
+    inputs = {
+        "files": ["C:/Plans/a.dwg", "C:/Plans/b.dwg"],
+        "report": "C:/r.pdf",
+        "template": "C:/Modèles/Liste.xlsx",
+        "folder": "C:/Plans",
+        "project": "Tour 1.2",
+    }
+
+    assert count_files(_Inputs, inputs) == 3
+    assert count_files(MODULE.inputs_model, INPUTS) == 2
 
 
 def test_successful_runs_accumulate_per_feature(tmp_path: Path) -> None:
