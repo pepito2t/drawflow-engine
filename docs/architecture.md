@@ -96,6 +96,6 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 
 ## CI/CD
 
-- **`ci.yml`** : moteur, UI, Tauri + sidecar sur macOS et Windows, plugin Stream Dock. Le smoke test exécute le binaire figé de bout en bout : modules, handshake MCP, erreur de l'assistant.
-- **`release.yml`**, sur un tag `v*` : installeur NSIS, `latest.json` signé et plugin Stream Dock joint (`ch.drawflow.sdPlugin.zip`). Procédure dans le [README](../README.md#publier-une-version).
+- **`ci.yml`** : moteur et Tauri + sidecar sur macOS et Windows, UI et plugin Stream Dock sur Ubuntu. Le smoke test exécute le binaire figé de bout en bout : contenu (ni tests ni outils de développement), modules et outils MCP comparés au code source, handshake MCP, erreur de l'assistant. Sur `main`, un installeur Windows non signé est conservé trois jours comme artefact.
+- **`release.yml`**, sur un tag `v*` : installeur NSIS, `latest.json` signé et plugin Stream Dock joint (`ch.drawflow.sdPlugin.zip`) ; la release reste en brouillon jusqu'à ce que tout soit joint, ses notes sont la section du `CHANGELOG.md`. Procédure dans le [README](../README.md#releasing).
 - **`scripts/version.py`** garde toutes les versions alignées (UI, Tauri, Cargo, moteur, plugin).
