@@ -9,7 +9,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
 ```
 <racine du repo>/
   ui/                     # React + TS + Vite — affichage uniquement
-  src-tauri/              # Tauri 2 — pont sidecar, dialogues, updater
+  src-tauri/              # Tauri 2 — système : processus du moteur, API locale, fichiers surveillés, sécurité, updater
   engine/                 # Moteur Python (uv), packagé en sidecar PyInstaller
     src/engine/
       cli.py              # point d'entrée, voir `engine --help`
@@ -70,7 +70,8 @@ Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 - Pas d'état global ; logs via l'émetteur d'événements, pas de `print`.
 
 **Tauri 2 / Rust**
-- Rust = pont uniquement. Commandes Tauri fines, erreurs typées (`thiserror`), pas de `unwrap()` hors tests.
+- Python pour le métier, Rust pour le système. Le moteur est lancé puis arrêté à chaque commande : ce qui doit tourner en continu ou toucher l'OS vit dans Rust (processus du moteur, fichiers surveillés, réseau et API locale, sécurité, intégration Windows, mises à jour, console). Lire, calculer et produire des documents reste dans le moteur.
+- Commandes Tauri fines, erreurs typées (`thiserror`) sérialisées avec un code traduit par l'UI, pas de `unwrap()` hors tests.
 - Permissions/capabilities minimales dans `src-tauri/capabilities/`.
 - Sidecar déclaré dans `bundle.externalBin`, lancé via `tauri-plugin-shell`.
 - Updater : `tauri-plugin-updater`, endpoint `latest.json` des GitHub Releases, vérification au démarrage, installeur NSIS.

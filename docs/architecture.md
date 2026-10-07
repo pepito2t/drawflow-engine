@@ -8,7 +8,7 @@ Comment les pièces s'assemblent et pourquoi. Les conventions de code et les com
 ┌──────────────── Fenêtre Tauri ────────────────┐         ┌────────── Moteur Python (sidecar) ──────────┐
 │ UI React (ui/) : formulaires générés, runs,    │ invoke  │ cli.py : une commande = un processus        │
 │ toasts, chat, écran Installation               │ ──────▶ │ core/      contrat, registre, réglages      │
-│ Pont Rust (src-tauri/) : lance le moteur,      │ NDJSON  │ modules/   une fonctionnalité par dossier   │
+│ Rust (src-tauri/) : système, lance le moteur,  │ NDJSON  │ modules/   une fonctionnalité par dossier   │
 │ relaie sa sortie, verrou, updater, API locale  │ ◀────── │ assistant/ serveur MCP, client du modèle    │
 └────────────────────────────────────────────────┘         │ setup/     analyse du poste, installations  │
         ▲ WebSocket 127.0.0.1 + jeton                       └─────────────────────────────────────────────┘
@@ -18,8 +18,8 @@ Comment les pièces s'assemblent et pourquoi. Les conventions de code et les com
 | Couche | Rôle | Ne fait pas |
 |---|---|---|
 | UI | Affiche, valide (zod) ce qu'elle reçoit, déclare les commandes nommées | Logique métier ; appels Tauri hors de `ui/src/lib/tauri/` |
-| Rust | Lance le moteur et relaie sa sortie telle quelle ; code d'accès, mises à jour, API locale, ouverture de fichiers et de pages | Interpréter les données du moteur, hormis la liste des fichiers produits (seuls ceux-là peuvent être ouverts) |
-| Moteur | Toute la logique métier | Écrire autre chose que le protocole sur stdout |
+| Rust | Le système : lance, annule et arrête le moteur, relaie sa sortie telle quelle ; tout ce qui doit tourner en continu ou toucher l'OS (dossiers surveillés, API locale, console, code d'accès, listes blanches, mises à jour, ouverture de fichiers et de pages) | Logique métier (lire un plan, calculer, produire un document) ; interpréter les données du moteur, hormis la liste des fichiers produits (seuls ceux-là peuvent être ouverts) |
+| Moteur | Toute la logique métier, un processus par commande, sans état entre deux appels | Écrire autre chose que le protocole sur stdout ; tourner en continu |
 
 Liste des commandes du moteur : `engine --help`.
 
@@ -46,7 +46,7 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 
 | Décision | Raison | Réf. |
 |---|---|---|
-| Moteur Python en sidecar, Rust réduit au rôle de pont | Bibliothèques CAO/PDF/Office en Python ; un seul endroit pour la logique | #1 |
+| Python pour le métier, Rust pour le système | Les bibliothèques CAO/PDF/Office sont en Python, donc un seul endroit pour la logique métier ; le moteur est lancé puis arrêté à chaque commande, donc ce qui doit tourner en continu (dossiers surveillés, API locale, console) ou toucher l'OS vit dans Rust, seul processus qui reste ouvert | #1 |
 | Un processus par commande, NDJSON sur stdout | Isolement des pannes, annulation par simple arrêt du processus | #1 |
 | Formulaires et paramètres générés depuis pydantic | Ajouter une fonctionnalité sans toucher l'UI | #1, #27 |
 | pdfplumber + pypdf, pas PyMuPDF | Licence AGPL de PyMuPDF incompatible avec la diffusion | #43 |
@@ -81,11 +81,11 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | L'app s'ouvre sur « Aujourd'hui », composé depuis l'historique, les préréglages et le scan d'installation, sans nouveau stockage | Un écran d'accueil qui agrège l'existant reste juste quand les fonctionnalités évoluent | #165 |
 | Le profil est un zip (`profile.json`, `presets.json`, `templates/`) validé entièrement avant d'écrire quoi que ce soit ; les sections inconnues de cette version sont ignorées | Un import partiel laisserait un poste incohérent ; un profil d'un autre jeu de modules reste importable | #129 |
 | Compteurs d'utilisation tenus par le moteur dans `stats.json`, incrémentés à chaque traitement réussi, indépendants de l'historique borné | L'historique garde 200 entrées ; un compteur doit survivre à cette rotation et ne jamais faire échouer un traitement | #133 |
-| Les dossiers surveillés vivent dans le pont Rust (`notify`, repli par scrutation) et lancent `automation.run`, une commande nommée traitée par l'UI comme celles de l'API locale | Le pont ne connaît ni les préréglages ni les formulaires ; une empreinte SHA-256 évite un second traitement du même fichier | #126 |
+| Les dossiers surveillés vivent dans Rust (`notify`, repli par scrutation) et lancent `automation.run`, une commande nommée traitée par l'UI comme celles de l'API locale | La surveillance doit tourner en continu, ce que le moteur ne fait pas ; Rust ne connaît ni les préréglages ni les formulaires ; une empreinte SHA-256 évite un second traitement du même fichier | #126 |
 | Les fichiers joints à l'assistant voyagent comme chemins dans le texte du message ; `inspect_file` lit sur le poste, borné en taille | Protocole de conversation inchangé, rien de copié, le modèle voit ce que l'utilisateur voit | #172 |
 | Courriels lus via Microsoft Graph en HTTP direct (device code, `Mail.Read`), sans SDK ; seule la session (refresh token) est conservée, à côté des réglages | Pas de mot de passe stocké, pas d'écriture sur la boîte, dépendances minimales ; `transport` injectable pour tester sans réseau | #134 |
 | Textes de l'UI dans des catalogues typés par domaine (`ui/src/i18n/*.ts`, mêmes clés fr/en vérifiées par TypeScript), résolus à l'appel ; la langue est un réglage du moteur, l'arbre React est remonté au changement | Aucune dépendance, pas de clé manquante possible, les fonctions pures et les composants partagent le même `t` | #121 |
-| Langue du moteur fixée au tout début du processus (`--lang`, sinon `general.language` du fichier de réglages), avant l'import des modules ; catalogues `messages.py` par paquet, cohérence fr/en vérifiée par un test | Les manifestes et étiquettes pydantic sont construits à l'import ; une langue par processus suffit (le pont relance le moteur à chaque requête) | #121 |
+| Langue du moteur fixée au tout début du processus (`--lang`, sinon `general.language` du fichier de réglages), avant l'import des modules ; catalogues `messages.py` par paquet, cohérence fr/en vérifiée par un test | Les manifestes et étiquettes pydantic sont construits à l'import ; une langue par processus suffit (Rust relance le moteur à chaque requête) | #121 |
 | Historique écrit par le moteur (`history.json`, 200 entrées) autour de chaque `run`, pas par l'UI | Le moteur seul connaît entrées, sorties, avertissements et durée ; un lancement par Stream Dock ou assistant est historisé pareil | #160 |
 | Installeurs téléchargés vérifiés par leur signature Authenticode (PowerShell `Get-AuthenticodeSignature`) avant exécution | HTTPS protège le transport, pas l'authenticité du fichier ; aucun checksum publié par ODA | #141 |
 | `open_output` limité aux chemins annoncés dans les événements `result` du moteur | L'UI ne doit pas pouvoir faire ouvrir un exécutable arbitraire | #141 |
@@ -95,7 +95,7 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Plugin pour Stream Dock (Mirabox), installé par Drawflow dans `%APPDATA%\HotSpot\StreamDock\plugins` | C'est l'appareil de l'utilisateur ; même protocole que le SDK Stream Deck, sans fichier d'installation à double-cliquer | #109 |
 | Délais maximum en CI, tests et requêtes MCP | Un blocage échoue vite au lieu de figer la CI ou l'application | #82 |
 | Updater activé seulement par la configuration de release | Aucune mise à jour en développement ; clé publique injectée par la CI | #52 |
-| Console : un tampon circulaire unique `ConsoleLog` dans le pont (5000 entrées, secrets masqués à l'ajout), alimenté par l'UI (`console_append`) et par Rust, diffusé à toutes les fenêtres (`console-entry`) ; fenêtre détachée = même UI avec `#console` | La fenêtre principale et la fenêtre détachée montrent le même journal sans synchronisation ; masquer à l'entrée garantit qu'aucune copie ne contient de jeton | — |
+| Console : un tampon circulaire unique `ConsoleLog` dans Rust (5000 entrées, secrets masqués à l'ajout), alimenté par l'UI (`console_append`) et par Rust, diffusé à toutes les fenêtres (`console-entry`) ; fenêtre détachée = même UI avec `#console` | La fenêtre principale et la fenêtre détachée montrent le même journal sans synchronisation ; masquer à l'entrée garantit qu'aucune copie ne contient de jeton | — |
 | `engine setup scan` est en lecture seule : le modèle recommandé figure dans le rapport (`recommended_model`) et n'est enregistré qu'au téléchargement (`model.pull`) quand aucun modèle n'a été choisi | Un scan lancé à chaque ouverture ne doit jamais écrire ni échouer sur `settings.json` ; le choix du modèle reste une action de l'utilisateur | — |
 
 ## CI/CD
