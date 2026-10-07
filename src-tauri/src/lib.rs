@@ -1,6 +1,7 @@
 mod access;
 mod assistant;
 mod automations;
+mod bounded_set;
 mod error;
 mod integrations;
 mod outputs;

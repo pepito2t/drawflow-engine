@@ -284,7 +284,12 @@ pub(crate) fn start_streaming_run(
 }
 
 #[tauri::command]
-pub fn cancel_run(runs: State<'_, EngineRuns>, run_id: RunId) -> Result<(), BridgeError> {
+pub fn cancel_run(
+    runs: State<'_, EngineRuns>,
+    lock: State<'_, AccessLock>,
+    run_id: RunId,
+) -> Result<(), BridgeError> {
+    lock.ensure_unlocked()?;
     runs.cancel(&run_id)
 }
 
@@ -323,9 +328,13 @@ async fn collect_output(
     let mut code = None;
     while let Some(event) = receiver.recv().await {
         match event {
-            CommandEvent::Stdout(line) => {
-                stdout.extend(line);
-                stdout.push(NEWLINE);
+            CommandEvent::Stdout(chunk) => {
+                // The shell plugin keeps the line terminator; chunks without one still get a boundary.
+                let terminated = chunk.ends_with(&[NEWLINE]);
+                stdout.extend(chunk);
+                if !terminated {
+                    stdout.push(NEWLINE);
+                }
             }
             CommandEvent::Terminated(payload) => code = payload.code,
             _ => {}
@@ -571,6 +580,10 @@ mod tests {
     async fn collected_output_keeps_one_line_per_event_and_the_exit_code() {
         let (sender, mut receiver) = tauri::async_runtime::channel(8);
         sender
+            .send(CommandEvent::Stdout(b"{\"type\":\"log\"}\r\n".to_vec()))
+            .await
+            .unwrap();
+        sender
             .send(CommandEvent::Stdout(b"{\"type\":\"result\"}".to_vec()))
             .await
             .unwrap();
@@ -590,7 +603,10 @@ mod tests {
         let output = collect_output(&mut receiver).await;
 
         assert!(output.success);
-        assert_eq!(output.stdout, "{\"type\":\"result\"}\n");
+        assert_eq!(
+            output.stdout,
+            "{\"type\":\"log\"}\r\n{\"type\":\"result\"}\n"
+        );
     }
 
     #[tokio::test]

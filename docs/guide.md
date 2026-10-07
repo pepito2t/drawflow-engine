@@ -148,7 +148,7 @@ Code initial : `0000`, à changer dans **Paramètres → Code d'accès**. Après
 
 ## Mises à jour
 
-Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **Plus tard**). La mise à jour attend la fin des traitements en cours puis redémarre l'application.
+Au démarrage, Drawflow propose les nouvelles versions (**Mettre à jour** ou **Plus tard**). La mise à jour se télécharge pendant que vous travaillez ; elle ne s'installe que lorsqu'aucun traitement n'est en cours, arrête les processus du moteur encore ouverts (assistant, courriel), puis redémarre l'application. En cas d'échec du téléchargement, un nouveau clic relance la mise à jour.
 
 ## Ce que Drawflow vous a fait gagner
 

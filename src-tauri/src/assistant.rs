@@ -82,7 +82,11 @@ pub fn assistant_chat(
 }
 
 #[tauri::command]
-pub fn assistant_cancel(assistant: State<'_, AssistantTurn>) -> Result<(), BridgeError> {
+pub fn assistant_cancel(
+    assistant: State<'_, AssistantTurn>,
+    lock: State<'_, AccessLock>,
+) -> Result<(), BridgeError> {
+    lock.ensure_unlocked()?;
     assistant.stop()
 }
 

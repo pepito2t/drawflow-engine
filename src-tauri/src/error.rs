@@ -20,7 +20,7 @@ pub enum BridgeError {
     ConfigCorrupted(String),
     #[error("Paramètres non sérialisables : {0}")]
     Serialization(#[from] serde_json::Error),
-    #[error("Erreur de l'application : {0}")]
+    #[error("Erreur de l'application : {0}. Redémarrez Drawflow si le problème persiste.")]
     Tauri(#[from] tauri::Error),
     #[error("Cette fonctionnalité est déjà en cours d'exécution.")]
     RunInProgress,
@@ -32,8 +32,10 @@ pub enum BridgeError {
     PageNotAllowed,
     #[error("L'assistant répond déjà à une question.")]
     AssistantBusy,
-    #[error("État interne du moteur indisponible.")]
+    #[error("État interne de l'application indisponible. Redémarrez Drawflow.")]
     StatePoisoned,
+    #[error("Le port {0} n'est pas utilisable : choisissez un port entre 1024 et 65535.")]
+    InvalidPort(u16),
     #[error("L'application est verrouillée. Saisissez le code d'accès.")]
     Locked,
     #[error("Code d'accès incorrect.")]

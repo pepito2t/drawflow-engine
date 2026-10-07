@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -7,18 +6,25 @@ use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 
 use crate::access::AccessLock;
+use crate::bounded_set::BoundedSet;
 use crate::error::BridgeError;
 use crate::paths::settings_file;
 
 const LOGS_FOLDER: &str = "logs";
+const MAX_KNOWN_OUTPUTS: usize = 10_000;
 /// Documents handed to their default application; anything else is only revealed in its folder.
 const OPENABLE_EXTENSIONS: [&str; 13] = [
     "pdf", "docx", "xlsx", "xlsm", "csv", "txt", "dwg", "dxf", "png", "jpg", "jpeg", "md", "json",
 ];
 
 /// Files the engine reported in its `result` events: the only ones the UI may open.
-#[derive(Default)]
-pub struct KnownOutputs(Mutex<HashSet<String>>);
+pub struct KnownOutputs(Mutex<BoundedSet>);
+
+impl Default for KnownOutputs {
+    fn default() -> Self {
+        Self(Mutex::new(BoundedSet::new(MAX_KNOWN_OUTPUTS)))
+    }
+}
 
 #[derive(Deserialize)]
 struct ResultLine {
@@ -112,7 +118,11 @@ pub fn open_logs_folder(app: AppHandle, lock: State<'_, AccessLock>) -> Result<(
     let folder = settings_file(&app)?
         .parent()
         .map(|parent| parent.join(LOGS_FOLDER))
-        .ok_or(BridgeError::StatePoisoned)?;
+        .ok_or_else(|| {
+            BridgeError::LogsFolder(std::io::Error::other(
+                "dossier de configuration sans parent",
+            ))
+        })?;
     std::fs::create_dir_all(&folder).map_err(BridgeError::LogsFolder)?;
     app.opener()
         .open_path(folder.to_string_lossy(), None::<&str>)?;

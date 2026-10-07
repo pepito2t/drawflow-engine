@@ -21,6 +21,8 @@ const COMMAND_EVENT: &str = "integration-command";
 const REPLY_TIMEOUT: Duration = Duration::from_secs(15);
 const EVENT_BUFFER: usize = 256;
 const NO_REPLY_MESSAGE: &str = "Drawflow n'a pas répondu à temps.";
+/// Below this range the OS reserves the ports; 0 would pick a random one the plugin cannot find.
+const MIN_PORT: u16 = 1024;
 
 #[derive(Clone, Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -225,6 +227,9 @@ pub async fn integration_update(
     regenerate_token: bool,
 ) -> Result<(), BridgeError> {
     lock.ensure_unlocked()?;
+    if port < MIN_PORT {
+        return Err(BridgeError::InvalidPort(port));
+    }
     let path = config::config_file(&app)?;
     let mut updated = config::load(&path)?;
     updated.enabled = enabled;

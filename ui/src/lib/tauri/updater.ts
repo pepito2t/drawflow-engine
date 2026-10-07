@@ -22,8 +22,7 @@ export async function findUpdate(): Promise<AvailableUpdate | null> {
     install: async (onProgress) => {
       let downloaded = 0;
       let total: number | null = null;
-      await invoke("prepare_for_update");
-      await update.downloadAndInstall((event) => {
+      await update.download((event) => {
         if (event.event === "Started") {
           total = event.data.contentLength ?? null;
         } else if (event.event === "Progress") {
@@ -31,6 +30,9 @@ export async function findUpdate(): Promise<AvailableUpdate | null> {
           onProgress(downloaded, total);
         }
       });
+      // The installer replaces the sidecar: nothing from the engine may still run at that point.
+      await invoke("prepare_for_update");
+      await update.install();
       await relaunch();
     },
   };

@@ -14,6 +14,7 @@ use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Manager, State};
 
 use crate::access::AccessLock;
+use crate::bounded_set::BoundedSet;
 use crate::error::BridgeError;
 use crate::integrations::{dispatch_to_ui, protocol::CommandRequest};
 use crate::paths::write_atomically;
@@ -51,12 +52,22 @@ pub struct AutomationStatus {
 
 type FolderWatcher = Box<dyn Watcher + Send>;
 
-#[derive(Default)]
 pub struct AutomationState {
     watchers: Mutex<Vec<FolderWatcher>>,
     errors: Mutex<Vec<String>>,
     pending: Mutex<HashSet<PathBuf>>,
-    seen: Mutex<HashSet<String>>,
+    seen: Mutex<BoundedSet>,
+}
+
+impl Default for AutomationState {
+    fn default() -> Self {
+        Self {
+            watchers: Mutex::default(),
+            errors: Mutex::default(),
+            pending: Mutex::default(),
+            seen: Mutex::new(BoundedSet::new(MAX_SEEN)),
+        }
+    }
 }
 
 impl AutomationState {
@@ -255,12 +266,9 @@ fn load_seen(app: &AppHandle) {
 
 fn persist_seen(app: &AppHandle) {
     let state = app.state::<AutomationState>();
-    let Ok(mut seen) = state.seen.lock() else {
+    let Ok(seen) = state.seen.lock() else {
         return;
     };
-    if seen.len() > MAX_SEEN {
-        seen.clear();
-    }
     let snapshot: Vec<&String> = seen.iter().collect();
     if let Ok(path) = seen_file(app) {
         if let Ok(content) = serde_json::to_vec(&snapshot) {
@@ -311,7 +319,9 @@ pub fn start_at_launch(app: &AppHandle) -> Result<(), BridgeError> {
 pub fn automation_status(
     app: AppHandle,
     state: State<'_, AutomationState>,
+    lock: State<'_, AccessLock>,
 ) -> Result<AutomationStatus, BridgeError> {
+    lock.ensure_unlocked()?;
     Ok(AutomationStatus {
         automations: load(&config_file(&app)?)?,
         errors: state.errors(),

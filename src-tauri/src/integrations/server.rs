@@ -161,7 +161,8 @@ async fn send(
     socket: &mut WebSocketStream<TcpStream>,
     message: &ServerMessage,
 ) -> Result<(), tokio_tungstenite::tungstenite::Error> {
-    let json = serde_json::to_string(message).unwrap_or_default();
+    let json = serde_json::to_string(message)
+        .map_err(|error| tokio_tungstenite::tungstenite::Error::Io(io::Error::other(error)))?;
     socket.send(Message::Text(json.into())).await
 }
 
