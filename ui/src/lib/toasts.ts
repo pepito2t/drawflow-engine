@@ -41,11 +41,27 @@ export function toastsReducer(state: ToastsState, action: ToastsAction): ToastsS
   switch (action.type) {
     case "shown": {
       const toasts = [...state.toasts, { ...action.toast, id: state.nextId }];
-      return { nextId: state.nextId + 1, toasts: toasts.slice(-MAX_VISIBLE_TOASTS) };
+      return { nextId: state.nextId + 1, toasts: evictOldestTimed(toasts) };
     }
     case "dismissed":
       return { ...state, toasts: state.toasts.filter((toast) => toast.id !== action.id) };
   }
+}
+
+/** Toasts waiting for an answer, and the one just shown, are never pushed out by passing ones. */
+function evictOldestTimed(toasts: Toast[]): Toast[] {
+  const kept = [...toasts];
+  while (kept.length > MAX_VISIBLE_TOASTS) {
+    const newest = kept.length - 1;
+    const oldestTimed = kept.findIndex(
+      (toast, index) => index < newest && toast.durationMs !== null,
+    );
+    if (oldestTimed === -1) {
+      break;
+    }
+    kept.splice(oldestTimed, 1);
+  }
+  return kept;
 }
 
 export function toastFor(event: AppEvent): ToastSpec | null {

@@ -49,6 +49,28 @@ describe("toastsReducer", () => {
     expect(state.toasts[0]?.title).toBe("2");
   });
 
+  it("never evicts a toast that waits for an answer", () => {
+    const persistent = { ...spec("ask"), durationMs: null };
+    const toasts = [spec("1"), persistent, spec("2"), spec("3"), spec("4")];
+    const state = toasts.reduce(
+      (current, toast) => toastsReducer(current, { type: "shown", toast }),
+      INITIAL_TOASTS,
+    );
+
+    expect(state.toasts.map((toast) => toast.title)).toEqual(["ask", "2", "3", "4"]);
+  });
+
+  it("keeps the toast just shown even when every other one waits for an answer", () => {
+    const persistent = (title: string) => ({ ...spec(title), durationMs: null });
+    const toasts = [persistent("a"), persistent("b"), persistent("c"), persistent("d"), spec("e")];
+    const state = toasts.reduce(
+      (current, toast) => toastsReducer(current, { type: "shown", toast }),
+      INITIAL_TOASTS,
+    );
+
+    expect(state.toasts.map((toast) => toast.title)).toEqual(["a", "b", "c", "d", "e"]);
+  });
+
   it("removes dismissed toasts", () => {
     const shown = toastsReducer(INITIAL_TOASTS, { type: "shown", toast: spec("a") });
 
