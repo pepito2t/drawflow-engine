@@ -27,6 +27,7 @@ import type { CatalogModule } from "../lib/catalog";
 import { AutomationsPanel } from "./AutomationsPanel";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useNotificationCenter } from "../hooks/notification-center";
+import { useSettingsFeed } from "../hooks/settings-feed";
 import { t } from "../i18n/settings";
 import { ErrorPanel } from "./ErrorPanel";
 import { AboutPanel } from "./AboutPanel";
@@ -345,25 +346,21 @@ function useExternalSettingsChanges(
   setSections: (sections: SettingsSection[]) => void,
   setValues: (update: SetStateAction<SettingsValues>) => void,
 ): void {
-  const { subscribe } = useNotificationCenter();
+  const { subscribe } = useSettingsFeed();
   const latest = useRef(sections);
   useEffect(() => {
     latest.current = sections;
   }, [sections]);
   useEffect(
     () =>
-      subscribe((event) => {
-        if (event.type !== "settingsSaved") {
-          return;
+      subscribe((rawSettings) => {
+        try {
+          const reloaded = parseSettings(rawSettings);
+          setValues((current) => mergeReloadedSettings(latest.current, current, reloaded));
+          setSections(reloaded);
+        } catch (error: unknown) {
+          console.error("Paramètres non rechargés :", error);
         }
-        loadSettings()
-          .then((reloaded) => {
-            setValues((current) => mergeReloadedSettings(latest.current, current, reloaded));
-            setSections(reloaded);
-          })
-          .catch((error: unknown) => {
-            console.error("Paramètres non rechargés :", error);
-          });
       }),
     [subscribe, setSections, setValues],
   );

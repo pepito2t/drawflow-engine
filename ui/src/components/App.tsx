@@ -6,6 +6,8 @@ import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { CommandProvider } from "../hooks/command-registry";
 import { NotificationProvider } from "../hooks/notification-center";
+import { HistoryProvider } from "../hooks/history-context";
+import { SettingsFeedProvider } from "../hooks/settings-feed";
 import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
 import { useAppCommands } from "../hooks/use-app-commands";
@@ -107,9 +109,11 @@ function CatalogApp() {
         <RunsProvider>
           <SetupRunsProvider>
             <NotificationProvider>
-              <CommandProvider>
-                <StartupGate startupPromise={promise} />
-              </CommandProvider>
+              <SettingsFeedProvider>
+                <CommandProvider>
+                  <StartupGate startupPromise={promise} />
+                </CommandProvider>
+              </SettingsFeedProvider>
             </NotificationProvider>
           </SetupRunsProvider>
         </RunsProvider>
@@ -122,7 +126,9 @@ function StartupGate({ startupPromise }: { startupPromise: Promise<Startup> }) {
   const { modules, presets } = use(startupPromise);
   return (
     <PresetsProvider initialPresets={presets}>
-      <CatalogView initialModules={modules} />
+      <HistoryProvider>
+        <CatalogView initialModules={modules} />
+      </HistoryProvider>
     </PresetsProvider>
   );
 }
