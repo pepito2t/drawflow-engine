@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: release
@@ -27,6 +28,24 @@ jobs:
       RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The CI matrix (macOS, Windows, Ubuntu) already tested this commit when it reached main or a
+      # pull request: reusing its verdict costs seconds, rerunning the suites here would cost minutes.
+      - name: CI is green on the tagged commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          commit="$(git rev-parse HEAD)"
+          run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${commit}&per_page=1" --jq '.workflow_runs[0].id // empty')"
+          if [[ -z "$run_id" ]]; then
+            echo "::error::Aucune exécution de la CI pour le commit ${commit} : poussez-le sur main (ou ouvrez une PR), attendez la CI, puis posez le tag."
+            exit 1
+          fi
+          echo "CI run ${run_id} : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${run_id}"
+          if ! gh run watch "$run_id" --exit-status --interval 30; then
+            echo "::error::La CI n'est pas verte sur le commit ${commit} (run ${run_id}) : corrigez, fusionnez, puis posez le tag sur le commit corrigé."
+            exit 1
+          fi
 
       - name: Signing secrets present
         env:

@@ -80,16 +80,160 @@ jobs:
       - run: pnpm build
       - run: pnpm run package
 
-  tauri:
-    name: Tauri + sidecar (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+  # Blocks only on vulnerabilities that already have a fixed version: an advisory without a fix
+  # is reported as a warning, RustSec warnings (unmaintained, unsound, yanked) too. npm advisories
+  # below "high" are left to the weekly Dependabot update.
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CARGO_AUDIT_VERSION: 0.22.2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+      - name: Rust channel from rust-toolchain.toml
+        id: rust
+        run: echo "channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' src-tauri/rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          toolchain: ${{ steps.rust.outputs.channel }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: cargo-audit
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: cargo-audit-${{ env.CARGO_AUDIT_VERSION }}-${{ runner.os }}-${{ steps.rust.outputs.channel }}
+      - name: Install cargo-audit
+        if: steps.cargo-audit.outputs.cache-hit != 'true'
+        run: cargo install --locked cargo-audit --version "$CARGO_AUDIT_VERSION"
+
+      - name: Rust (cargo audit)
+        working-directory: src-tauri
+        run: |
+          cargo audit --json > "$RUNNER_TEMP/cargo-audit.json" || true
+          jq -r '
+            .warnings | to_entries[] | .key as $kind | .value[]
+            | "::warning::RustSec \($kind) : \(.package.name) \(.package.version) — \(.advisory.title // "sans avis")"
+          ' "$RUNNER_TEMP/cargo-audit.json"
+          jq -r '
+            .vulnerabilities.list[] | select(.versions.patched | length == 0)
+            | "::warning::\(.advisory.id) sans correctif : \(.package.name) \(.package.version) — \(.advisory.title)"
+          ' "$RUNNER_TEMP/cargo-audit.json"
+          jq -r '
+            .vulnerabilities.list[] | select(.versions.patched | length > 0)
+            | "::error::\(.advisory.id) : \(.package.name) \(.package.version) — \(.advisory.title) (corrigé dans \(.versions.patched | join(", ")))"
+          ' "$RUNNER_TEMP/cargo-audit.json"
+          jq -e '[.vulnerabilities.list[] | select(.versions.patched | length > 0)] | length == 0' "$RUNNER_TEMP/cargo-audit.json" > /dev/null
+
+      - name: npm (pnpm audit)
+        run: |
+          pnpm audit --prod --audit-level high --ignore-unfixable
+          (cd ui && pnpm audit --prod --audit-level high --ignore-unfixable)
+          (cd streamdock && pnpm audit --prod --audit-level high --ignore-unfixable)
+
+      - name: Python (pip-audit)
+        working-directory: engine
+        run: |
+          uv run --locked --no-dev --group audit pip-audit --progress-spinner off --format json --output "$RUNNER_TEMP/pip-audit.json" || true
+          jq -r '
+            .dependencies[] | .name as $name | .version as $version | (.vulns // [])[]
+            | select(.fix_versions | length == 0)
+            | "::warning::\(.id) sans correctif : \($name) \($version)"
+          ' "$RUNNER_TEMP/pip-audit.json"
+          jq -r '
+            .dependencies[] | .name as $name | .version as $version | (.vulns // [])[]
+            | select(.fix_versions | length > 0)
+            | "::error::\(.id) : \($name) \($version) (corrigé dans \(.fix_versions | join(", ")))"
+          ' "$RUNNER_TEMP/pip-audit.json"
+          jq -e '[.dependencies[] | (.vulns // [])[] | select(.fix_versions | length > 0)] | length == 0' "$RUNNER_TEMP/pip-audit.json" > /dev/null
+
+  # `tauri::generate_context!` only needs the sidecar file and the frontendDist folder to exist:
+  # a placeholder and an empty folder are enough for clippy and the unit tests.
+  rust:
+    name: Rust checks (macos-latest)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Rust channel from rust-toolchain.toml
+        id: rust
+        run: echo "channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' src-tauri/rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          toolchain: ${{ steps.rust.outputs.channel }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: src-tauri
+      - name: Placeholder sidecar and frontend
+        run: |
+          placeholder="src-tauri/binaries/engine-$(rustc --print host-tuple)"
+          mkdir -p src-tauri/binaries/_internal ui/dist
+          touch "$placeholder"
+          chmod +x "$placeholder"
+      - name: cargo fmt
+        working-directory: src-tauri
+        run: cargo fmt --check
+      - name: cargo clippy
+        working-directory: src-tauri
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: cargo test
+        working-directory: src-tauri
+        run: cargo test --locked
+
+  sidecar:
+    name: Sidecar smoke test (macos-latest)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+      - name: Rust channel from rust-toolchain.toml
+        id: rust
+        run: echo "channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' src-tauri/rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      # build-sidecar.sh names the binary after `rustc --print host-tuple`.
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          toolchain: ${{ steps.rust.outputs.channel }}
+      - name: Build sidecar
+        run: |
+          (cd engine && uv sync --locked)
+          ./scripts/build-sidecar.sh
+      - name: Smoke test frozen sidecar
+        run: uv run --project engine python scripts/smoke-sidecar.py "$(ls src-tauri/binaries/engine-*)"
+
+  tauri:
+    name: Tauri + sidecar (windows-latest)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # A pull request that touches the bundle (sidecar, resources, icons, NSIS options) also
+      # builds the installer; the artifact is only kept for pushes on main.
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: changes
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            installer:
+              - .github/workflows/ci.yml
+              - package.json
+              - pnpm-lock.yaml
+              - engine/**
+              - scripts/**
+              - src-tauri/**
+              - ui/**
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
@@ -104,7 +248,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
         with:
           toolchain: ${{ steps.rust.outputs.channel }}
-          components: rustfmt, clippy
+          components: clippy
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           workspaces: src-tauri
@@ -116,10 +260,6 @@ jobs:
           ./scripts/build-sidecar.sh
       - name: Smoke test frozen sidecar
         run: uv run --project engine python scripts/smoke-sidecar.py "$(ls src-tauri/binaries/engine-*)"
-      - name: cargo fmt
-        if: matrix.os == 'macos-latest'
-        working-directory: src-tauri
-        run: cargo fmt --check
       - name: cargo clippy
         working-directory: src-tauri
         run: cargo clippy --locked --all-targets -- -D warnings
@@ -127,10 +267,10 @@ jobs:
         working-directory: src-tauri
         run: cargo test --locked
       - name: Windows installer (unsigned, no updater artifacts)
-        if: github.event_name == 'push' && matrix.os == 'windows-latest'
+        if: github.event_name == 'push' || steps.changes.outputs.installer == 'true'
         run: pnpm tauri build --bundles nsis --config '{"bundle":{"createUpdaterArtifacts":false}}' -- --locked
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: github.event_name == 'push' && matrix.os == 'windows-latest'
+        if: github.event_name == 'push'
         with:
           name: drawflow-windows-installer
           path: src-tauri/target/release/bundle/nsis/*.exe
