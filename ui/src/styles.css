@@ -796,6 +796,22 @@ small {
   padding-left: 18px;
 }
 
+.outputs li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.outputs code {
+  overflow-wrap: anywhere;
+}
+
+.run-missing {
+  margin: -6px 0 0;
+}
+
 .error-panel {
   display: flex;
   gap: 12px;
