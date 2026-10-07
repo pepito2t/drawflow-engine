@@ -6,6 +6,7 @@ use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::ShellExt;
 
 use crate::access::AccessLock;
+use crate::console::{self, ConsoleLevel};
 use crate::error::BridgeError;
 use crate::paths::settings_file;
 use crate::runs::Killable;
@@ -71,10 +72,12 @@ pub fn assistant_chat(
         assistant.begin(|| Ok(app.shell().sidecar(SIDECAR_NAME)?.args(arguments).spawn()?))?;
     tauri::async_runtime::spawn(async move {
         if let Err(error) = relay_events(&mut receiver, &on_event, |_| {}).await {
-            eprintln!("Relais de l'assistant interrompu : {error}");
+            let message = format!("Relais de l'assistant interrompu : {error}");
+            console::report(&app, ConsoleLevel::Warning, message);
         }
         if let Err(error) = app.state::<AssistantTurn>().end(turn_id) {
-            eprintln!("Fin de réponse de l'assistant non enregistrée : {error}");
+            let message = format!("Fin de réponse de l'assistant non enregistrée : {error}");
+            console::report(&app, ConsoleLevel::Error, message);
         }
         drop(input_file);
     });

@@ -12,6 +12,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::{broadcast, oneshot};
 
 use crate::access::AccessLock;
+use crate::console::ConsoleLog;
 use crate::error::{BridgeError, ErrorPayload};
 use config::IntegrationConfig;
 use protocol::{CommandReply, CommandRequest, ServerMessage};
@@ -128,6 +129,9 @@ pub async fn dispatch_to_ui(app: &AppHandle, request: CommandRequest) -> Command
 }
 
 pub async fn apply(app: &AppHandle, config: &IntegrationConfig) {
+    if let Err(error) = app.state::<ConsoleLog>().remember_secret(&config.token) {
+        eprintln!("Jeton de l'API locale non masqué dans la console : {error}");
+    }
     let state = app.state::<IntegrationState>();
     let mut server = state.server.lock().await;
     if let Some(previous) = server.take() {

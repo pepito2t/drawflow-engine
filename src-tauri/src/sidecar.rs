@@ -9,6 +9,7 @@ use tauri_plugin_shell::ShellExt;
 use tempfile::NamedTempFile;
 
 use crate::access::AccessLock;
+use crate::console::{self, ConsoleLevel};
 use crate::error::BridgeError;
 use crate::outputs::KnownOutputs;
 use crate::paths::settings_file;
@@ -282,11 +283,13 @@ pub(crate) fn start_streaming_run(
         let outputs = app.state::<KnownOutputs>();
         let remember = |line: &str| outputs.remember_from_line(line);
         if let Err(error) = relay_events(&mut receiver, &on_event, remember).await {
-            eprintln!("Relais des événements interrompu ({task_run_id}) : {error}");
+            let message = format!("Relais des événements interrompu ({task_run_id}) : {error}");
+            console::report(&app, ConsoleLevel::Warning, message);
         }
         let runs = app.state::<EngineRuns>();
         if let Err(error) = runs.finish(&task_run_id) {
-            eprintln!("Fin de traitement non enregistrée ({task_run_id}) : {error}");
+            let message = format!("Fin de traitement non enregistrée ({task_run_id}) : {error}");
+            console::report(&app, ConsoleLevel::Error, message);
         }
         drop(input_file);
     });
