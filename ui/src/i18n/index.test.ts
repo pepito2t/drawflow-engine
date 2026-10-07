@@ -25,6 +25,12 @@ describe("i18n", () => {
     expect(plural(3, "{count} fichier", "{count} fichiers")).toBe("3 fichiers");
   });
 
+  it("tells which keys built at run time exist", () => {
+    expect(t.has("hello")).toBe(true);
+    expect(t.has("missing")).toBe(false);
+    expect(t.has("toString")).toBe(false);
+  });
+
   it("falls back to a language without browser storage", () => {
     expect(["fr", "en"]).toContain(detectLanguage());
   });

@@ -3,6 +3,8 @@
 use serde::{Deserialize, Serialize};
 use subtle::ConstantTimeEq;
 
+use crate::error::BridgeError;
+
 pub const PROTOCOL_VERSION: u32 = 1;
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -27,7 +29,7 @@ pub enum ServerMessage {
     Result(CommandReply),
     Event { event: serde_json::Value },
     Locked { locked: bool },
-    Error { message: String },
+    Error { code: String, message: String },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
@@ -36,19 +38,26 @@ pub struct CommandReply {
     pub id: String,
     pub ok: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<serde_json::Value>,
 }
 
 impl CommandReply {
-    pub fn failure(id: String, message: impl Into<String>) -> Self {
+    pub fn failure(id: String, code: &str, message: impl Into<String>) -> Self {
         Self {
             id,
             ok: false,
+            code: Some(code.to_owned()),
             error: Some(message.into()),
             data: None,
         }
+    }
+
+    pub fn from_error(id: String, error: &BridgeError) -> Self {
+        Self::failure(id, error.code(), error.to_string())
     }
 }
 
@@ -105,11 +114,55 @@ mod tests {
         assert_eq!(welcome, r#"{"type":"welcome","version":1,"locked":false}"#);
         let failure = serde_json::to_value(ServerMessage::Result(CommandReply::failure(
             "7".to_owned(),
-            "verrouillée",
+            "locked",
+            "Drawflow is locked.",
         )))
         .unwrap();
-        assert_eq!(failure["type"], "result");
-        assert_eq!(failure["error"], "verrouillée");
+        assert_eq!(
+            failure,
+            serde_json::json!({
+                "type": "result",
+                "id": "7",
+                "ok": false,
+                "code": "locked",
+                "error": "Drawflow is locked."
+            })
+        );
+    }
+
+    #[test]
+    fn server_errors_carry_a_code_next_to_the_message() {
+        let error = serde_json::to_value(ServerMessage::Error {
+            code: "unknownMessage".to_owned(),
+            message: "Unrecognized message.".to_owned(),
+        })
+        .unwrap();
+        assert_eq!(
+            error,
+            serde_json::json!({
+                "type": "error",
+                "code": "unknownMessage",
+                "message": "Unrecognized message."
+            })
+        );
+    }
+
+    #[test]
+    fn bridge_errors_become_coded_failures() {
+        let reply = CommandReply::from_error("3".to_owned(), &BridgeError::StatePoisoned);
+        assert_eq!(reply.code.as_deref(), Some("statePoisoned"));
+        assert_eq!(
+            reply.error.as_deref(),
+            Some("Internal application state unavailable. Restart Drawflow.")
+        );
+    }
+
+    #[test]
+    fn replies_from_the_ui_may_omit_the_code() {
+        let reply: CommandReply =
+            serde_json::from_str(r#"{"id":"1","ok":false,"error":"Préréglage introuvable."}"#)
+                .unwrap();
+        assert_eq!(reply.code, None);
     }
 
     #[test]

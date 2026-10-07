@@ -48,6 +48,13 @@ const CONNECTION_ERRORS: Record<Exclude<ConnectionState, "ready">, MessageKey> =
   locked: "error.locked",
   refused: "error.refused",
 };
+/** Codes of the local API (docs/api-locale.md); others keep the text Drawflow sent. */
+const SERVER_ERRORS: Partial<Record<string, MessageKey>> = {
+  locked: "error.locked",
+  invalidToken: "error.refused",
+  noReply: "error.timeout",
+  unknownMessage: "error.unknownMessage",
+};
 
 interface Pending {
   resolve: (result: CommandResult) => void;
@@ -178,7 +185,10 @@ export class DrawflowClient {
         if (this.state === "offline") {
           this.refuse();
         } else {
-          console.error("Drawflow a rejeté un message du plugin :", parsed.message);
+          console.error(
+            "Drawflow a rejeté un message du plugin :",
+            this.serverError(parsed.code, parsed.message),
+          );
         }
         return;
       case "result":
@@ -186,7 +196,7 @@ export class DrawflowClient {
           parsed.id,
           parsed.ok
             ? { ok: true, data: parsed.data }
-            : { ok: false, error: parsed.error ?? this.text("error.unknown") },
+            : { ok: false, error: this.serverError(parsed.code, parsed.error) },
         );
         return;
       case "event":
@@ -214,6 +224,14 @@ export class DrawflowClient {
 
   private failPending(error: string): void {
     for (const [id] of this.pending) this.resolve(id, { ok: false, error });
+  }
+
+  private serverError(code: string | undefined, received: string | undefined): string {
+    const key = code === undefined ? undefined : SERVER_ERRORS[code];
+    if (key !== undefined) {
+      return this.text(key);
+    }
+    return received ?? this.text("error.unknown");
   }
 
   private text(key: MessageKey): string {

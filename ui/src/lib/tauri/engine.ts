@@ -3,6 +3,7 @@ import { t } from "../../i18n/shell";
 import type { EngineMessageHandler, InvalidMessageHandler } from "../engine-message";
 import { unwrapEngineOutput } from "../engine-output";
 import type { FormValues } from "../form-schema";
+import { parseBridgeError, translateBridgeError } from "./bridge-error";
 import { engineChannel } from "./engine-channel";
 
 export async function listModules(): Promise<string> {
@@ -73,9 +74,14 @@ export function cancelRun(runId: string): Promise<void> {
   return invoke<undefined>("cancel_run", { runId });
 }
 
+/** Tauri plugins still reject with plain strings: those are shown as they are. */
 export function describeBridgeError(error: unknown): string {
   if (typeof error === "string") {
     return error;
+  }
+  const bridgeError = parseBridgeError(error);
+  if (bridgeError) {
+    return translateBridgeError(bridgeError);
   }
   return error instanceof Error ? error.message : t("bridge.unknownError");
 }

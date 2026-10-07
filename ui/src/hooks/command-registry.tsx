@@ -6,6 +6,7 @@ import {
   type CommandId,
   type CommandResult,
 } from "../lib/commands";
+import { describeBridgeError } from "../lib/tauri/engine";
 
 type AnyHandler = (args: unknown) => unknown;
 
@@ -42,7 +43,7 @@ export function CommandProvider({ children }: { children: ReactNode }) {
       const data: unknown = await handler(parsed.args);
       return data === undefined ? { ok: true } : { ok: true, data };
     } catch (error: unknown) {
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      return { ok: false, error: describeBridgeError(error) };
     }
   }, []);
 

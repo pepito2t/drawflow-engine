@@ -23,8 +23,12 @@ const KEEPALIVE_INTERVAL: Duration = Duration::from_secs(30);
 const SILENT_PERIODS_BEFORE_CLOSE: u32 = 2;
 const MAX_MESSAGE_BYTES: usize = 64 * 1024;
 const MAX_CLIENTS: usize = 8;
-const LOCKED_MESSAGE: &str =
-    "Drawflow est verrouillée : saisissez le code d'accès dans l'application.";
+const LOCKED_CODE: &str = "locked";
+const LOCKED_MESSAGE: &str = "Drawflow is locked: enter the access code in the application.";
+const INVALID_TOKEN_CODE: &str = "invalidToken";
+const INVALID_TOKEN_MESSAGE: &str = "Invalid token or protocol version.";
+const UNKNOWN_MESSAGE_CODE: &str = "unknownMessage";
+const UNKNOWN_MESSAGE_MESSAGE: &str = "Unrecognized message.";
 const RESYNC_EVENT_TYPE: &str = "resync";
 
 pub type ReplyFuture<'a> = Pin<Box<dyn Future<Output = CommandReply> + Send + 'a>>;
@@ -162,7 +166,8 @@ impl<D: Dispatcher> Client<D> {
         };
         if !self.authenticate(&mut socket).await {
             let message = ServerMessage::Error {
-                message: "Jeton ou version de protocole invalide.".to_owned(),
+                code: INVALID_TOKEN_CODE.to_owned(),
+                message: INVALID_TOKEN_MESSAGE.to_owned(),
             };
             let _closing = send(&mut socket, &message).await;
             return;
@@ -256,12 +261,17 @@ async fn answer<D: Dispatcher>(dispatcher: &D, text: &str) -> ServerMessage {
         Ok(ClientMessage::Command { id, command, args }) => CommandRequest { id, command, args },
         Ok(ClientMessage::Hello { .. }) | Err(_) => {
             return ServerMessage::Error {
-                message: "Message non reconnu.".to_owned(),
+                code: UNKNOWN_MESSAGE_CODE.to_owned(),
+                message: UNKNOWN_MESSAGE_MESSAGE.to_owned(),
             }
         }
     };
     if dispatcher.is_locked() {
-        return ServerMessage::Result(CommandReply::failure(request.id, LOCKED_MESSAGE));
+        return ServerMessage::Result(CommandReply::failure(
+            request.id,
+            LOCKED_CODE,
+            LOCKED_MESSAGE,
+        ));
     }
     ServerMessage::Result(dispatcher.dispatch(request).await)
 }
@@ -308,6 +318,7 @@ mod tests {
                 CommandReply {
                     id: request.id,
                     ok: true,
+                    code: None,
                     error: None,
                     data: Some(serde_json::json!({ "echo": request.command })),
                 }
@@ -376,7 +387,10 @@ mod tests {
     async fn wrong_token_is_refused() {
         let (handle, _) = server(false).await;
         let mut socket = connect(&handle, "wrong").await;
-        assert_eq!(next_json(&mut socket).await["type"], "error");
+        let refusal = next_json(&mut socket).await;
+        assert_eq!(refusal["type"], "error");
+        assert_eq!(refusal["code"], INVALID_TOKEN_CODE);
+        assert_eq!(refusal["message"], INVALID_TOKEN_MESSAGE);
     }
 
     #[tokio::test]
@@ -401,6 +415,19 @@ mod tests {
         send_text(&mut socket, command).await;
         let reply = next_json(&mut socket).await;
         assert_eq!(reply["ok"], false);
+        assert_eq!(reply["code"], LOCKED_CODE);
+        assert_eq!(reply["error"], LOCKED_MESSAGE);
+    }
+
+    #[tokio::test]
+    async fn unknown_message_is_answered_with_its_code() {
+        let (handle, _) = server(false).await;
+        let mut socket = connect(&handle, "secret").await;
+        next_json(&mut socket).await;
+        send_text(&mut socket, serde_json::json!({ "type": "bogus" })).await;
+        let error = next_json(&mut socket).await;
+        assert_eq!(error["type"], "error");
+        assert_eq!(error["code"], UNKNOWN_MESSAGE_CODE);
     }
 
     #[tokio::test]
