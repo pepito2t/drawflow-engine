@@ -140,6 +140,9 @@ def pipe_is_held_open(descriptor: int) -> bool:
 
 
 def pending_bytes(descriptor: int) -> int:
+    # Only meaningful on POSIX; the narrowing lets mypy check this branch on Windows too.
+    if sys.platform == "win32":
+        return 0
     import fcntl
     import termios
 
