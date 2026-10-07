@@ -21,7 +21,18 @@ describe("parseLaunchArguments", () => {
       port: 23519,
       pluginUUID: "abc123",
       registerEvent: "registerPlugin",
+      language: "fr",
     });
+  });
+
+  it("follows the language of Stream Dock, French unless it says English", () => {
+    const withInfo = (info: string) => parseLaunchArguments([...ARGV.slice(0, -1), info]).language;
+
+    expect(withInfo('{"application":{"language":"en"}}')).toBe("en");
+    expect(withInfo('{"application":{"language":"en-US"}}')).toBe("en");
+    expect(withInfo('{"application":{"language":"de"}}')).toBe("fr");
+    expect(withInfo("not json")).toBe("fr");
+    expect(parseLaunchArguments(ARGV.slice(0, -2)).language).toBe("fr");
   });
 
   it("refuses to start outside Stream Dock", () => {

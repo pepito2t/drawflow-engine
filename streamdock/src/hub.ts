@@ -6,6 +6,7 @@ import {
   type SocketLike,
   type Timers,
 } from "./drawflow-client";
+import { DEFAULT_LANGUAGE, translate, type Language } from "./i18n";
 import { appStateSchema, type AppState, type CommandResult } from "./protocol";
 import { acknowledge, applyEvent, runningCount, runsFromState, type Runs } from "./run-tracker";
 
@@ -13,10 +14,14 @@ const EMPTY_STATE: AppState = { modules: [], presets: [], runs: [] };
 // Drawflow's relay may drop events under load; a periodic reload catches a missed `runFinished`.
 const RESYNC_WHILE_RUNNING_MS = 30_000;
 const RESYNC_EVENTS: ReadonlySet<string> = new Set(["presetSaved", "resync"]);
-const UNREADABLE_STATE_ERROR = "Réponse de Drawflow illisible : mettez à jour le plugin.";
+
+export interface HubOptions extends Partial<Timers> {
+  language?: Language;
+}
 
 /** Shared view of Drawflow for every key: connection, features, presets and runs. */
 export class DrawflowHub {
+  readonly language: Language;
   connection: ConnectionState = "offline";
   app: AppState = EMPTY_STATE;
   runs: Runs = new Map();
@@ -27,9 +32,10 @@ export class DrawflowHub {
   private automatic: Connection | null = null;
   private resyncTimer: unknown = null;
 
-  constructor(createSocket: (url: string) => SocketLike, timers: Partial<Timers> = {}) {
-    this.timers = { ...DEFAULT_TIMERS, ...timers };
-    this.client = new DrawflowClient({ createSocket, ...timers });
+  constructor(createSocket: (url: string) => SocketLike, options: HubOptions = {}) {
+    this.language = options.language ?? DEFAULT_LANGUAGE;
+    this.timers = { ...DEFAULT_TIMERS, ...options };
+    this.client = new DrawflowClient({ createSocket, ...options });
     this.client.onState((state) => {
       this.connection = state;
       if (state === "ready") {
@@ -90,7 +96,7 @@ export class DrawflowHub {
     }
     const parsed = appStateSchema.safeParse(result.data);
     if (!parsed.success) {
-      return { ok: false, error: UNREADABLE_STATE_ERROR };
+      return { ok: false, error: translate(this.language, "error.unreadableState") };
     }
     this.app = parsed.data;
     this.runs = runsFromState(parsed.data);

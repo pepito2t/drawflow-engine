@@ -3,9 +3,9 @@ import { BEHAVIORS } from "./behaviors";
 import { FakeSocket } from "./fake-socket.test-helper";
 import { DrawflowHub } from "./hub";
 
-function readyHub(): { hub: DrawflowHub; socket: FakeSocket } {
+function readyHub(language: "fr" | "en" = "fr"): { hub: DrawflowHub; socket: FakeSocket } {
   const socket = new FakeSocket();
-  const hub = new DrawflowHub(() => socket);
+  const hub = new DrawflowHub(() => socket, { language });
   hub.configure(51717, "secret");
   socket.open();
   socket.receive({ type: "welcome", version: 1, locked: false });
@@ -26,6 +26,17 @@ describe("cancel-all key", () => {
     socket.receive(runEvent({ type: "runFinished", moduleId: "a", outcome: "cancelled" }));
     socket.receive(runEvent({ type: "runFinished", moduleId: "b", outcome: "cancelled" }));
     expect(behavior?.face(hub, {})).toMatchObject({ tone: "idle", detail: null });
+  });
+});
+
+describe("key texts", () => {
+  it("are in English when Stream Dock runs in English", async () => {
+    const { hub } = readyHub("en");
+
+    expect(BEHAVIORS["ch.drawflow.preset"]?.face(hub, {}).label).toBe("Choose a preset");
+    await expect(BEHAVIORS["ch.drawflow.open-tab"]?.press(hub, {})).resolves.toEqual({
+      failed: "Choose a tab in the key settings",
+    });
   });
 });
 

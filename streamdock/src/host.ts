@@ -1,11 +1,13 @@
 import * as z from "zod/mini";
 import type { SocketLike } from "./drawflow-client";
+import { languageFromInfo, type Language } from "./i18n";
 
 /** How Stream Dock starts the plugin: `-port 1234 -pluginUUID … -registerEvent … -info {…}`. */
 export interface LaunchArguments {
   port: number;
   pluginUUID: string;
   registerEvent: string;
+  language: Language;
 }
 
 const hostEventSchema = z.object({
@@ -37,7 +39,13 @@ export function parseLaunchArguments(argv: readonly string[]): LaunchArguments {
   if (!Number.isInteger(port) || port <= 0) {
     throw new LaunchError("Port de Stream Dock invalide.");
   }
-  return { port, pluginUUID: value("-pluginUUID"), registerEvent: value("-registerEvent") };
+  const infoIndex = argv.indexOf("-info");
+  return {
+    port,
+    pluginUUID: value("-pluginUUID"),
+    registerEvent: value("-registerEvent"),
+    language: languageFromInfo(infoIndex === -1 ? undefined : argv[infoIndex + 1]),
+  };
 }
 
 /** The plugin side of the Stream Dock protocol (same messages as the classic Stream Deck SDK). */

@@ -1,4 +1,5 @@
 import type { ConnectionState } from "./drawflow-client";
+import { translate, type Language, type MessageKey } from "./i18n";
 import { progressRatio, type RunView } from "./run-tracker";
 
 export type KeyTone =
@@ -35,16 +36,22 @@ const BACKGROUNDS: Record<KeyTone, string> = {
   warning: "#9a5a0c",
 };
 
+const CONNECTION_FACES: Record<Exclude<ConnectionState, "ready">, [KeyTone, MessageKey]> = {
+  offline: ["offline", "face.offline"],
+  locked: ["locked", "face.locked"],
+  refused: ["refused", "face.refused"],
+};
+
 /** Chooses what a key shows from the connection and the run of its feature. */
-export function faceFor(connection: ConnectionState, label: string, run: RunView | null): KeyFace {
-  if (connection === "offline") {
-    return { tone: "offline", label, detail: "Hors ligne", progress: null };
-  }
-  if (connection === "locked") {
-    return { tone: "locked", label, detail: "Verrouillé", progress: null };
-  }
-  if (connection === "refused") {
-    return { tone: "refused", label, detail: "Jeton invalide", progress: null };
+export function faceFor(
+  language: Language,
+  connection: ConnectionState,
+  label: string,
+  run: RunView | null,
+): KeyFace {
+  if (connection !== "ready") {
+    const [tone, key] = CONNECTION_FACES[connection];
+    return { tone, label, detail: translate(language, key), progress: null };
   }
   if (run === null) {
     return { tone: "idle", label, detail: null, progress: null };
@@ -52,15 +59,23 @@ export function faceFor(connection: ConnectionState, label: string, run: RunView
   switch (run.status) {
     case "running": {
       const progress = progressRatio(run);
-      const detail = progress === null ? "En cours" : `${String(Math.round(progress * PERCENT))} %`;
+      const detail =
+        progress === null
+          ? translate(language, "face.running")
+          : `${String(Math.round(progress * PERCENT))} %`;
       return { tone: "running", label, detail, progress };
     }
     case "succeeded":
-      return { tone: "succeeded", label, detail: "Terminé", progress: null };
+      return {
+        tone: "succeeded",
+        label,
+        detail: translate(language, "face.succeeded"),
+        progress: null,
+      };
     case "failed":
-      return { tone: "failed", label, detail: "Échec", progress: null };
+      return { tone: "failed", label, detail: translate(language, "face.failed"), progress: null };
     case "cancelled":
-      return { tone: "idle", label, detail: "Annulé", progress: null };
+      return { tone: "idle", label, detail: translate(language, "face.cancelled"), progress: null };
     case "idle":
       return { tone: "idle", label, detail: null, progress: null };
   }

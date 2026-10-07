@@ -8,19 +8,26 @@ describe("key faces", () => {
   it("shows offline and locked states before anything else", () => {
     const running = { status: "running" as const, current: 1, total: 2 };
 
-    expect(faceFor("offline", "Tour B", running).tone).toBe("offline");
-    expect(faceFor("locked", "Tour B", running)).toMatchObject({
+    expect(faceFor("fr", "offline", "Tour B", running).tone).toBe("offline");
+    expect(faceFor("fr", "locked", "Tour B", running)).toMatchObject({
       tone: "locked",
       detail: "Verrouillé",
     });
-    expect(faceFor("refused", "Tour B", running)).toMatchObject({
+    expect(faceFor("fr", "refused", "Tour B", running)).toMatchObject({
       tone: "refused",
       detail: "Jeton invalide",
     });
   });
 
+  it("speaks English when Stream Dock does", () => {
+    expect(faceFor("en", "offline", "Tour B", null).detail).toBe("Offline");
+    expect(
+      faceFor("en", "ready", "A", { status: "failed", current: null, total: null }).detail,
+    ).toBe("Failed");
+  });
+
   it("shows live progress while running", () => {
-    expect(faceFor("ready", "Tour B", { status: "running", current: 3, total: 4 })).toEqual({
+    expect(faceFor("fr", "ready", "Tour B", { status: "running", current: 3, total: 4 })).toEqual({
       tone: "running",
       label: "Tour B",
       detail: "75 %",
@@ -29,16 +36,18 @@ describe("key faces", () => {
   });
 
   it("shows green or red results", () => {
-    expect(faceFor("ready", "A", { status: "succeeded", current: null, total: null }).tone).toBe(
-      "succeeded",
-    );
-    expect(faceFor("ready", "A", { status: "failed", current: null, total: null }).tone).toBe(
+    expect(
+      faceFor("fr", "ready", "A", { status: "succeeded", current: null, total: null }).tone,
+    ).toBe("succeeded");
+    expect(faceFor("fr", "ready", "A", { status: "failed", current: null, total: null }).tone).toBe(
       "failed",
     );
   });
 
   it("says that a run was cancelled until the key is pressed again", () => {
-    expect(faceFor("ready", "A", { status: "cancelled", current: null, total: null })).toEqual({
+    expect(
+      faceFor("fr", "ready", "A", { status: "cancelled", current: null, total: null }),
+    ).toEqual({
       tone: "idle",
       label: "A",
       detail: "Annulé",
