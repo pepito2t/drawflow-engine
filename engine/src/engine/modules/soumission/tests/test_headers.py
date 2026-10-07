@@ -6,9 +6,9 @@ import pytest
 
 from engine.core.errors import InvalidInputError
 from engine.modules.soumission.headers import add_synonyms, inspect_headers, validate_additions
-from engine.modules.soumission.reader import header_candidates, read_workbook
+from engine.modules.soumission.reader import WorkbookReadError, header_candidates, read_workbook
 from engine.modules.soumission.settings import SoumissionSettings, synonyms_of
-from engine.modules.soumission.tests.workbooks import submission_bytes
+from engine.modules.soumission.tests.workbooks import submission_bytes, truncated_sheet_bytes
 
 
 def test_header_candidates_rank_rows_by_how_many_texts_they_hold() -> None:
@@ -82,3 +82,14 @@ def test_add_synonyms_persists_them_next_to_the_existing_ones(tmp_path: Path) ->
     assert quantity["value"].endswith(";Nbre")
     reloaded = SoumissionSettings.model_validate({"columns": stored})
     assert "Somme" in synonyms_of(next(c for c in reloaded.columns if c.key == "Total"))
+
+
+def test_inspect_reports_a_damaged_sheet_readably(tmp_path: Path) -> None:
+    path = tmp_path / "tronqué.xlsx"
+    path.write_bytes(truncated_sheet_bytes())
+
+    with pytest.raises(WorkbookReadError) as caught:
+        inspect_headers(path, SoumissionSettings())
+
+    assert caught.value.file is not None and caught.value.file.name == path.name
+    assert "« Offre »" in caught.value.message

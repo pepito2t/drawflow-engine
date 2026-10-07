@@ -91,8 +91,9 @@ t = define_messages(
             "Vérifiez la connexion Internet et l'espace disque, puis réessayez."
         ),
         "ollama.unreadable_list": "Liste des modèles d'Ollama illisible.",
+        "ollama.list_unreachable": "Ollama ne répond plus : liste des modèles indisponible.",
         "ollama.delete_unreachable": "Ollama ne répond pas : impossible de supprimer « {model} ».",
-        "ollama.delete_unreachable.hint": "Vérifiez qu'Ollama est démarré.",
+        "ollama.unreachable.hint": "Vérifiez qu'Ollama est démarré.",
         "ollama.delete_failed": "Ollama n'a pas pu supprimer « {model} » (HTTP {status}).",
         "scan.action.install": "Installer",
         "scan.action.use": "Utiliser",
@@ -164,6 +165,13 @@ t = define_messages(
         "stream_dock.in_use.hint": (
             "Quittez Stream Dock, cliquez à nouveau sur Installer, puis relancez Stream Dock."
         ),
+        "stream_dock.write_failed": (
+            "Le plugin n'a pas pu être écrit dans le dossier de Stream Dock."
+        ),
+        "stream_dock.write_failed.hint": (
+            "Vérifiez l'espace disque et vos droits sur ce dossier, puis réessayez."
+        ),
+        "stream_dock.remove_failed": "Un ancien dossier du plugin n'a pas pu être supprimé.",
     },
     en={
         "actions.unknown": "Unknown setup action: {action}.",
@@ -238,8 +246,9 @@ t = define_messages(
             "Check the Internet connection and the disk space, then try again."
         ),
         "ollama.unreadable_list": "Ollama's model list is unreadable.",
+        "ollama.list_unreachable": "Ollama stopped answering: the model list is unavailable.",
         "ollama.delete_unreachable": 'Ollama does not answer: "{model}" could not be removed.',
-        "ollama.delete_unreachable.hint": "Check that Ollama is running.",
+        "ollama.unreachable.hint": "Check that Ollama is running.",
         "ollama.delete_failed": 'Ollama could not remove "{model}" (HTTP {status}).',
         "scan.action.install": "Install",
         "scan.action.use": "Use",
@@ -310,5 +319,10 @@ t = define_messages(
         "stream_dock.in_use.hint": (
             "Quit Stream Dock, click Install again, then start Stream Dock again."
         ),
+        "stream_dock.write_failed": "The plugin could not be written into the Stream Dock folder.",
+        "stream_dock.write_failed.hint": (
+            "Check the disk space and your rights on that folder, then try again."
+        ),
+        "stream_dock.remove_failed": "A previous plugin folder could not be removed.",
     },
 )

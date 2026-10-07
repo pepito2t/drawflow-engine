@@ -52,6 +52,13 @@ class FileCache:
     def entry_path(self, digest: str, suffix: str) -> Path:
         return self._folder / digest[:SHARD_LENGTH] / f"{digest}{suffix}"
 
+    def has(self, source: Path, suffix: str) -> bool:
+        """Whether a usable entry already exists, without producing anything."""
+        try:
+            return self.entry_path(file_digest(source), suffix).stat().st_size > 0
+        except OSError:
+            return False
+
     def get_or_create(self, source: Path, suffix: str, produce: Producer, emit: Emit) -> Path:
         entry = self.entry_path(file_digest(source), suffix)
         if self._is_usable(entry, source, emit):

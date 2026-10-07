@@ -1,4 +1,5 @@
 import io
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -57,6 +58,36 @@ def test_previous_plugin_is_replaced(tmp_path: Path) -> None:
 
     assert not old.exists()
     assert sorted(path.name for path in tmp_path.iterdir()) == [PLUGIN]
+
+
+def test_old_plugin_folder_that_cannot_be_removed_is_a_readable_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / PLUGIN).mkdir()
+    real_rmtree = shutil.rmtree
+
+    def refuse_old(path: Path, *arguments: object, **options: object) -> None:
+        if path.name.endswith(".old"):
+            raise PermissionError("en cours d'utilisation")
+        real_rmtree(path, *arguments, **options)
+
+    monkeypatch.setattr(shutil, "rmtree", refuse_old)
+
+    with pytest.raises(StreamDockError, match="supprimé") as caught:
+        install_plugin(tmp_path, PLUGIN, ASSET_URL, release(plugin_zip()))
+
+    assert caught.value.file is not None and caught.value.file.name.endswith(".old")
+    assert caught.value.hint is not None and "Stream Dock" in caught.value.hint
+
+
+def test_plugin_folder_that_cannot_be_written_is_a_readable_error(tmp_path: Path) -> None:
+    plugins = tmp_path / "plugins"
+    plugins.write_text("", encoding="utf-8")
+
+    with pytest.raises(StreamDockError, match="écrit") as caught:
+        install_plugin(plugins, PLUGIN, ASSET_URL, release(plugin_zip()))
+
+    assert caught.value.file is not None and caught.value.hint is not None
 
 
 def test_entries_outside_the_plugin_folder_are_never_written(tmp_path: Path) -> None:

@@ -33,6 +33,7 @@ from engine.core.settings import (
     load_run_settings,
     save_settings,
 )
+from engine.core.shutdown import exit_when_stdin_closes
 from engine.core.stats import StatsStore
 from engine.core.templates import TemplateLibrary
 from engine.messages import t
@@ -219,6 +220,7 @@ def _dispatch(arguments: argparse.Namespace, emit: Emit) -> None:
 
 
 def _run(arguments: argparse.Namespace, emit: Emit) -> None:
+    exit_when_stdin_closes()
     module = get_module(arguments.module_id)
     settings = load_run_settings(arguments.settings, module)
     default_template = None

@@ -58,6 +58,7 @@ t = define_messages(
         ),
         "reader.unreadable": "Le classeur Excel est illisible.",
         "reader.unreadable.hint": "Vérifiez qu'il s'ouvre dans Excel (format .xlsx).",
+        "reader.sheet_unreadable": "La feuille « {sheet} » du classeur Excel est illisible.",
         "reader.unreadable_amounts": "{count} montant(s) illisible(s) gardé(s) en texte.",
         "reader.unreadable_amounts.location": "feuille « {sheet} »",
         "reader.unreadable_amounts.hint": (
@@ -84,9 +85,12 @@ t = define_messages(
         "pipeline.writing": "Écriture de {name}",
         "pipeline.summary": "{rows} ligne(s) issues de {tables} tableau(x), {files} fichier(s)",
         "pipeline.duplicate": "Doublon ignoré : même contenu que {name}.",
-        "pipeline.unreadable_source": "Fichier introuvable ou illisible, ignoré.",
-        "pipeline.unreadable_source.hint": "Réenregistrez le préréglage ou vérifiez le chemin.",
         "pipeline.no_source": "Aucune soumission n'a pu être lue.",
+        "pipeline.no_source.hint": (
+            "Les avertissements ci-dessus indiquent le problème de chaque fichier."
+        ),
+        "worker.unreadable_source": "Fichier introuvable ou illisible, ignoré.",
+        "worker.unreadable_source.hint": "Réenregistrez le préréglage ou vérifiez le chemin.",
     },
     en={
         "manifest.name": "Submission",
@@ -143,6 +147,7 @@ t = define_messages(
         ),
         "reader.unreadable": "The Excel workbook cannot be read.",
         "reader.unreadable.hint": "Check that it opens in Excel (.xlsx format).",
+        "reader.sheet_unreadable": "Sheet “{sheet}” of the Excel workbook cannot be read.",
         "reader.unreadable_amounts": "{count} unreadable amount(s) kept as text.",
         "reader.unreadable_amounts.location": "sheet “{sheet}”",
         "reader.unreadable_amounts.hint": (
@@ -169,8 +174,9 @@ t = define_messages(
         "pipeline.writing": "Writing {name}",
         "pipeline.summary": "{rows} row(s) from {tables} table(s), {files} file(s)",
         "pipeline.duplicate": "Duplicate skipped: same content as {name}.",
-        "pipeline.unreadable_source": "File not found or unreadable, skipped.",
-        "pipeline.unreadable_source.hint": "Save the preset again or check the path.",
         "pipeline.no_source": "No submission could be read.",
+        "pipeline.no_source.hint": "The warnings above tell what is wrong with each file.",
+        "worker.unreadable_source": "File not found or unreadable, skipped.",
+        "worker.unreadable_source.hint": "Save the preset again or check the path.",
     },
 )

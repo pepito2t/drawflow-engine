@@ -54,8 +54,8 @@ def run_diff(inputs: DwgDiffInputs, context: RunContext, moment: datetime) -> Mo
         )
     target = _target(inputs, settings, moment)
     emit(LogEvent(message=t("pipeline.writing", name=target.name)))
-    with writing_output(target):
-        export_diff(report, target)
+    with writing_output(target) as draft:
+        export_diff(report, draft)
     return ModuleResult(summary=describe_result(report), outputs=[target])
 
 

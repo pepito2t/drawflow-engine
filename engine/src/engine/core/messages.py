@@ -99,6 +99,7 @@ t = define_messages(
         "history.unreadable": "Le fichier d'historique est illisible ; il n'a pas été modifié.",
         "history.unreadable_hint": "Supprimez-le pour repartir d'un historique vide.",
         "history.save_failed": "Impossible d'enregistrer l'historique.",
+        "history.internal_error": "Erreur interne inattendue.",
         "history.missing_id": "Identifiant de traitement manquant.",
         "history.unknown_action": "Action d'historique inconnue : {action}.",
         "stats.unreadable": "Le fichier des compteurs est illisible ; il n'a pas été modifié.",
@@ -125,6 +126,10 @@ t = define_messages(
         "naming.output_folder_unreachable": "Le dossier de sortie est inaccessible.",
         "naming.output_folder_unreachable_hint": (
             "Choisissez un autre dossier de sortie, ou vérifiez vos droits dessus."
+        ),
+        "naming.output_finalize_failed": "Le fichier de sortie n'a pas pu être finalisé.",
+        "naming.output_finalize_failed_hint": (
+            "Vérifiez qu'aucun programme ne bloque le dossier de sortie, puis relancez."
         ),
         "cache.invalid_entry": "Entrée de cache invalide, nouveau calcul.",
         "cache.folder_unreachable": "Le dossier de cache est inaccessible.",
@@ -282,6 +287,7 @@ t = define_messages(
         "history.unreadable": "The history file is unreadable; it was left untouched.",
         "history.unreadable_hint": "Delete it to start from an empty history.",
         "history.save_failed": "The history could not be saved.",
+        "history.internal_error": "Unexpected internal error.",
         "history.missing_id": "Run identifier missing.",
         "history.unknown_action": "Unknown history action: {action}.",
         "stats.unreadable": "The counters file is unreadable; it was left untouched.",
@@ -306,6 +312,10 @@ t = define_messages(
         "naming.output_folder_unreachable": "The output folder cannot be accessed.",
         "naming.output_folder_unreachable_hint": (
             "Choose another output folder, or check your permissions on it."
+        ),
+        "naming.output_finalize_failed": "The output file could not be finalized.",
+        "naming.output_finalize_failed_hint": (
+            "Check that no program is locking the output folder, then run again."
         ),
         "cache.invalid_entry": "Invalid cache entry, computing again.",
         "cache.folder_unreachable": "The cache folder cannot be accessed.",

@@ -1,4 +1,6 @@
 import json
+import stat
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -7,6 +9,7 @@ from urllib.parse import parse_qs
 import httpx
 import pytest
 
+from engine.core.errors import OutputWriteError
 from engine.core.registry import discover_modules
 from engine.core.settings import save_settings
 from engine.mail import service
@@ -197,6 +200,22 @@ def test_unconfigured_mailbox_is_refused(tmp_path: Path) -> None:
         service.fetch(settings_file)
 
 
+def test_unwritable_store_folder_is_a_readable_error_naming_the_file(tmp_path: Path) -> None:
+    store = ConversationStore(tmp_path / "mail")
+    store.register("c1")
+    (store.folder / "conversations.json").mkdir()
+
+    with pytest.raises(OutputWriteError, match="index") as index_error:
+        store.rebuild_index()
+    assert index_error.value.file == store.folder / "conversations.json"
+
+    blocked = ConversationStore(tmp_path / "fichier")
+    (tmp_path / "fichier").write_text("", encoding="utf-8")
+    with pytest.raises(OutputWriteError, match="dossier") as register_error:
+        blocked.register("c2")
+    assert register_error.value.file is not None and register_error.value.hint is not None
+
+
 def test_store_prunes_oldest_conversations_and_cleans_subjects(tmp_path: Path) -> None:
     store = ConversationStore(tmp_path / "mail")
     for index in range(3):
@@ -301,6 +320,21 @@ def test_windows_session_file_is_restricted_with_icacls(tmp_path: Path) -> None:
     assert command[4].endswith(":F")
     session = store.read()
     assert session is not None and session.protected
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX file modes")
+def test_session_file_is_owner_only_before_any_restriction_runs(tmp_path: Path) -> None:
+    modes: list[int] = []
+
+    def acl(arguments: Any) -> bool:
+        modes.append(stat.S_IMODE(Path(arguments[1]).stat().st_mode))
+        return True
+
+    store = SessionStore(tmp_path / "settings.json", acl=acl)
+    store.write(MailSession(account="lea@facades.ch", refresh_token="rt"))
+
+    assert modes == [0o600]
+    assert [path.name for path in tmp_path.iterdir()] == ["mail-session.json"]
 
 
 def test_failed_acl_is_remembered_and_surfaced_in_the_status(settings: Path) -> None:

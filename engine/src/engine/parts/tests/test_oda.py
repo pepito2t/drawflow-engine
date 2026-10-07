@@ -1,5 +1,8 @@
 import os
 import subprocess
+import sys
+import threading
+import time
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -8,15 +11,21 @@ import pytest
 from engine.core.cache import FileCache
 from engine.core.events import Event
 from engine.core.settings_models import GeneralSettings
+from engine.core.shutdown import hooks
 from engine.parts.oda import (
     DwgConversionError,
     OdaConverter,
     OdaNotConfiguredError,
     ensure_dxf,
     require_oda,
+    run_command,
 )
 
 ODA_ENVIRONMENT_VARIABLE = "ODA_FILE_CONVERTER"
+FAILING_PROGRAM = "import sys; sys.stderr.write('Licence refusée'); sys.exit(3)"
+SLEEPING_PROGRAM = "import time; time.sleep(30)"
+KILL_WAIT_SECONDS = 10.0
+PROGRAM_START_SECONDS = 0.5
 
 
 class FakeOda:
@@ -73,6 +82,35 @@ def test_process_failures_name_the_plan(tmp_path: Path, dwg: Path, error: Except
         OdaConverter(Path("oda"), FakeOda(error=error)).convert(dwg, tmp_path / "out.dxf")
 
     assert caught.value.file == dwg
+
+
+def test_command_failure_carries_what_the_program_printed() -> None:
+    with pytest.raises(subprocess.CalledProcessError) as caught:
+        run_command([sys.executable, "-c", FAILING_PROGRAM])
+
+    assert caught.value.returncode == 3
+    # The child writes in the platform encoding: compare on the accent-free prefix.
+    assert b"Licence refus" in caught.value.stderr
+
+
+def test_cancelling_the_run_kills_the_converter() -> None:
+    errors: list[Exception] = []
+
+    def convert() -> None:
+        try:
+            run_command([sys.executable, "-c", SLEEPING_PROGRAM])
+        except subprocess.CalledProcessError as error:
+            errors.append(error)
+
+    thread = threading.Thread(target=convert, daemon=True)
+    started = time.monotonic()
+    thread.start()
+    time.sleep(PROGRAM_START_SECONDS)
+    hooks.trigger()
+    thread.join(KILL_WAIT_SECONDS)
+
+    assert not thread.is_alive() and len(errors) == 1
+    assert time.monotonic() - started < KILL_WAIT_SECONDS
 
 
 def test_oda_must_be_configured() -> None:

@@ -46,8 +46,8 @@ def run_report(inputs: PdfReportInputs, context: RunContext, moment: datetime) -
     target = _target(inputs, settings, plans, moment)
     context.emit(LogEvent(message=t("pipeline.writing", name=target.name)))
     report = build_context(plan_data, settings.fields, inputs.project.strip(), moment)
-    with writing_output(target):
-        render_report(inputs.template, report, target)
+    with writing_output(target) as draft:
+        render_report(inputs.template, report, draft)
     summary = t("pipeline.summary", count=len(plan_data), read=len(plan_data), total=len(plans))
     return ModuleResult(summary=summary, outputs=[target])
 

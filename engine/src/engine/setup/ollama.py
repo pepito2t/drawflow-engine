@@ -102,7 +102,12 @@ async def installed_sizes(
 ) -> dict[str, int]:
     """Installed models and their size on disk, in bytes."""
     async with httpx.AsyncClient(timeout=PROBE_TIMEOUT, transport=transport) as http:
-        response = await http.get(api_root(base_url) + TAGS_PATH)
+        try:
+            response = await http.get(api_root(base_url) + TAGS_PATH)
+        except httpx.TransportError as error:
+            raise AssistantError(
+                t("ollama.list_unreachable"), hint=t("ollama.unreachable.hint")
+            ) from error
     try:
         return {str(model["name"]): int(model["size"]) for model in response.json()["models"]}
     except (ValueError, KeyError, TypeError) as error:
@@ -120,7 +125,7 @@ async def delete_model(
         except httpx.TransportError as error:
             raise AssistantError(
                 t("ollama.delete_unreachable", model=model),
-                hint=t("ollama.delete_unreachable.hint"),
+                hint=t("ollama.unreachable.hint"),
             ) from error
     if not response.is_success:
         raise AssistantError(t("ollama.delete_failed", model=model, status=response.status_code))
