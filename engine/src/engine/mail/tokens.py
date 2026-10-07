@@ -11,6 +11,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from engine.core.errors import OutputWriteError
+from engine.core.json_files import write_json_atomically
 from engine.mail.messages import t
 
 TOKEN_FILE = "mail-session.json"
@@ -72,8 +73,8 @@ class SessionStore:
             raise OutputWriteError(t("tokens.save_failed"), file=self.path) from error
 
     def _write(self, session: MailSession) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(session.model_dump_json(indent=2), encoding="utf-8")
+        # Born owner-only and swapped in whole: never readable by others, never half-written.
+        write_json_atomically(self.path, session.model_dump(mode="json"), mode=OWNER_ONLY)
 
     def _restrict(self) -> bool:
         if self._acl is None:

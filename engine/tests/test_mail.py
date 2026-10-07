@@ -1,4 +1,6 @@
 import json
+import stat
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -318,6 +320,21 @@ def test_windows_session_file_is_restricted_with_icacls(tmp_path: Path) -> None:
     assert command[4].endswith(":F")
     session = store.read()
     assert session is not None and session.protected
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX file modes")
+def test_session_file_is_owner_only_before_any_restriction_runs(tmp_path: Path) -> None:
+    modes: list[int] = []
+
+    def acl(arguments: Any) -> bool:
+        modes.append(stat.S_IMODE(Path(arguments[1]).stat().st_mode))
+        return True
+
+    store = SessionStore(tmp_path / "settings.json", acl=acl)
+    store.write(MailSession(account="lea@facades.ch", refresh_token="rt"))
+
+    assert modes == [0o600]
+    assert [path.name for path in tmp_path.iterdir()] == ["mail-session.json"]
 
 
 def test_failed_acl_is_remembered_and_surfaced_in_the_status(settings: Path) -> None:
