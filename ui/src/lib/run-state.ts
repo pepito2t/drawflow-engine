@@ -1,5 +1,5 @@
 import { t } from "../i18n/shell";
-import type { EngineMessage } from "./engine-message";
+import { SUCCESS_EXIT_CODE, type EngineMessage } from "./engine-message";
 import { parseEventLine, type EngineEvent, type ProgressEvent, type TableEvent } from "./events";
 
 export type RunStatus = "idle" | "running" | "succeeded" | "failed" | "cancelled";
@@ -40,8 +40,6 @@ export const INITIAL_RUN_STATE: RunState = {
   cancelRequested: false,
 };
 
-const SUCCESS_EXIT_CODE = 0;
-
 export function runReducer(state: RunState, action: RunAction): RunState {
   switch (action.type) {
     case "started":
@@ -61,8 +59,10 @@ export function hasErrors(state: RunState): boolean {
 
 function applyMessage(state: RunState, message: EngineMessage): RunState {
   switch (message.kind) {
-    case "stdout":
-      return applyEvent(state, parseEventLine(message.line));
+    case "stdout": {
+      const event = parseEventLine(message.line);
+      return event ? applyEvent(state, event) : appendLog(state, "detail", message.line);
+    }
     case "stderr":
       return appendLog(state, "detail", message.line);
     case "exit":
@@ -98,7 +98,7 @@ function finish(state: RunState, exitCode: number | null): RunState {
   if (state.cancelRequested) {
     return appendLog({ ...state, status: "cancelled" }, "warning", t("run.cancelled"));
   }
-  if (exitCode === SUCCESS_EXIT_CODE && !hasErrors(state)) {
+  if (exitCode === SUCCESS_EXIT_CODE) {
     return { ...state, status: "succeeded" };
   }
   const failed = { ...state, status: "failed" as const };

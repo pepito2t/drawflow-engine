@@ -1,7 +1,8 @@
 import { plural } from "../i18n";
 import { t } from "../i18n/shell";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRunsStore } from "../hooks/runs-context";
+import { useDismiss } from "../hooks/use-dismiss";
 import type { CatalogModule } from "../lib/catalog";
 import { statusLabel } from "../lib/run-labels";
 import { entryFor, overallProgress, runningModuleIds, visibleRunIds } from "../lib/runs-store";
@@ -17,12 +18,17 @@ const PERCENT = 100;
 export function RunsIndicator({ modules, onOpenModule }: RunsIndicatorProps) {
   const { state } = useRunsStore();
   const [isOpen, setIsOpen] = useState(false);
+  const container = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+  useDismiss(container, isOpen, close);
   const running = runningModuleIds(state).length;
   const progress = overallProgress(state);
   const listed = visibleRunIds(state);
 
   return (
-    <div className="runs-indicator">
+    <div className="runs-indicator" ref={container}>
       <button
         type="button"
         className={running > 0 ? "icon-button active" : "icon-button"}
@@ -50,7 +56,7 @@ export function RunsIndicator({ modules, onOpenModule }: RunsIndicatorProps) {
                 className="runs-item"
                 onClick={() => {
                   onOpenModule(moduleId);
-                  setIsOpen(false);
+                  close();
                 }}
               >
                 <span className="runs-item-header">

@@ -28,7 +28,7 @@ export function AiModelsPanel() {
   const { id, promise, retry } = useRetryablePromise(loadCatalog);
   const { run, start } = useSetupRun("models", retry);
   const download = (model: string) => {
-    start(model, (onMessage) => pullModel(model, onMessage));
+    start(model, (onMessage, onInvalid) => pullModel(model, onMessage, onInvalid));
   };
   return (
     <section className="settings-section">

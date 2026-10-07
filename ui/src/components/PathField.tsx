@@ -1,6 +1,7 @@
 import { t } from "../i18n/shell";
 import { dropFieldProps } from "../hooks/use-file-drop";
 import {
+  fieldInputId,
   isFolderKind,
   isMultipleKind,
   mergeDroppedPaths,
@@ -36,7 +37,7 @@ export function PathField({ moduleId, field, value, disabled, onChange }: PathFi
 
   return (
     <div className="path-field" {...dropFieldProps(moduleId, field.name)}>
-      <ul id={field.name} className="path-list">
+      <ul id={fieldInputId(moduleId, field.name)} className="path-list">
         {paths.length === 0 && <li className="placeholder">{t("pathField.placeholder")}</li>}
         {paths.map((path) => (
           <li key={path} title={path}>

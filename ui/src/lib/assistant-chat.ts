@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { t, type PanelKey } from "../i18n/panels";
 import type { AssistantEvent } from "./assistant-events";
+import { SUCCESS_EXIT_CODE } from "./engine-message";
 import { parseJsonOrNull } from "./json";
 import type { ReadableError } from "./error-message";
 
@@ -72,7 +73,6 @@ const savedHistorySchema = z.object({
 
 export const INITIAL_CHAT: ChatState = { entries: [], nextId: 1 };
 
-const SUCCESS_EXIT_CODE = 0;
 const TOOL_LABEL_KEYS: Record<string, PanelKey> = {
   list_features: "assistant.tool.list_features",
   list_presets: "assistant.tool.list_presets",

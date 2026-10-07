@@ -22,6 +22,7 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
   const [selectedId, setSelectedId] = useState(NO_PRESET);
   const [draftName, setDraftName] = useState<string | null>(null);
   const [error, setError] = useState<ReadableError | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const available = presetsFor(presets, moduleId);
   const selected = available.find((preset) => preset.id === selectedId);
 
@@ -51,6 +52,7 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
         disabled={disabled}
         onChange={(event) => {
           setSelectedId(event.target.value);
+          setConfirmRemove(false);
           const preset = available.find((item) => item.id === event.target.value);
           if (preset) {
             onLoad(preset);
@@ -110,18 +112,42 @@ export function PresetBar({ moduleId, disabled, currentInputs, onLoad }: PresetB
           </button>
         </>
       )}
-      {selected && draftName === null && (
+      {selected && draftName === null && !confirmRemove && (
         <button
           type="button"
           disabled={disabled}
           onClick={() => {
-            attempt(remove(selected.id), () => {
-              setSelectedId(NO_PRESET);
-            });
+            setConfirmRemove(true);
           }}
         >
           {t("presetBar.remove")}
         </button>
+      )}
+      {selected && draftName === null && confirmRemove && (
+        <>
+          <span>{t("presetBar.confirmRemove", { name: selected.name })}</span>
+          <button
+            type="button"
+            className="primary"
+            disabled={disabled}
+            onClick={() => {
+              setConfirmRemove(false);
+              attempt(remove(selected.id), () => {
+                setSelectedId(NO_PRESET);
+              });
+            }}
+          >
+            {t("presetBar.remove")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmRemove(false);
+            }}
+          >
+            {t("presetBar.cancel")}
+          </button>
+        </>
       )}
       {error && (
         <ErrorPanel title={t("presetBar.saveFailed")} message={error.message} hint={error.hint} />

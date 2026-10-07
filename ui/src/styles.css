@@ -105,6 +105,18 @@ input[type="checkbox"] {
   color: var(--color-muted);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* Shell: content + IDE-like status bar spanning the full width */
 
 .app-shell {
@@ -422,6 +434,13 @@ input[type="checkbox"] {
 .dialog-header h2 {
   margin: 0;
   font-size: 15px;
+}
+
+.dialog-confirm {
+  margin: 0;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .dialog-footer {
@@ -794,6 +813,22 @@ small {
 .outputs {
   margin: 8px 0 0;
   padding-left: 18px;
+}
+
+.outputs li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.outputs code {
+  overflow-wrap: anywhere;
+}
+
+.run-missing {
+  margin: -6px 0 0;
 }
 
 .error-panel {

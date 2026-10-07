@@ -13,6 +13,7 @@ import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError, type ReadableError } from "../lib/error-message";
 import type { FormValue, FormValues } from "../lib/form-schema";
 import {
+  GENERAL_SECTION_ID,
   editedSections,
   mergeReloadedSettings,
   parseSettings,
@@ -42,7 +43,6 @@ import { ModuleForm } from "./ModuleForm";
 import { Loader, Spinner } from "./Spinner";
 
 const ACCESS_CODE_TAB_ID = "access-code";
-const GENERAL_SECTION_ID = "general";
 const TEMPLATES_TAB_ID = "templates";
 const INTEGRATIONS_TAB_ID = "integrations";
 const PROFILE_TAB_ID = "profile";
@@ -75,17 +75,33 @@ interface SettingsDialogProps {
 export function SettingsDialog({ initialTab, modules, onClose }: SettingsDialogProps) {
   useLanguage();
   const { id, promise, retry } = useRetryablePromise(loadSettings);
+  const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  const requestClose = () => {
+    if (hasUnsavedEdits) {
+      setConfirmClose(true);
+    } else {
+      onClose();
+    }
+  };
+
   return (
     <div
       className="dialog-backdrop"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          requestClose();
         }
       }}
       onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          onClose();
+        if (event.key !== "Escape") {
+          return;
+        }
+        if (confirmClose) {
+          setConfirmClose(false);
+        } else {
+          requestClose();
         }
       }}
     >
@@ -97,17 +113,34 @@ export function SettingsDialog({ initialTab, modules, onClose }: SettingsDialogP
             className="icon-button"
             aria-label={t("settings.close")}
             autoFocus
-            onClick={onClose}
+            onClick={requestClose}
           >
             <CloseIcon />
           </button>
         </header>
+        {confirmClose && (
+          <div className="setup-confirm dialog-confirm" role="alert">
+            <span>{t("settings.unsavedEdits")}</span>
+            <button type="button" className="primary" onClick={onClose}>
+              {t("settings.closeWithoutSaving")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmClose(false);
+              }}
+            >
+              {t("settings.keepEditing")}
+            </button>
+          </div>
+        )}
         <SettingsContent
           attemptId={id}
           promise={promise}
           retry={retry}
           initialTab={initialTab}
           modules={modules}
+          onEditedChange={setHasUnsavedEdits}
         />
       </div>
     </div>
@@ -120,9 +153,17 @@ interface SettingsContentProps {
   retry: () => void;
   initialTab: string | undefined;
   modules: CatalogModule[];
+  onEditedChange: (edited: boolean) => void;
 }
 
-function SettingsContent({ attemptId, promise, retry, initialTab, modules }: SettingsContentProps) {
+function SettingsContent({
+  attemptId,
+  promise,
+  retry,
+  initialTab,
+  modules,
+  onEditedChange,
+}: SettingsContentProps) {
   return (
     <ErrorBoundary
       key={attemptId}
@@ -152,6 +193,7 @@ function SettingsContent({ attemptId, promise, retry, initialTab, modules }: Set
           initialTab={initialTab}
           modules={modules}
           onReload={retry}
+          onEditedChange={onEditedChange}
         />
       </Suspense>
     </ErrorBoundary>
@@ -163,9 +205,16 @@ interface SettingsEditorProps {
   modules: CatalogModule[];
   onReload: () => void;
   initialTab: string | undefined;
+  onEditedChange: (edited: boolean) => void;
 }
 
-function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: SettingsEditorProps) {
+function SettingsEditor({
+  sectionsPromise,
+  initialTab,
+  modules,
+  onReload,
+  onEditedChange,
+}: SettingsEditorProps) {
   const [sections, setSections] = useState(use(sectionsPromise));
   const [values, setValues] = useState<SettingsValues>(() => valuesBySection(sections));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
@@ -173,6 +222,13 @@ function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: Sett
   const [activeId, setActiveId] = useState(initialTab ?? sections[0]?.id ?? null);
   const isSaving = saveState.status === "saving";
   useExternalSettingsChanges(sections, setSections, setValues);
+  const isEdited = editedSections(sections, values).length > 0;
+  useEffect(() => {
+    onEditedChange(isEdited);
+    return () => {
+      onEditedChange(false);
+    };
+  }, [isEdited, onEditedChange]);
 
   const save = () => {
     setSaveState({ status: "saving" });

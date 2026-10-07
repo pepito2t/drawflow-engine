@@ -1,25 +1,32 @@
 import { plural } from "../i18n";
 import { t } from "../i18n/shell";
+import { t as panelText } from "../i18n/panels";
 import { useState } from "react";
+import { useThrottledValue } from "../hooks/use-throttled-value";
 import type { TableEvent } from "../lib/events";
 import { anomaliesAsText, groupAnomalies, type AnomalyGroup } from "../lib/anomalies";
+import { toReadableError } from "../lib/error-message";
 import { statusLabel } from "../lib/run-labels";
 import { isPreview, type LogEntry, type RunState } from "../lib/run-state";
+import { openOutput } from "../lib/tauri/window";
 import { TablePreview } from "./TablePreview";
 import { ErrorPanel } from "./ErrorPanel";
 import { Spinner } from "./Spinner";
 
 interface RunPanelProps {
   state: RunState;
+  /** Labels of the required fields still empty; the run cannot start while there are any. */
+  missingFields: string[];
   onStart: () => void;
   onExport: () => void;
   onCancel: () => void;
 }
 
-export function RunPanel({ state, onStart, onExport, onCancel }: RunPanelProps) {
+export function RunPanel({ state, missingFields, onStart, onExport, onCancel }: RunPanelProps) {
   const isRunning = state.status === "running";
   const [dismissedTable, setDismissedTable] = useState<TableEvent | null>(null);
   const preview = isPreview(state) && state.table !== dismissedTable ? state.table : null;
+  const isIncomplete = missingFields.length > 0;
 
   return (
     <section className="run-panel">
@@ -29,7 +36,7 @@ export function RunPanel({ state, onStart, onExport, onCancel }: RunPanelProps) 
             {state.cancelRequested ? t("runPanel.cancelling") : t("runPanel.cancel")}
           </button>
         ) : (
-          <button type="button" className="primary" onClick={onStart}>
+          <button type="button" className="primary" onClick={onStart} disabled={isIncomplete}>
             {t("runPanel.start")}
           </button>
         )}
@@ -38,6 +45,11 @@ export function RunPanel({ state, onStart, onExport, onCancel }: RunPanelProps) 
           {statusLabel(state.status)}
         </span>
       </div>
+      {!isRunning && isIncomplete && (
+        <p className="muted run-missing">
+          {t("runPanel.missingFields", { fields: missingFields.join(", ") })}
+        </p>
+      )}
       {isRunning && <RunProgress state={state} />}
       {preview ? (
         <TablePreview
@@ -58,8 +70,15 @@ export function RunPanel({ state, onStart, onExport, onCancel }: RunPanelProps) 
   );
 }
 
+/** Screen readers hear the progress at a sustainable pace rather than on every file. */
+const PROGRESS_ANNOUNCE_INTERVAL_MS = 3_000;
+
 function RunProgress({ state }: { state: RunState }) {
   const { progress } = state;
+  const text = progress
+    ? `${String(progress.current)}/${String(progress.total)} · ${progress.message}`
+    : t("runPanel.starting");
+  const announced = useThrottledValue(text, PROGRESS_ANNOUNCE_INTERVAL_MS);
   return (
     <div className="progress">
       {progress ? (
@@ -67,16 +86,24 @@ function RunProgress({ state }: { state: RunState }) {
       ) : (
         <progress aria-label={t("runPanel.startingLabel")} />
       )}
-      <span className="muted">
-        {progress
-          ? `${String(progress.current)}/${String(progress.total)} · ${progress.message}`
-          : t("runPanel.starting")}
+      <span className="muted" aria-hidden="true">
+        {text}
+      </span>
+      <span className="sr-only" aria-live="polite">
+        {announced}
       </span>
     </div>
   );
 }
 
 function RunOutcome({ state }: { state: RunState }) {
+  const [openError, setOpenError] = useState<string | null>(null);
+  const open = (path: string) => {
+    setOpenError(null);
+    openOutput(path).catch((error: unknown) => {
+      setOpenError(toReadableError(error).message);
+    });
+  };
   if (state.status === "failed") {
     const firstError = state.log.find((entry) => entry.level === "error");
     return (
@@ -99,10 +126,19 @@ function RunOutcome({ state }: { state: RunState }) {
           {state.outputs.map((output) => (
             <li key={output}>
               <code>{output}</code>
+              <button
+                type="button"
+                onClick={() => {
+                  open(output);
+                }}
+              >
+                {panelText("history.open_output")}
+              </button>
             </li>
           ))}
         </ul>
       )}
+      {openError && <ErrorPanel title={panelText("common.action_failed")} message={openError} />}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import type { RunAction } from "./run-state";
 import {
   entryFor,
   overallProgress,
+  pendingCancellations,
   runningModuleIds,
   runsReducer,
   visibleRunIds,
@@ -63,6 +64,34 @@ describe("runsReducer", () => {
 
   it("returns an empty entry for unknown modules", () => {
     expect(entryFor({}, "x").run.status).toBe("idle");
+  });
+});
+
+describe("pendingCancellations", () => {
+  it("waits for the run id before a cancellation can be sent", () => {
+    const requested = reduce([
+      run("a", { type: "started" }),
+      run("a", { type: "cancelRequested" }),
+    ]);
+
+    expect(pendingCancellations(requested)).toEqual([]);
+
+    const assigned = runsReducer(requested, { type: "runIdAssigned", moduleId: "a", runId: "r1" });
+
+    expect(pendingCancellations(assigned)).toEqual([{ moduleId: "a", runId: "r1" }]);
+  });
+
+  it("ignores runs that were not asked to stop or are already over", () => {
+    const state = reduce([
+      run("a", { type: "started" }),
+      { type: "runIdAssigned", moduleId: "a", runId: "r1" },
+      run("b", { type: "started" }),
+      { type: "runIdAssigned", moduleId: "b", runId: "r2" },
+      run("b", { type: "cancelRequested" }),
+      exit("b", 0),
+    ]);
+
+    expect(pendingCancellations(state)).toEqual([]);
   });
 });
 

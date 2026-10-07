@@ -59,10 +59,8 @@ export function unreadableEventMessage(): string {
   return t("events.unreadable");
 }
 
-export function parseEventLine(line: string): EngineEvent {
+/** `null` for a line that is not an engine event: stray tool output is not a failure. */
+export function parseEventLine(line: string): EngineEvent | null {
   const parsed = engineEventSchema.safeParse(parseJsonOrNull(line));
-  if (parsed.success) {
-    return parsed.data;
-  }
-  return { type: "error", message: unreadableEventMessage(), file: null, hint: line };
+  return parsed.success ? parsed.data : null;
 }

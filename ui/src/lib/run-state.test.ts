@@ -89,6 +89,38 @@ describe("runReducer", () => {
     expect(state.status).toBe("cancelled");
   });
 
+  it("keeps a stdout line that is not an event as a detail and trusts the exit code", () => {
+    const state = reduce([
+      { type: "started" },
+      { type: "message", message: { kind: "stdout", line: "ODA File Converter 25.1" } },
+      stdout({ type: "result", summary: "OK", outputs: ["out.xlsx"] }),
+      exit(0),
+    ]);
+
+    expect(state.status).toBe("succeeded");
+    expect(state.log).toEqual([
+      {
+        id: 0,
+        level: "detail",
+        message: "ODA File Converter 25.1",
+        file: null,
+        location: null,
+        hint: null,
+      },
+    ]);
+  });
+
+  it("fails on a non-zero exit code even when every line was readable", () => {
+    const state = reduce([
+      { type: "started" },
+      { type: "message", message: { kind: "stdout", line: "garbage" } },
+      exit(2),
+    ]);
+
+    expect(state.status).toBe("failed");
+    expect(state.log.at(-1)?.level).toBe("error");
+  });
+
   it("records stderr lines as technical details", () => {
     const state = reduce([
       { type: "started" },

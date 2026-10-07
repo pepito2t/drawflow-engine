@@ -99,7 +99,7 @@ export function mergeReloadedSettings(
   );
 }
 
-const GENERAL_SECTION_ID = "general";
+export const GENERAL_SECTION_ID = "general";
 const LANGUAGE_FIELD = "language";
 const NOTIFICATION_THRESHOLD_FIELD = "notification_threshold_seconds";
 const DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10;

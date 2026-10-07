@@ -23,6 +23,7 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
   const [values, setValues] = useState(() => initialValues(fields));
   const { state, start, cancel } = useModuleRun(manifest.id);
   const isRunning = state.status === "running";
+  const missingFields = missingRequired(fields, values);
 
   const setValue = useCallback((name: string, value: FormValue) => {
     setValues((current) => ({ ...current, [name]: value }));
@@ -87,6 +88,7 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
       />
       <RunPanel
         state={state}
+        missingFields={missingFields}
         onStart={() => {
           start(toEngineInputs(fields, values));
         }}

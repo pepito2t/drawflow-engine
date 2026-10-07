@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  fieldInputId,
   missingRequired,
   describeFields,
   initialValues,
@@ -127,5 +128,13 @@ describe("missingRequired", () => {
       "Dossier de sortie",
     ]);
     expect(missingRequired(fields, { output_folder: "C:\\Sortie", project: "x" })).toEqual([]);
+  });
+});
+
+describe("fieldInputId", () => {
+  it("prefixes the field name with its namespace so namesakes never share an id", () => {
+    expect(fieldInputId("dwg_parts", "preview")).toBe("dwg_parts-preview");
+    expect(fieldInputId("settings-general", "language")).toBe("settings-general-language");
+    expect(fieldInputId("dwg_parts", "preview")).not.toBe(fieldInputId("dwg_diff", "preview"));
   });
 });

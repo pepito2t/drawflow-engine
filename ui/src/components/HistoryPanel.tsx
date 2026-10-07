@@ -7,10 +7,12 @@ import { t } from "../i18n/panels";
 import { COMMANDS } from "../lib/commands";
 import { toReadableError } from "../lib/error-message";
 import { describeDuration, describeStart, lastOutput, type HistoryEntry } from "../lib/history";
+import { fileName } from "../lib/paths";
 import { clearHistory, listHistory, removeHistoryEntry } from "../lib/tauri/history";
 import { openOutput } from "../lib/tauri/window";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
+import { CloseIcon } from "./icons";
 import { Loader } from "./Spinner";
 
 const STATUS_LABELS = {
@@ -68,6 +70,7 @@ function HistoryList({ entriesPromise, onChanged }: HistoryListProps) {
   const entries = use(entriesPromise);
   const { execute } = useCommands();
   const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const fail = (error: unknown) => {
     setActionError(toReadableError(error).message);
@@ -86,6 +89,7 @@ function HistoryList({ entriesPromise, onChanged }: HistoryListProps) {
     removeHistoryEntry(entry.id).then(onChanged).catch(fail);
   };
   const clear = () => {
+    setConfirmClear(false);
     clearHistory().then(onChanged).catch(fail);
   };
 
@@ -106,10 +110,32 @@ function HistoryList({ entriesPromise, onChanged }: HistoryListProps) {
         ))}
       </ul>
       {actionError && <ErrorPanel title={t("common.action_failed")} message={actionError} />}
-      <div>
-        <button type="button" onClick={clear}>
-          {t("history.clear")}
-        </button>
+      <div className="run-controls">
+        {confirmClear ? (
+          <>
+            <span>{t("history.confirm_clear")}</span>
+            <button type="button" className="primary" onClick={clear}>
+              {t("history.clear")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmClear(false);
+              }}
+            >
+              {t("common.cancel")}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmClear(true);
+            }}
+          >
+            {t("history.clear")}
+          </button>
+        )}
       </div>
     </>
   );
@@ -124,6 +150,7 @@ export interface HistoryRowProps {
 
 export function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps) {
   const output = lastOutput(entry);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   return (
     <li className="history-item">
       <div className="history-main">
@@ -146,7 +173,11 @@ export function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps
                   {warning.location && <span className="anomaly-location">{warning.location}</span>}
                   {warning.message}
                 </span>
-                {warning.file && <span className="log-meta">{warning.file}</span>}
+                {warning.file && (
+                  <span className="log-meta" title={warning.file}>
+                    {fileName(warning.file)}
+                  </span>
+                )}
                 {warning.hint && <span className="log-meta">{warning.hint}</span>}
               </li>
             ))}
@@ -173,17 +204,41 @@ export function HistoryRow({ entry, onOpen, onRerun, onRemove }: HistoryRowProps
         >
           {t("history.rerun")}
         </button>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label={t("history.remove")}
-          title={t("history.remove")}
-          onClick={() => {
-            onRemove(entry);
-          }}
-        >
-          ×
-        </button>
+        {confirmRemove ? (
+          <>
+            <span>{t("history.confirm_remove")}</span>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => {
+                setConfirmRemove(false);
+                onRemove(entry);
+              }}
+            >
+              {t("history.remove_confirm")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmRemove(false);
+              }}
+            >
+              {t("common.cancel")}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={t("history.remove")}
+            title={t("history.remove")}
+            onClick={() => {
+              setConfirmRemove(true);
+            }}
+          >
+            <CloseIcon size={14} />
+          </button>
+        )}
       </div>
     </li>
   );

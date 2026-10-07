@@ -1,16 +1,16 @@
-import { Channel, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import type { ConversationMessage } from "../assistant-chat";
-import { engineMessageSchema, type EngineMessage } from "../engine-message";
+import type { EngineMessageHandler, InvalidMessageHandler } from "../engine-message";
 import { engineRequest } from "./engine";
+import { engineChannel } from "./engine-channel";
 
 export function startAssistantChat(
   messages: ConversationMessage[],
-  onMessage: (message: EngineMessage) => void,
+  onMessage: EngineMessageHandler,
+  onInvalid: InvalidMessageHandler,
 ): Promise<void> {
-  const channel = new Channel<unknown>((raw) => {
-    onMessage(engineMessageSchema.parse(raw));
-  });
-  return invoke<undefined>("assistant_chat", { conversation: { messages }, onEvent: channel });
+  const onEvent = engineChannel(onMessage, onInvalid);
+  return invoke<undefined>("assistant_chat", { conversation: { messages }, onEvent });
 }
 
 export function cancelAssistant(): Promise<void> {
@@ -39,10 +39,9 @@ export async function deleteModel(model: string): Promise<void> {
 
 export function pullModel(
   model: string,
-  onMessage: (message: EngineMessage) => void,
+  onMessage: EngineMessageHandler,
+  onInvalid: InvalidMessageHandler,
 ): Promise<string> {
-  const channel = new Channel<unknown>((raw) => {
-    onMessage(engineMessageSchema.parse(raw));
-  });
-  return invoke<string>("pull_model", { model, onEvent: channel });
+  const onEvent = engineChannel(onMessage, onInvalid);
+  return invoke<string>("pull_model", { model, onEvent });
 }

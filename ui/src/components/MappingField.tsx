@@ -1,5 +1,6 @@
 import { t } from "../i18n/shell";
 import {
+  fieldInputId,
   toMappingRows,
   type FieldDescriptor,
   type FormValue,
@@ -8,6 +9,7 @@ import {
 import { CloseIcon } from "./icons";
 
 interface MappingFieldProps {
+  moduleId: string;
   field: FieldDescriptor;
   value: FormValue;
   disabled: boolean;
@@ -16,7 +18,7 @@ interface MappingFieldProps {
 
 const EMPTY_ROW: MappingRow = { key: "", value: "" };
 
-export function MappingField({ field, value, disabled, onChange }: MappingFieldProps) {
+export function MappingField({ moduleId, field, value, disabled, onChange }: MappingFieldProps) {
   const rows = toMappingRows(value);
   const labels = field.mappingLabels ?? {
     key: t("mappingField.key"),
@@ -28,7 +30,7 @@ export function MappingField({ field, value, disabled, onChange }: MappingFieldP
   };
 
   return (
-    <div className="mapping-field" id={field.name}>
+    <div className="mapping-field" id={fieldInputId(moduleId, field.name)}>
       <div className="mapping-row mapping-header">
         <span>{labels.key}</span>
         <span>{labels.value}</span>

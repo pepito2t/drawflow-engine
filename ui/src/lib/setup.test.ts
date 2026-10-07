@@ -112,6 +112,16 @@ describe("setupRunReducer", () => {
 
     expect(state.status).toBe("failed");
   });
+
+  it("ignores installer output that is not an event", () => {
+    const state = run([
+      { kind: "started", action: "oda.install" },
+      { kind: "line", line: "Found ODA File Converter [ODA.ODAFileConverter]" },
+      { kind: "exit", code: 0 },
+    ]);
+
+    expect(state.status).toBe("done");
+  });
 });
 
 describe("setupRunsReducer", () => {

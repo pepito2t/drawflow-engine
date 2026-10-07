@@ -97,6 +97,13 @@ export function describeFields(schema: InputsSchema): FieldDescriptor[] {
   });
 }
 
+const INPUT_ID_SEPARATOR = "-";
+
+/** Every workspace stays mounted, so a label must point at its own module's input, not a namesake. */
+export function fieldInputId(namespace: string, fieldName: string): string {
+  return `${namespace}${INPUT_ID_SEPARATOR}${fieldName}`;
+}
+
 export function initialValues(fields: FieldDescriptor[]): FormValues {
   return Object.fromEntries(fields.map((field) => [field.name, field.defaultValue]));
 }
