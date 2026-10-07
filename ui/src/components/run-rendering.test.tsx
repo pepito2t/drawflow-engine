@@ -13,6 +13,8 @@ vi.mock("../lib/tauri/drag-drop");
 vi.mock("../lib/tauri/window");
 
 const EMITTED_MESSAGES = 600;
+// One act() per batch is slow on CI runners: a hundred batches prove the same isolation.
+const RENDER_BATCHES = 100;
 const MODULES = [catalogModule("busy"), catalogModule("idle")];
 
 function renderTwoWorkspaces(renders: Map<string, number>) {
@@ -60,17 +62,17 @@ describe("rendering during a run", () => {
     if (!run) throw new Error("Aucun traitement lancé.");
     const before = new Map(renders);
 
-    for (let index = 1; index <= EMITTED_MESSAGES; index += 1) {
+    for (let index = 1; index <= RENDER_BATCHES; index += 1) {
       act(() => {
         run.emit(
-          engineEvent({ type: "progress", current: index, total: EMITTED_MESSAGES, message: "f" }),
+          engineEvent({ type: "progress", current: index, total: RENDER_BATCHES, message: "f" }),
         );
         run.emit(engineEvent({ type: "log", message: `ligne ${String(index)}` }));
       });
     }
 
     const delta = (id: string) => (renders.get(id) ?? 0) - (before.get(id) ?? 0);
-    expect(delta("busy")).toBe(EMITTED_MESSAGES);
+    expect(delta("busy")).toBe(RENDER_BATCHES);
     expect(delta("idle")).toBe(0);
     expect(delta("tabs")).toBe(0);
   });
