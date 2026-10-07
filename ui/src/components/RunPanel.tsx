@@ -41,7 +41,13 @@ export function RunPanel({ state, missingFields, onStart, onExport, onCancel }: 
             {state.cancelRequested ? t("runPanel.cancelling") : t("runPanel.cancel")}
           </button>
         ) : (
-          <button type="button" className="primary" onClick={onStart} disabled={isIncomplete}>
+          <button
+            type="button"
+            className="primary"
+            aria-keyshortcuts="Control+Enter"
+            onClick={onStart}
+            disabled={isIncomplete}
+          >
             {t("runPanel.start")}
           </button>
         )}

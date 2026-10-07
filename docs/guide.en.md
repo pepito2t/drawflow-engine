@@ -61,6 +61,16 @@ At the end, the **warnings to check** block lists, file by file, what could not 
 
 You can switch tabs or run another feature while a run is running. The **Runs** icon (next to the gear) shows the ones in progress; **Cancel** stops a run. A message signals the end, and a Windows notification if the run was long or if Drawflow was in the background.
 
+### Keyboard shortcuts
+
+| Shortcut | Effect |
+|---|---|
+| **Ctrl+Enter** | Runs the feature on screen, like **Run** |
+| **Ctrl+,** | Opens the settings |
+| **F1** | Opens the help |
+
+In the tab list, the **up** and **down** arrows move from one tab to the next, **Home** and **End** go to the first and the last one. Shortcuts do nothing while a window (Settings, Help) is open; **Esc** closes it.
+
 ### History
 
 The **History** tab lists the latest runs (200 at most): date, duration, result or error, number of warnings. **Open result** opens the last file produced; **Run again** reloads the same files and runs again; **×** removes a row. Commands `history.open` and `history.rerun` for the Stream Dock and the assistant.

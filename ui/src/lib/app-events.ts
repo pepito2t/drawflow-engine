@@ -5,6 +5,7 @@ export type AppEvent =
   | { type: "runProgress"; moduleId: string; current: number; total: number }
   | { type: "presetRunRequested"; presetId: string; moduleId: string }
   | { type: "featureRunRequested"; moduleId: string; inputs: Record<string, unknown> }
+  | { type: "formRunRequested"; moduleId: string }
   | { type: "featureRunIncomplete"; moduleId: string; moduleName: string; missing: string[] }
   | {
       type: "runFinished";

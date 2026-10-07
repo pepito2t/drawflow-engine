@@ -79,6 +79,7 @@ Les erreurs produites par Drawflow lui-même portent un champ `code` stable, à 
 | `tab.open` | `moduleId` | Ouvre l'onglet et met l'app au premier plan |
 | `preset.run` | `presetId` | Ouvre l'onglet, remplit le formulaire et lance le traitement |
 | `feature.run` | `moduleId`, `inputs` | Ouvre l'onglet, remplit le formulaire avec `inputs` et lance le traitement |
+| `feature.run-current` | — | Lance la fonctionnalité affichée avec les valeurs de son formulaire (raccourci Ctrl+Entrée) |
 | `runs.cancel-all` | — | Annule tous les traitements en cours |
 | `runs.cancel` | `moduleId` | Annule le traitement en cours de cette fonctionnalité (sans effet si elle ne traite rien) |
 | `result.open-last` | — | Ouvre le dernier fichier produit |
@@ -112,6 +113,7 @@ Les erreurs produites par Drawflow lui-même portent un champ `code` stable, à 
 | `runFinished` | `moduleId`, `moduleName`, `outcome` (`succeeded` \| `failed` \| `cancelled`), `message` (résumé ou erreur lisible), `durationMs`, `outputs` (chemins produits) | Un traitement se termine |
 | `presetRunRequested` | `presetId`, `moduleId` | Un préréglage est lancé par commande |
 | `featureRunRequested` | `moduleId`, `inputs` | Une fonctionnalité est lancée par commande |
+| `formRunRequested` | `moduleId` | La fonctionnalité affichée est lancée avec son formulaire (`feature.run-current`) |
 | `featureRunIncomplete` | `moduleId`, `moduleName`, `missing` (champs manquants) | `feature.run` ou `history.rerun` n'a pas pu lancer le traitement : le formulaire reste ouvert |
 | `updateAvailable` | `version` | Une mise à jour est disponible |
 | `updateDeferred` | — | L'utilisateur a remis la mise à jour à plus tard |

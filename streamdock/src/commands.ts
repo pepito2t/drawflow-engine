@@ -18,6 +18,7 @@ export const PLUGIN_COMMANDS: readonly PluginCommand[] = [
   { id: "mail.open", label: "command.mail.open" },
   { id: "mail.fetch", label: "command.mail.fetch" },
   { id: "result.open-last", label: "command.result.open-last" },
+  { id: "feature.run-current", label: "command.feature.run-current" },
   { id: "runs.cancel-all", label: "command.runs.cancel-all" },
   { id: "assistant.toggle", label: "command.assistant.toggle" },
   { id: "settings.open", label: "command.settings.open" },

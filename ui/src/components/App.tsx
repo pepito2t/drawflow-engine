@@ -11,6 +11,7 @@ import { SettingsFeedProvider } from "../hooks/settings-feed";
 import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
 import { useAppCommands } from "../hooks/use-app-commands";
+import { useGlobalShortcuts } from "../hooks/use-global-shortcuts";
 import { useIntegrationBridge } from "../hooks/use-integration-bridge";
 import { useLanguage } from "../hooks/use-language";
 import { loadCatalog, useModuleCatalog } from "../hooks/use-module-catalog";
@@ -192,6 +193,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
   }, []);
   useAppCommands({
     modules,
+    selectedId,
     selectModule: select,
     openSettings,
     toggleAssistant,
@@ -201,6 +203,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
     openMail,
   });
   useIntegrationBridge();
+  useGlobalShortcuts();
 
   const sidebarActions = (
     <>
@@ -208,6 +211,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
         type="button"
         className="icon-button"
         aria-label={t("app.settings")}
+        aria-keyshortcuts="Control+,"
         title={t("app.settings")}
         onClick={() => {
           openSettings();
@@ -230,6 +234,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
         type="button"
         className="icon-button"
         aria-label={t("app.help")}
+        aria-keyshortcuts="F1"
         title={t("app.help")}
         onClick={() => {
           openHelp();

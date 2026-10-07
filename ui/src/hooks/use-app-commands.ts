@@ -18,6 +18,8 @@ import { useRunsStore } from "./runs-context";
 
 interface AppCommandTargets {
   modules: CatalogModule[];
+  /** The tab on screen; only a feature tab can be run with `feature.run-current`. */
+  selectedId: string | null;
   selectModule: (moduleId: string) => void;
   openSettings: (tab?: string) => void;
   toggleAssistant: () => void;
@@ -30,6 +32,7 @@ interface AppCommandTargets {
 /** Registers the app-level commands shared by the UI, the Stream Dock and future integrations. */
 export function useAppCommands({
   modules,
+  selectedId,
   selectModule,
   openSettings,
   toggleAssistant,
@@ -93,6 +96,18 @@ export function useAppCommands({
     [runs, openTab, publish],
   );
   useCommand(COMMANDS.runFeature, runFeature);
+
+  const runCurrentFeature = useCallback(() => {
+    const module = modules.find((candidate) => candidate.manifest.id === selectedId);
+    if (!module) {
+      throw new Error(t("appCommands.noFeatureShown"));
+    }
+    if (entryFor(runs.getState(), module.manifest.id).run.status === "running") {
+      throw new Error(t("appCommands.alreadyRunning"));
+    }
+    publish({ type: "formRunRequested", moduleId: module.manifest.id });
+  }, [modules, selectedId, runs, publish]);
+  useCommand(COMMANDS.runCurrentFeature, runCurrentFeature);
 
   const requestCancellation = useCallback(
     (moduleIds: readonly string[]) => {

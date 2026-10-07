@@ -70,6 +70,7 @@ export function toastFor(event: AppEvent): ToastSpec | null {
     case "runProgress":
     case "presetRunRequested":
     case "featureRunRequested":
+    case "formRunRequested":
       return null;
     case "runFinished":
       return runToast(event);

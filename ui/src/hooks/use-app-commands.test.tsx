@@ -14,12 +14,13 @@ vi.mock("../lib/tauri/window");
 
 const MODULES = [catalogModule("parts"), catalogModule("diff")];
 
-function renderAppCommands() {
+function renderAppCommands(selectedId: string | null = "parts") {
   const calls: string[] = [];
   const rendered = renderHook(
     () => {
       useAppCommands({
         modules: MODULES,
+        selectedId,
         selectModule: (moduleId) => calls.push(`select:${moduleId}`),
         openSettings: (tab) => calls.push(`settings:${tab ?? ""}`),
         toggleAssistant: () => calls.push("assistant"),
@@ -157,5 +158,21 @@ describe("useAppCommands", () => {
     await result.current.commands.execute(COMMANDS.toggleAssistant);
 
     expect(calls).toEqual(["settings:", "help:dwg", "assistant"]);
+  });
+
+  it("runs the feature on screen with its form, and only a feature", async () => {
+    const onFeature = renderAppCommands("parts");
+    await act(() => onFeature.result.current.commands.execute(COMMANDS.runCurrentFeature));
+    expect(onFeature.result.current.events).toContainEqual({
+      type: "formRunRequested",
+      moduleId: "parts",
+    });
+    onFeature.unmount();
+
+    const onHistory = renderAppCommands("history");
+    const outcome = await onHistory.result.current.commands.execute(COMMANDS.runCurrentFeature);
+
+    expect(outcome.ok).toBe(false);
+    expect(onHistory.result.current.events).toEqual([]);
   });
 });

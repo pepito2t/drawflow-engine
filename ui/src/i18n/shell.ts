@@ -207,6 +207,8 @@ export const t = defineMessages({
     "appCommands.unknownFeature": "Fonctionnalité inconnue : {id}",
     "appCommands.presetGone": "Ce préréglage n'existe plus.",
     "appCommands.alreadyRunning": "Cette fonctionnalité est déjà en cours d'exécution.",
+    "appCommands.noFeatureShown":
+      "Aucune fonctionnalité n'est affichée : ouvrir son onglet avant de la lancer.",
     "appCommands.noOutputYet": "Aucun fichier produit depuis l'ouverture de l'application.",
     "appCommands.historyEntryGone": "Ce traitement n'est plus dans l'historique.",
     "appCommands.automationGone": "Cette automatisation n'existe plus.",
@@ -408,6 +410,7 @@ export const t = defineMessages({
     "appCommands.unknownFeature": "Unknown feature: {id}",
     "appCommands.presetGone": "This preset no longer exists.",
     "appCommands.alreadyRunning": "This feature is already running.",
+    "appCommands.noFeatureShown": "No feature is shown: open its tab before running it.",
     "appCommands.noOutputYet": "No file produced since the application was opened.",
     "appCommands.historyEntryGone": "This run is no longer in the history.",
     "appCommands.automationGone": "This automation no longer exists.",
