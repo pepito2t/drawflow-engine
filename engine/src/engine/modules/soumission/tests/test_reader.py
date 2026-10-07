@@ -1,7 +1,9 @@
+from datetime import date, datetime
 from io import BytesIO
 from pathlib import Path
 
 import pytest
+from openpyxl import Workbook
 
 from engine.modules.soumission.reader import WorkbookReadError, read_workbook
 from engine.modules.soumission.settings import SoumissionSettings
@@ -46,6 +48,25 @@ def test_header_beyond_the_search_window_is_not_found() -> None:
 
     assert content.tables == []
     assert "Aucun tableau" in content.warnings[-1].message
+
+
+def test_date_cells_are_written_as_day_month_year() -> None:
+    workbook = Workbook()
+    sheet = workbook.active
+    assert sheet is not None
+    sheet.append(["Pos.", "Désignation", "Qté", "Unité", "P.U.", "Montant"])
+    sheet.append(["1.1", datetime(2024, 1, 1, 0, 0), 1, "pce", 10, date(2024, 3, 15)])
+    buffer = BytesIO()
+    workbook.save(buffer)
+
+    content = read_workbook(BytesIO(buffer.getvalue()), "offre.xlsx", SoumissionSettings())
+
+    [row] = content.tables[0].rows
+    assert row["Désignation"] == "01.01.2024"
+    assert row["Total"] == "15.03.2024"
+    assert [warning.message for warning in content.warnings] == [
+        "1 montant(s) illisible(s) gardé(s) en texte."
+    ]
 
 
 def test_unreadable_workbook_is_reported(tmp_path: Path) -> None:
