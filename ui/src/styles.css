@@ -892,6 +892,11 @@ small {
   font-size: 12px;
 }
 
+.run-log-hidden {
+  margin: 0;
+  padding: 0 12px 6px;
+}
+
 .log-entry {
   display: flex;
   flex-direction: column;

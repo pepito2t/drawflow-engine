@@ -79,3 +79,34 @@ export function visibleRunIds(state: RunsState): string[] {
     .filter(([, entry]) => entry.run.status !== "idle")
     .map(([moduleId]) => moduleId);
 }
+
+export interface RunsStore {
+  getState: () => RunsState;
+  dispatch: (action: RunsAction) => void;
+  subscribe: (listener: () => void) => () => void;
+}
+
+/** Lives outside React so each screen subscribes to the slice it shows, not to every message. */
+export function createRunsStore(initial: RunsState = {}): RunsStore {
+  let state = initial;
+  const listeners = new Set<() => void>();
+  return {
+    getState: () => state,
+    dispatch: (action) => {
+      const next = runsReducer(state, action);
+      if (next === state) {
+        return;
+      }
+      state = next;
+      for (const listener of listeners) {
+        listener();
+      }
+    },
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}

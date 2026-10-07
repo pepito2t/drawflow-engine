@@ -1,6 +1,6 @@
 import { t } from "../i18n/shell";
 import { Suspense, use, useCallback, useState } from "react";
-import { RunsProvider, useRunsStore } from "../hooks/runs-context";
+import { RunsProvider, useRunsSelector, useRunsState, useRunsStore } from "../hooks/runs-context";
 import { SetupRunsProvider } from "../hooks/setup-runs-context";
 import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
@@ -149,8 +149,8 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
   const [settingsTab, setSettingsTab] = useState<string | null>(null);
   const [help, setHelp] = useState<{ topic: string | undefined } | null>(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const { state, dispatch } = useRunsStore();
-  useRunEvents(state, modules);
+  const { dispatch } = useRunsStore();
+  const canInstallUpdate = useRunsSelector((state) => runningModuleIds(state).length === 0);
   useLanguageSync();
   useSystemNotifications();
   useSetupCheck();
@@ -235,7 +235,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
   );
 
   return (
-    <UpdateProvider canInstall={runningModuleIds(state).length === 0}>
+    <UpdateProvider canInstall={canInstallUpdate}>
       <AppShell
         engine={{ state: "ready", moduleCount: modules.length }}
         updates={<UpdateIndicator />}
@@ -293,6 +293,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
             }}
           />
         </div>
+        <RunEventsPublisher modules={modules} />
         <Toaster onOpenModule={select} />
         {settingsTab !== null && (
           <SettingsDialog
@@ -316,4 +317,10 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
       </AppShell>
     </UpdateProvider>
   );
+}
+
+/** Follows every run message; isolated so the rest of the screen does not re-render with it. */
+function RunEventsPublisher({ modules }: { modules: CatalogModule[] }) {
+  useRunEvents(useRunsState(), modules);
+  return null;
 }
