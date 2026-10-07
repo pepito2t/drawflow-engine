@@ -22,6 +22,7 @@ export async function findUpdate(): Promise<AvailableUpdate | null> {
     install: async (onProgress) => {
       let downloaded = 0;
       let total: number | null = null;
+      await invoke("prepare_for_update");
       await update.downloadAndInstall((event) => {
         if (event.event === "Started") {
           total = event.data.contentLength ?? null;

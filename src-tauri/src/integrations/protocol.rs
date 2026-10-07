@@ -1,6 +1,7 @@
 //! Local API protocol (version 1), documented in docs/api-locale.md.
 
 use serde::{Deserialize, Serialize};
+use subtle::ConstantTimeEq;
 
 pub const PROTOCOL_VERSION: u32 = 1;
 
@@ -61,16 +62,7 @@ pub struct CommandRequest {
 
 /// Compares secrets without leaking their content through timing.
 pub fn tokens_match(expected: &str, received: &str) -> bool {
-    let expected = expected.as_bytes();
-    let received = received.as_bytes();
-    if expected.len() != received.len() {
-        return false;
-    }
-    expected
-        .iter()
-        .zip(received)
-        .fold(0u8, |difference, (left, right)| difference | (left ^ right))
-        == 0
+    expected.as_bytes().ct_eq(received.as_bytes()).into()
 }
 
 #[cfg(test)]

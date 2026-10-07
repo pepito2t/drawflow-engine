@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use tauri::{ipc::Channel, AppHandle, Manager, State};
@@ -11,13 +12,19 @@ use crate::access::AccessLock;
 use crate::error::BridgeError;
 use crate::outputs::KnownOutputs;
 use crate::paths::settings_file;
-use crate::runs::{Killable, RunId, RunRegistry};
+use crate::runs::{ChildRegistry, Killable, RunId, RunRegistry};
 
 pub(crate) const SIDECAR_NAME: &str = "engine";
 const INPUT_FILE_PREFIX: &str = "drawflow-input-";
 const INPUT_FILE_SUFFIX: &str = ".json";
+const QUERY_TIMEOUT: Duration = Duration::from_secs(120);
+// Fetching a mailbox over Graph can legitimately take many minutes.
+const MAIL_QUERY_TIMEOUT: Duration = Duration::from_secs(15 * 60);
+const MAIL_COMMAND_GROUP: &str = "mail";
+const NEWLINE: u8 = b'\n';
 
 pub type EngineRuns = RunRegistry<CommandChild>;
+pub type OneShotChildren = ChildRegistry<CommandChild>;
 
 impl Killable for CommandChild {
     fn kill_process(self) -> Result<(), BridgeError> {
@@ -281,20 +288,53 @@ pub fn cancel_run(runs: State<'_, EngineRuns>, run_id: RunId) -> Result<(), Brid
     runs.cancel(&run_id)
 }
 
+/// Runs a one-shot engine command; the child is registered so exit or a timeout can kill it.
 async fn query_engine(
     app: &AppHandle,
     arguments: Vec<String>,
 ) -> Result<EngineOutput, BridgeError> {
-    let output = app
-        .shell()
-        .sidecar(SIDECAR_NAME)?
-        .args(arguments)
-        .output()
-        .await?;
-    Ok(EngineOutput {
-        success: output.status.success(),
-        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-    })
+    let timeout = query_timeout(&arguments);
+    let (mut receiver, child) = app.shell().sidecar(SIDECAR_NAME)?.args(arguments).spawn()?;
+    let children = app.state::<OneShotChildren>();
+    let child_id = children.register(child)?;
+    match tokio::time::timeout(timeout, collect_output(&mut receiver)).await {
+        Ok(output) => {
+            children.take(child_id)?;
+            Ok(output)
+        }
+        Err(_elapsed) => {
+            children.kill(child_id)?;
+            Err(BridgeError::EngineTimeout(timeout.as_secs()))
+        }
+    }
+}
+
+fn query_timeout(arguments: &[String]) -> Duration {
+    match arguments.first().map(String::as_str) {
+        Some(MAIL_COMMAND_GROUP) => MAIL_QUERY_TIMEOUT,
+        _ => QUERY_TIMEOUT,
+    }
+}
+
+async fn collect_output(
+    receiver: &mut tauri::async_runtime::Receiver<CommandEvent>,
+) -> EngineOutput {
+    let mut stdout = Vec::new();
+    let mut code = None;
+    while let Some(event) = receiver.recv().await {
+        match event {
+            CommandEvent::Stdout(line) => {
+                stdout.extend(line);
+                stdout.push(NEWLINE);
+            }
+            CommandEvent::Terminated(payload) => code = payload.code,
+            _ => {}
+        }
+    }
+    EngineOutput {
+        success: code == Some(0),
+        stdout: String::from_utf8_lossy(&stdout).into_owned(),
+    }
 }
 
 /// Module ids come from `list-modules`; anything else must not reach the engine's CLI parser.
@@ -353,24 +393,31 @@ pub(crate) fn path_argument(path: PathBuf) -> String {
     path.to_string_lossy().into_owned()
 }
 
+/// Relays until the process terminates, even once the UI channel is gone: the caller must only
+/// release the run after termination, otherwise the feature could be started twice.
 pub(crate) async fn relay_events(
     receiver: &mut tauri::async_runtime::Receiver<CommandEvent>,
     channel: &Channel<EngineMessage>,
     on_stdout: impl Fn(&str),
 ) -> Result<(), BridgeError> {
+    let mut channel_failure: Option<BridgeError> = None;
     while let Some(event) = receiver.recv().await {
         let is_terminal = matches!(event, CommandEvent::Terminated(_));
         if let Some(message) = to_message(event) {
             if let EngineMessage::Stdout { line } = &message {
                 on_stdout(line);
             }
-            channel.send(message)?;
+            if channel_failure.is_none() {
+                if let Err(error) = channel.send(message) {
+                    channel_failure = Some(error.into());
+                }
+            }
         }
         if is_terminal {
             break;
         }
     }
-    Ok(())
+    channel_failure.map_or(Ok(()), Err)
 }
 
 fn to_message(event: CommandEvent) -> Option<EngineMessage> {
@@ -509,6 +556,71 @@ mod tests {
             ]
         );
         assert!(serde_json::from_str::<EngineRequest>("\"run\"").is_err());
+    }
+
+    #[test]
+    fn mail_requests_get_a_longer_deadline_than_other_queries() {
+        let mail = ["mail".to_owned(), "fetch".to_owned()];
+        let list = ["presets".to_owned(), "list".to_owned()];
+        assert_eq!(query_timeout(&mail), MAIL_QUERY_TIMEOUT);
+        assert_eq!(query_timeout(&list), QUERY_TIMEOUT);
+        assert!(MAIL_QUERY_TIMEOUT > QUERY_TIMEOUT);
+    }
+
+    #[tokio::test]
+    async fn collected_output_keeps_one_line_per_event_and_the_exit_code() {
+        let (sender, mut receiver) = tauri::async_runtime::channel(8);
+        sender
+            .send(CommandEvent::Stdout(b"{\"type\":\"result\"}".to_vec()))
+            .await
+            .unwrap();
+        sender
+            .send(CommandEvent::Stderr(b"ignored".to_vec()))
+            .await
+            .unwrap();
+        sender
+            .send(CommandEvent::Terminated(TerminatedPayload {
+                code: Some(0),
+                signal: None,
+            }))
+            .await
+            .unwrap();
+        drop(sender);
+
+        let output = collect_output(&mut receiver).await;
+
+        assert!(output.success);
+        assert_eq!(output.stdout, "{\"type\":\"result\"}\n");
+    }
+
+    #[tokio::test]
+    async fn relay_keeps_draining_after_the_ui_channel_is_gone() {
+        let (sender, mut receiver) = tauri::async_runtime::channel(8);
+        let channel: Channel<EngineMessage> = Channel::new(|_| Err(tauri::Error::WebviewNotFound));
+        sender
+            .send(CommandEvent::Stdout(b"first".to_vec()))
+            .await
+            .unwrap();
+        sender
+            .send(CommandEvent::Stdout(b"second".to_vec()))
+            .await
+            .unwrap();
+        sender
+            .send(CommandEvent::Terminated(TerminatedPayload {
+                code: Some(1),
+                signal: None,
+            }))
+            .await
+            .unwrap();
+        let seen = std::sync::Mutex::new(Vec::new());
+
+        let outcome = relay_events(&mut receiver, &channel, |line| {
+            seen.lock().unwrap().push(line.to_owned());
+        })
+        .await;
+
+        assert!(outcome.is_err());
+        assert_eq!(*seen.lock().unwrap(), ["first", "second"]);
     }
 
     #[test]

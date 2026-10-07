@@ -16,6 +16,7 @@ use tauri::{AppHandle, Manager, State};
 use crate::access::AccessLock;
 use crate::error::BridgeError;
 use crate::integrations::{dispatch_to_ui, protocol::CommandRequest};
+use crate::paths::write_atomically;
 
 const CONFIG_FILE_NAME: &str = "automations.json";
 const SEEN_FILE_NAME: &str = "automations-seen.json";
@@ -92,21 +93,20 @@ pub fn config_file(app: &AppHandle) -> Result<PathBuf, BridgeError> {
     Ok(app.path().app_config_dir()?.join(CONFIG_FILE_NAME))
 }
 
-pub fn load(path: &Path) -> Vec<Automation> {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|content| serde_json::from_str(&content).ok())
-        .unwrap_or_default()
+/// A missing file means no automation; a corrupt one is reported, never silently emptied.
+pub fn load(path: &Path) -> Result<Vec<Automation>, BridgeError> {
+    let content = match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => return Err(BridgeError::AutomationsFile(error)),
+    };
+    serde_json::from_str(&content)
+        .map_err(|_| BridgeError::ConfigCorrupted(CONFIG_FILE_NAME.to_owned()))
 }
 
 pub fn save(path: &Path, automations: &[Automation]) -> Result<(), BridgeError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let temporary = path.with_extension("json.tmp");
-    fs::write(&temporary, serde_json::to_vec_pretty(automations)?)?;
-    fs::rename(&temporary, path)?;
-    Ok(())
+    let content = serde_json::to_vec_pretty(automations)?;
+    write_atomically(path, &content).map_err(BridgeError::AutomationsFile)
 }
 
 pub fn validate(automations: &[Automation]) -> Result<(), BridgeError> {
@@ -293,10 +293,17 @@ fn replace<T>(slot: &Mutex<T>, value: T) {
     }
 }
 
+/// A corrupt file must not keep the application from starting: nothing is watched and the
+/// status reports why.
 pub fn start_at_launch(app: &AppHandle) -> Result<(), BridgeError> {
     load_seen(app);
-    let automations = load(&config_file(app)?);
-    apply(app, &automations);
+    match load(&config_file(app)?) {
+        Ok(automations) => apply(app, &automations),
+        Err(error) => replace(
+            &app.state::<AutomationState>().errors,
+            vec![error.to_string()],
+        ),
+    }
     Ok(())
 }
 
@@ -306,7 +313,7 @@ pub fn automation_status(
     state: State<'_, AutomationState>,
 ) -> Result<AutomationStatus, BridgeError> {
     Ok(AutomationStatus {
-        automations: load(&config_file(&app)?),
+        automations: load(&config_file(&app)?)?,
         errors: state.errors(),
     })
 }
@@ -346,10 +353,19 @@ mod tests {
     fn config_round_trip_and_missing_file() {
         let folder = tempfile::tempdir().unwrap();
         let path = folder.path().join("Réglages").join(CONFIG_FILE_NAME);
-        assert!(load(&path).is_empty());
+        assert!(load(&path).unwrap().is_empty());
         let automations = vec![automation(folder.path())];
         save(&path, &automations).unwrap();
-        assert_eq!(load(&path), automations);
+        assert_eq!(load(&path).unwrap(), automations);
+    }
+
+    #[test]
+    fn corrupt_config_is_an_error_not_an_empty_list() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = folder.path().join(CONFIG_FILE_NAME);
+        fs::write(&path, "[ pas du json").unwrap();
+        assert!(matches!(load(&path), Err(BridgeError::ConfigCorrupted(_))));
+        assert_eq!(fs::read_to_string(&path).unwrap(), "[ pas du json");
     }
 
     #[test]

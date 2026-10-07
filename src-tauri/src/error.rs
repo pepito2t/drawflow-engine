@@ -6,6 +6,18 @@ pub enum BridgeError {
     Shell(#[from] tauri_plugin_shell::Error),
     #[error("Impossible de préparer les paramètres : {0}")]
     InputFile(#[from] std::io::Error),
+    #[error("Le moteur n'a pas répondu dans le délai imparti ({0} s) ; il a été arrêté.")]
+    EngineTimeout(u64),
+    #[error("Impossible de lire ou d'écrire le fichier du code d'accès : {0}")]
+    AccessFile(std::io::Error),
+    #[error("Impossible de créer le dossier des journaux : {0}")]
+    LogsFolder(std::io::Error),
+    #[error("Impossible d'enregistrer les automatisations : {0}")]
+    AutomationsFile(std::io::Error),
+    #[error("Impossible d'enregistrer les réglages de l'API locale : {0}")]
+    IntegrationsFile(std::io::Error),
+    #[error("Le fichier {0} est illisible : corrigez-le ou supprimez-le dans le dossier de configuration.")]
+    ConfigCorrupted(String),
     #[error("Paramètres non sérialisables : {0}")]
     Serialization(#[from] serde_json::Error),
     #[error("Erreur de l'application : {0}")]

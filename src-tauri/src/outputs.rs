@@ -11,6 +11,10 @@ use crate::error::BridgeError;
 use crate::paths::settings_file;
 
 const LOGS_FOLDER: &str = "logs";
+/// Documents handed to their default application; anything else is only revealed in its folder.
+const OPENABLE_EXTENSIONS: [&str; 13] = [
+    "pdf", "docx", "xlsx", "xlsm", "csv", "txt", "dwg", "dxf", "png", "jpg", "jpeg", "md", "json",
+];
 
 /// Files the engine reported in its `result` events: the only ones the UI may open.
 #[derive(Default)]
@@ -109,15 +113,16 @@ pub fn open_logs_folder(app: AppHandle, lock: State<'_, AccessLock>) -> Result<(
         .parent()
         .map(|parent| parent.join(LOGS_FOLDER))
         .ok_or(BridgeError::StatePoisoned)?;
-    std::fs::create_dir_all(&folder)?;
+    std::fs::create_dir_all(&folder).map_err(BridgeError::LogsFolder)?;
     app.opener()
         .open_path(folder.to_string_lossy(), None::<&str>)?;
     Ok(())
 }
 
-/// Opens a file produced by a run with the system's default application.
-#[tauri::command]
-pub fn open_output(
+/// Opens a document produced by a run with its default application, or reveals any other
+/// produced file in its folder so nothing executable is ever launched.
+#[tauri::command(async)]
+pub async fn open_output(
     app: AppHandle,
     lock: State<'_, AccessLock>,
     outputs: State<'_, KnownOutputs>,
@@ -127,11 +132,26 @@ pub fn open_output(
     if !outputs.contains(&path)? {
         return Err(BridgeError::OutputNotAllowed(path));
     }
-    if !Path::new(&path).is_file() {
+    let checked = path.clone();
+    let exists =
+        tauri::async_runtime::spawn_blocking(move || Path::new(&checked).is_file()).await?;
+    if !exists {
         return Err(BridgeError::OutputMissing(path));
     }
-    app.opener().open_path(path, None::<&str>)?;
+    if opens_directly(&path) {
+        app.opener().open_path(path, None::<&str>)?;
+    } else {
+        app.opener().reveal_item_in_dir(path)?;
+    }
     Ok(())
+}
+
+pub fn opens_directly(path: &str) -> bool {
+    Path::new(path)
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| OPENABLE_EXTENSIONS.contains(&extension.to_ascii_lowercase().as_str()))
+        .unwrap_or(false)
 }
 
 #[cfg(test)]
@@ -162,5 +182,22 @@ mod tests {
         outputs.remember_from_history("pas du json");
 
         assert!(outputs.contains("C:\\Sortie\\ancien.xlsx").unwrap());
+    }
+
+    #[test]
+    fn documents_open_directly_whatever_the_case_of_the_extension() {
+        assert!(opens_directly("C:\\Sortie\\liste é.XLSX"));
+        assert!(opens_directly("C:\\Sortie\\rapport.docx"));
+        assert!(opens_directly("C:\\Sortie\\plan.dwg"));
+        assert!(opens_directly("/tmp/export.Json"));
+    }
+
+    #[test]
+    fn executables_and_unknown_files_are_only_revealed() {
+        assert!(!opens_directly("C:\\Sortie\\installer.exe"));
+        assert!(!opens_directly("C:\\Sortie\\script.bat"));
+        assert!(!opens_directly("C:\\Sortie\\liste.xlsx.lnk"));
+        assert!(!opens_directly("C:\\Sortie\\archive.zip"));
+        assert!(!opens_directly("C:\\Sortie\\sans-extension"));
     }
 }

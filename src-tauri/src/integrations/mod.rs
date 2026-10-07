@@ -155,7 +155,7 @@ pub async fn apply(app: &AppHandle, config: &IntegrationConfig) {
 /// The Stream Dock plugin reads Drawflow's API settings itself: installing it must turn the API on.
 pub async fn ensure_enabled(app: &AppHandle) -> Result<(), BridgeError> {
     let path = config::config_file(app)?;
-    if let Some(enabled) = enabling(config::load(&path)) {
+    if let Some(enabled) = enabling(config::load(&path)?) {
         config::save(&path, &enabled)?;
         apply(app, &enabled).await;
     }
@@ -172,8 +172,17 @@ fn enabling(config: IntegrationConfig) -> Option<IntegrationConfig> {
     })
 }
 
+/// A corrupt configuration must not keep the application from starting: the API stays off and
+/// the status reports why.
 pub fn start_at_launch(app: &AppHandle) -> Result<(), BridgeError> {
-    let config = config::load(&config::config_file(app)?);
+    let config = match config::load(&config::config_file(app)?) {
+        Ok(config) => config,
+        Err(error) => {
+            app.state::<IntegrationState>()
+                .set_error(Some(error.to_string()));
+            return Ok(());
+        }
+    };
     let handle = app.clone();
     tauri::async_runtime::spawn(async move { apply(&handle, &config).await });
     Ok(())
@@ -186,7 +195,7 @@ pub async fn integration_status(
     lock: State<'_, AccessLock>,
 ) -> Result<IntegrationStatus, BridgeError> {
     lock.ensure_unlocked()?;
-    let config = config::load(&config::config_file(&app)?);
+    let config = config::load(&config::config_file(&app)?)?;
     let address = state
         .server
         .lock()
@@ -217,7 +226,7 @@ pub async fn integration_update(
 ) -> Result<(), BridgeError> {
     lock.ensure_unlocked()?;
     let path = config::config_file(&app)?;
-    let mut updated = config::load(&path);
+    let mut updated = config::load(&path)?;
     updated.enabled = enabled;
     updated.port = port;
     if regenerate_token {

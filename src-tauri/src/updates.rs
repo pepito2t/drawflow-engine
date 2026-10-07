@@ -19,6 +19,13 @@ pub fn updater_configured(app: AppHandle) -> bool {
     is_configured(&app)
 }
 
+/// The installer replaces the sidecar binary: every engine process must be gone first, and the
+/// updater's own exit path never reaches `RunEvent::Exit`.
+#[tauri::command]
+pub fn prepare_for_update(app: AppHandle) {
+    crate::stop_engine_processes(&app);
+}
+
 fn is_configured(app: &AppHandle) -> bool {
     app.config().plugins.0.contains_key(UPDATER_PLUGIN)
 }
