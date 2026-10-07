@@ -38,6 +38,7 @@ def run_report(inputs: PdfReportInputs, context: RunContext, moment: datetime) -
         batch_size=context.general.batch_size,
         emit=context.emit,
         label=t("pipeline.read_label"),
+        settings_file=context.settings_file,
     )
     if not outcome.results:
         raise EngineError(t("pipeline.nothing_read"), hint=t("pipeline.nothing_read.hint"))

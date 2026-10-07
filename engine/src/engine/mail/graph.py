@@ -60,9 +60,10 @@ def start_device_login(
     client_id: str, tenant: str, transport: httpx.BaseTransport | None = None
 ) -> DeviceLogin:
     with httpx.Client(timeout=LOGIN_TIMEOUT, transport=transport) as http:
-        response = http.post(
+        response = _post(
+            http,
             f"{LOGIN_ROOT}/{tenant}/oauth2/v2.0/devicecode",
-            data={"client_id": client_id, "scope": SCOPES},
+            {"client_id": client_id, "scope": SCOPES},
         )
     payload = _json_or_error(response, t("graph.no_device_code"))
     if not response.is_success:
@@ -86,9 +87,10 @@ def finish_device_login(
     interval = float(login.interval)
     with httpx.Client(timeout=LOGIN_TIMEOUT, transport=transport) as http:
         while clock() < deadline:
-            response = http.post(
+            response = _post(
+                http,
                 _token_url(tenant),
-                data={
+                {
                     "client_id": client_id,
                     "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
                     "device_code": login.device_code,
@@ -110,9 +112,10 @@ def refresh_tokens(
     client_id: str, tenant: str, refresh_token: str, transport: httpx.BaseTransport | None = None
 ) -> Tokens:
     with httpx.Client(timeout=LOGIN_TIMEOUT, transport=transport) as http:
-        response = http.post(
+        response = _post(
+            http,
             _token_url(tenant),
-            data={
+            {
                 "client_id": client_id,
                 "grant_type": "refresh_token",
                 "refresh_token": refresh_token,
@@ -167,20 +170,36 @@ class GraphClient:
         return [item for item in page.get("value", []) if isinstance(item, dict)]
 
     def attachment_content(self, message_id: str, attachment_id: str) -> bytes:
-        response = self._http.get(f"/me/messages/{message_id}/attachments/{attachment_id}/$value")
+        response = self._fetch(
+            f"/me/messages/{message_id}/attachments/{attachment_id}/$value", None
+        )
         if not response.is_success:
             raise MailError(t("graph.attachment_refused"))
         return response.content
 
     def _get(self, url: str, params: dict[str, str] | None) -> dict[str, Any]:
-        try:
-            response = self._http.get(url, params=params)
-        except httpx.TransportError as error:
-            raise MailError(t("graph.unreachable"), hint=t("graph.unreachable.hint")) from error
+        response = self._fetch(url, params)
         payload = _json_or_error(response, t("graph.unreadable_reply"))
         if not response.is_success:
             raise MailError(t("graph.read_refused", error=_error_text(payload)))
         return payload
+
+    def _fetch(self, url: str, params: dict[str, str] | None) -> httpx.Response:
+        try:
+            return self._http.get(url, params=params)
+        except httpx.TransportError as error:
+            raise _unreachable() from error
+
+
+def _post(http: httpx.Client, url: str, data: dict[str, str]) -> httpx.Response:
+    try:
+        return http.post(url, data=data)
+    except httpx.TransportError as error:
+        raise _unreachable() from error
+
+
+def _unreachable() -> MailError:
+    return MailError(t("graph.unreachable"), hint=t("graph.unreachable.hint"))
 
 
 def _json_or_error(response: httpx.Response, message: str) -> dict[str, Any]:

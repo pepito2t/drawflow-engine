@@ -1,4 +1,5 @@
 import json
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -12,7 +13,7 @@ from engine.core.errors import EngineError, InvalidInputError
 from engine.core.events import Event
 from engine.core.settings import load_general_settings
 from engine.setup.actions import SetupContext, SetupError, run_action
-from engine.setup.commands import CommandOutcome
+from engine.setup.commands import CommandOutcome, run_command, start_detached
 from engine.setup.installer_download import InstallerDownloadError
 from engine.setup.ollama import delete_model, pull_model
 from engine.testing.fake_machine import LOCALAPPDATA, PROGRAM_FILES, FakeMachine
@@ -193,6 +194,24 @@ def test_model_pull_reports_download_progress(tmp_path: Path) -> None:
     assert events[-1].type == "result"
 
 
+def test_model_pull_downloads_and_remembers_the_recommended_model(tmp_path: Path) -> None:
+    pulled: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/pull"):
+            pulled.append(str(json.loads(request.content)["model"]))
+        return httpx.Response(200, content=json.dumps({"status": "success"}).encode())
+
+    recorder = Recorder(FakeMachine(memory=8_000_000_000))
+    setup = context(tmp_path, recorder, [], httpx.MockTransport(handle))
+
+    run_action("model.pull", setup)
+
+    assert pulled == ["qwen3.5:4b"]
+    stored = json.loads(setup.settings.read_text(encoding="utf-8"))["assistant"]["model"]
+    assert stored == "qwen3.5:4b"
+
+
 def test_model_pull_error_is_readable(tmp_path: Path) -> None:
     server = _pull_server({"error": "pull model manifest: file does not exist"})
 
@@ -220,3 +239,12 @@ def test_deleting_a_model_while_ollama_is_down_is_a_readable_error() -> None:
         anyio.run(
             delete_model, "http://127.0.0.1:11434/v1", "qwen3:4b", httpx.MockTransport(refuse)
         )
+
+
+def test_missing_program_and_timeout_are_readable_setup_errors(tmp_path: Path) -> None:
+    with pytest.raises(SetupError, match="Impossible de lancer"):
+        run_command([str(tmp_path / "absent-installer.exe")])
+    with pytest.raises(SetupError, match="absent-installer"):
+        start_detached([str(tmp_path / "absent-installer.exe")])
+    with pytest.raises(SetupError, match="ne s'est pas terminé"):
+        run_command([sys.executable, "-c", "import time; time.sleep(30)"], timeout_seconds=0.2)

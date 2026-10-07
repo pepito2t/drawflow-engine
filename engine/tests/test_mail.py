@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs
@@ -17,8 +18,9 @@ from engine.mail.store import (
     Participant,
     as_message,
     clean_subject,
+    folder_id_of,
 )
-from engine.mail.tokens import SessionStore
+from engine.mail.tokens import MailSession, SessionStore
 
 CLIENT_ID = "11111111-2222-3333-4444-555555555555"
 MODULES = discover_modules()
@@ -46,6 +48,9 @@ class FakeMicrosoft:
 
     def __init__(self) -> None:
         self.polls = 0
+        self.downloads = 0
+        self.mailbox_down = False
+        self.served_at: list[datetime] = []
         self.messages = [
             _message("m1", "c1", "2026-10-01T08:00:00Z", "Façade nord"),
             _message("m2", "c1", "2026-10-02T09:00:00Z", "RE: Façade nord", attachments=True),
@@ -83,6 +88,9 @@ class FakeMicrosoft:
         if path == "/v1.0/me":
             return httpx.Response(200, json={"mail": "lea@facades.ch"})
         if path == "/v1.0/me/messages":
+            if self.mailbox_down:
+                raise httpx.ConnectError("offline", request=request)
+            self.served_at.append(datetime.now(UTC))
             return httpx.Response(200, json={"value": self.messages})
         if path.endswith("/attachments"):
             return httpx.Response(
@@ -100,6 +108,7 @@ class FakeMicrosoft:
                 },
             )
         if path.endswith("/$value"):
+            self.downloads += 1
             return httpx.Response(200, content=b"DWG-CONTENT")
         return httpx.Response(404, json={"error": {"message": "inconnu"}})
 
@@ -209,3 +218,96 @@ def test_store_prunes_oldest_conversations_and_cleans_subjects(tmp_path: Path) -
     assert clean_subject("Fwd: re: Offre") == "Offre" and clean_subject("") == "(sans objet)"
     assert as_message({"id": "x", "receivedDateTime": "t"}).sender == Participant()
     assert json.loads((tmp_path / "mail" / "conversations.json").read_text(encoding="utf-8"))
+
+
+def _connected(settings: Path, fake: FakeMicrosoft) -> None:
+    service.connect_finish(
+        settings, service.connect_start(settings, fake.transport()), fake.transport()
+    )
+
+
+def test_last_fetch_is_dated_before_the_download_not_after(settings: Path) -> None:
+    fake = FakeMicrosoft()
+    _connected(settings, fake)
+    moments = iter([datetime(2026, 10, 7, 8, 0, 0, tzinfo=UTC)])
+
+    service.fetch(settings, fake.transport(), clock=lambda: next(moments))
+
+    session = SessionStore(settings).read()
+    assert session is not None and session.last_fetch_at == "2026-10-07T08:00:00Z"
+    assert service.status(settings)["last_fetch_at"] == "2026-10-07T08:00:00Z"
+
+
+def test_rotated_refresh_token_is_kept_even_when_the_mailbox_is_unreachable(
+    settings: Path,
+) -> None:
+    fake = FakeMicrosoft()
+    _connected(settings, fake)
+    fake.mailbox_down = True
+
+    with pytest.raises(MailError, match="injoignable"):
+        service.fetch(settings, fake.transport())
+
+    session = SessionStore(settings).read()
+    assert session is not None and session.refresh_token == "rt2"
+    assert session.last_fetch_at is None
+
+
+def test_stored_messages_do_not_download_their_attachments_again(settings: Path) -> None:
+    fake = FakeMicrosoft()
+    _connected(settings, fake)
+
+    service.fetch(settings, fake.transport())
+    service.fetch(settings, fake.transport())
+
+    assert fake.downloads == 1
+
+
+def test_offline_sign_in_is_a_readable_error() -> None:
+    def offline(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("offline", request=request)
+
+    with pytest.raises(MailError, match="injoignable"):
+        start_device_login(CLIENT_ID, "common", httpx.MockTransport(offline))
+
+
+def test_one_damaged_message_file_does_not_hide_the_conversation(tmp_path: Path) -> None:
+    store = ConversationStore(tmp_path / "mail")
+    store.register("c1")
+    store.add_message(
+        "c1",
+        Message(id="m1", received_at="2026-10-01T08:00:00Z", sender=Participant(), subject="A"),
+    )
+    damaged = tmp_path / "mail" / folder_id_of("c1") / "messages" / "m2.json"
+    damaged.write_text("pas du json", encoding="utf-8")
+
+    assert [message.id for message in store.messages("c1")] == ["m1"]
+    [conversation] = store.rebuild_index()
+    assert conversation.message_count == 1
+
+
+def test_windows_session_file_is_restricted_with_icacls(tmp_path: Path) -> None:
+    commands: list[list[str]] = []
+
+    def icacls(arguments: Any) -> bool:
+        commands.append(list(arguments))
+        return True
+
+    store = SessionStore(tmp_path / "settings.json", acl=icacls)
+    store.write(MailSession(account="lea@facades.ch", refresh_token="rt"))
+
+    [command] = commands
+    assert command[:4] == ["icacls", str(store.path), "/inheritance:r", "/grant:r"]
+    assert command[4].endswith(":F")
+    session = store.read()
+    assert session is not None and session.protected
+
+
+def test_failed_acl_is_remembered_and_surfaced_in_the_status(settings: Path) -> None:
+    store = SessionStore(settings, acl=lambda _: False)
+
+    store.write(MailSession(account="lea@facades.ch", refresh_token="rt"))
+
+    session = store.read()
+    assert session is not None and not session.protected
+    assert "restreints" in str(service.status(settings)["protection_hint"])

@@ -15,7 +15,6 @@ from engine.modules.dwg_diff.messages import t
 from engine.modules.dwg_diff.schema import DwgDiffInputs
 from engine.modules.dwg_diff.service import (
     DOCUMENT_TYPE,
-    DiffReport,
     compare,
     describe_result,
     preview_table,
@@ -78,7 +77,12 @@ def _parts_list(
 ) -> PartsList:
     label = t("pipeline.side_label", side=side)
     outcome = process_batch(
-        plans, worker, batch_size=context.general.batch_size, emit=context.emit, label=label
+        plans,
+        worker,
+        batch_size=context.general.batch_size,
+        emit=context.emit,
+        label=label,
+        settings_file=context.settings_file,
     )
     if not outcome.results:
         raise EngineError(t("pipeline.no_file", side=side), hint=t("pipeline.no_file_hint"))
@@ -96,7 +100,3 @@ def _target(inputs: DwgDiffInputs, settings: DwgDiffSettings, moment: datetime) 
     return output_target(
         inputs.output_folder, settings.file_name_template, values, OUTPUT_EXTENSION
     )
-
-
-def report_of(before: PartsList, after: PartsList, settings: DwgDiffSettings) -> DiffReport:
-    return compare(before, after, settings.key_column_names(), settings.increment())

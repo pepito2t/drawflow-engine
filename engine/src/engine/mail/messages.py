@@ -38,7 +38,6 @@ t = define_messages(
             "Supprimez-le pour le reconstruire à la prochaine récupération."
         ),
         "store.conversation_gone": "Cette conversation n'est plus dans Drawflow.",
-        "store.message_unreadable": "Un message enregistré est illisible.",
         "store.message_save_failed": "Impossible d'enregistrer un message.",
         "store.attachment_save_failed": "Impossible d'enregistrer une pièce jointe.",
         "store.remove_failed": "Impossible de supprimer la conversation.",
@@ -49,6 +48,10 @@ t = define_messages(
         "store.export.attachments": "- Pièces jointes : {names}",
         "tokens.save_failed": "Impossible d'enregistrer la session Microsoft.",
         "tokens.clear_failed": "Impossible d'effacer la session Microsoft.",
+        "tokens.unprotected_hint": (
+            "Les droits du fichier de session n'ont pas pu être restreints : "
+            "vérifiez que le dossier de configuration n'est lisible que par vous."
+        ),
     },
     en={
         "graph.no_device_code": "Microsoft did not provide a sign-in code.",
@@ -79,7 +82,6 @@ t = define_messages(
         "store.index_unreadable": "The conversation index is unreadable; it was not modified.",
         "store.index_unreadable.hint": "Delete it to rebuild it at the next fetch.",
         "store.conversation_gone": "This conversation is no longer in Drawflow.",
-        "store.message_unreadable": "A saved message is unreadable.",
         "store.message_save_failed": "A message could not be saved.",
         "store.attachment_save_failed": "An attachment could not be saved.",
         "store.remove_failed": "The conversation could not be removed.",
@@ -90,5 +92,9 @@ t = define_messages(
         "store.export.attachments": "- Attachments: {names}",
         "tokens.save_failed": "The Microsoft session could not be saved.",
         "tokens.clear_failed": "The Microsoft session could not be cleared.",
+        "tokens.unprotected_hint": (
+            "The session file's permissions could not be restricted: "
+            "check that the configuration folder is readable by you only."
+        ),
     },
 )

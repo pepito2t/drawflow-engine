@@ -78,3 +78,31 @@ def test_duplicate_copies_are_reported(tmp_path: Path, sources: list[Path]) -> N
     ]
     assert len(duplicates) == 1
     assert duplicates[0]["file"].endswith("Façadier (copie).xlsx")
+
+
+def test_missing_file_from_a_preset_is_a_warning_naming_it(tmp_path: Path) -> None:
+    present = write_submission(tmp_path / "Façadier.xlsx")
+    gone = tmp_path / "Disparue.xlsx"
+    input_file = tmp_path / "inputs.json"
+    payload = {
+        "files": [str(gone), str(present)],
+        "project": "Tour B",
+        "output_folder": str(tmp_path / "Sortie"),
+        "preview": False,
+    }
+    input_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    completed = subprocess.run(
+        [sys.executable, "-m", "engine.cli", "run", "soumission", "--input", str(input_file)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    events = [json.loads(line) for line in completed.stdout.splitlines()]
+
+    assert completed.returncode == 0, completed.stderr
+    [missing] = [event for event in events if event.get("file") == str(gone)]
+    assert missing["type"] == "warning" and "introuvable" in missing["message"]
+    assert "préréglage" in missing["hint"]
+    assert events[-1]["type"] == "result"

@@ -72,16 +72,15 @@ def build_report(
     autocad_plugin_latest: str | None = None,
 ) -> SetupReport:
     system = SystemInfo(os=machine.os, arch=machine.arch, package_manager=_manager(machine))
+    recommended = recommend(machine.memory_bytes)
     items = [
         _with_help(_oda_item(machine, system, oda_configured), PREREQUISITES_HELP),
         _with_help(_model_server_item(machine, system, assistant, server), PREREQUISITES_HELP),
-        _with_help(
-            _model_item(assistant, server, recommend(machine.memory_bytes)), PREREQUISITES_HELP
-        ),
+        _with_help(_model_item(assistant, server, recommended), PREREQUISITES_HELP),
         _with_help(_stream_dock_item(machine, app_version), STREAM_DOCK_HELP),
         _with_help(_autocad_plugin_item(machine, autocad_plugin_latest), STREAM_DOCK_HELP),
     ]
-    return SetupReport(system=system, items=items)
+    return SetupReport(system=system, items=items, recommended_model=recommended)
 
 
 def _oda_item(machine: Machine, system: SystemInfo, configured: Path | None) -> SetupItem:

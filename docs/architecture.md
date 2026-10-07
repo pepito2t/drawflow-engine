@@ -93,6 +93,7 @@ Un tour envoie la conversation au modèle et exécute les outils demandés, puis
 | Plugin pour Stream Dock (Mirabox), installé par Drawflow dans `%APPDATA%\HotSpot\StreamDock\plugins` | C'est l'appareil de l'utilisateur ; même protocole que le SDK Stream Deck, sans fichier d'installation à double-cliquer | #109 |
 | Délais maximum en CI, tests et requêtes MCP | Un blocage échoue vite au lieu de figer la CI ou l'application | #82 |
 | Updater activé seulement par la configuration de release | Aucune mise à jour en développement ; clé publique injectée par la CI | #52 |
+| `engine setup scan` est en lecture seule : le modèle recommandé figure dans le rapport (`recommended_model`) et n'est enregistré qu'au téléchargement (`model.pull`) quand aucun modèle n'a été choisi | Un scan lancé à chaque ouverture ne doit jamais écrire ni échouer sur `settings.json` ; le choix du modèle reste une action de l'utilisateur | — |
 
 ## CI/CD
 

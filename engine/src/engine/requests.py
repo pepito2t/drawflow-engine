@@ -12,7 +12,6 @@ from engine.core.registry import discover_modules, get_module
 from engine.core.settings import export_section, read_section_import
 from engine.core.templates import TemplateLibrary, TemplateUser
 from engine.messages import t
-from engine.modules.soumission.headers import add_synonyms
 
 TEMPLATE_ACTIONS = {
     "list": "Liste les modèles importés et les modèles par défaut (JSON).",
@@ -110,6 +109,9 @@ def handle_presets(action: str, settings: Path, raw: dict[str, Any]) -> dict[str
 def handle_settings_file(action: str, settings: Path, raw: dict[str, Any]) -> dict[str, Any]:
     modules = discover_modules()
     if action == "add-synonyms":
+        # Pulls openpyxl and pypdf: only the request that needs them pays for the import.
+        from engine.modules.soumission.headers import add_synonyms
+
         return add_synonyms(settings, _parse(SynonymsRequest, raw).columns)
     if action == "export":
         request = _parse(ExportRequest, raw)

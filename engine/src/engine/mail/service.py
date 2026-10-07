@@ -1,5 +1,6 @@
 """Entry points of `engine mail …`: sign in, fetch, list, export, remove. Mailbox is read-only."""
 
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -25,16 +26,24 @@ from engine.mail.tokens import MailSession, SessionStore
 LOCAL_FOLDER_NAME = "mail"
 SKIPPED_CONTENT_TYPES = ("image/",)
 
+Clock = Callable[[], datetime]
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
+
 
 def status(settings_file: Path) -> dict[str, Any]:
     mail = load_mail_settings(settings_file)
     session = SessionStore(settings_file).read()
+    unprotected = session is not None and not session.protected
     return {
         "configured": bool(mail.client_id),
         "account": session.account if session else None,
         "last_fetch_at": session.last_fetch_at if session else None,
         "conversations": len(_store(settings_file, mail).conversations()),
         "folder": str(_folder(settings_file, mail)),
+        "protection_hint": t("tokens.unprotected_hint") if unprotected else None,
     }
 
 
@@ -72,7 +81,9 @@ def disconnect(settings_file: Path) -> dict[str, Any]:
     return {"disconnected": True}
 
 
-def fetch(settings_file: Path, transport: httpx.BaseTransport | None = None) -> dict[str, Any]:
+def fetch(
+    settings_file: Path, transport: httpx.BaseTransport | None = None, clock: Clock = utc_now
+) -> dict[str, Any]:
     """Downloads the messages received since the last fetch and files them by conversation."""
     mail = _configured(settings_file)
     sessions = SessionStore(settings_file)
@@ -80,6 +91,11 @@ def fetch(settings_file: Path, transport: httpx.BaseTransport | None = None) -> 
     if session is None:
         raise MailError(t("service.not_connected"), hint=t("service.not_connected_hint"))
     tokens = refresh_tokens(mail.client_id, mail.tenant, session.refresh_token, transport)
+    # Microsoft rotates the refresh token: the old one is dead as soon as this reply arrives.
+    session = session.model_copy(update={"refresh_token": tokens.refresh_token})
+    sessions.write(session)
+    # Taken before the download: a message arriving meanwhile is picked up next time.
+    fetched_at = _timestamp(clock())
     store = _store(settings_file, mail)
     client = GraphClient(tokens.access_token, transport)
     try:
@@ -89,13 +105,7 @@ def fetch(settings_file: Path, transport: httpx.BaseTransport | None = None) -> 
         client.close()
     conversations = store.rebuild_index()
     pruned = store.prune(mail.max_conversations)
-    sessions.write(
-        MailSession(
-            account=session.account,
-            refresh_token=tokens.refresh_token,
-            last_fetch_at=datetime.now(UTC).isoformat(timespec="seconds"),
-        )
-    )
+    sessions.write(session.model_copy(update={"last_fetch_at": fetched_at}))
     return {
         "fetched": len(received),
         "added": added,
@@ -149,8 +159,11 @@ def _store(settings_file: Path, mail: MailSettings) -> ConversationStore:
 def _since(session: MailSession, mail: MailSettings) -> str:
     if session.last_fetch_at:
         return session.last_fetch_at
-    start = datetime.now(UTC) - timedelta(days=mail.lookback_days)
-    return start.isoformat(timespec="seconds").replace("+00:00", "Z")
+    return _timestamp(utc_now() - timedelta(days=mail.lookback_days))
+
+
+def _timestamp(moment: datetime) -> str:
+    return moment.astimezone(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def _file_messages(
@@ -163,6 +176,8 @@ def _file_messages(
             continue
         message = as_message(raw)
         store.register(conversation_id)
+        if store.has_message(conversation_id, message.id):
+            continue
         if raw.get("hasAttachments"):
             message = message.model_copy(
                 update={

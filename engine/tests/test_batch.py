@@ -1,9 +1,11 @@
+import json
 from operator import methodcaller
 from pathlib import Path
 
 import pytest
 
 from engine.core.batch import UNEXPECTED_ITEM_ERROR, process_batch
+from engine.core.diagnostics import log_file
 from engine.core.errors import EngineError
 from engine.core.events import Event, ProgressEvent, WarningEvent
 
@@ -88,3 +90,21 @@ def test_empty_batch_returns_empty_outcome() -> None:
 
     assert outcome.results == []
     assert events == []
+
+
+def test_unexpected_failures_are_kept_in_the_diagnostics_log(tmp_path: Path) -> None:
+    settings = tmp_path / "config" / "settings.json"
+    [path] = make_files(tmp_path, 1)
+
+    def worker(_: Path) -> str:
+        raise ValueError("boom")
+
+    process_batch(
+        [path], worker, batch_size=1, emit=lambda _: None, label="Lecture", settings_file=settings
+    )
+
+    log = log_file(settings)
+    assert log is not None
+    [entry] = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert entry["type"] == "ValueError"
+    assert "boom" in str(entry["cause"]) and str(path) in entry["command"][0]

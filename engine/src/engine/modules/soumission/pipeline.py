@@ -40,6 +40,7 @@ def run_soumission(inputs: SoumissionInputs, context: RunContext, moment: dateti
         batch_size=context.general.batch_size,
         emit=context.emit,
         label=t("pipeline.read_label"),
+        settings_file=context.settings_file,
     )
     tables = _tables(outcome.results, context)
     if not tables:
@@ -63,6 +64,12 @@ def _without_duplicates(paths: list[Path], context: RunContext) -> list[Path]:
     for duplicate in result.duplicates:
         message = t("pipeline.duplicate", name=duplicate.same_as.name)
         context.emit(WarningEvent(message=message, file=str(duplicate.path)))
+    for unreadable in result.unreadable:
+        message = t("pipeline.unreadable_source")
+        hint = t("pipeline.unreadable_source.hint")
+        context.emit(WarningEvent(message=message, file=str(unreadable), hint=hint))
+    if not result.unique:
+        raise EngineError(t("pipeline.no_source"), hint=t("pipeline.unreadable_source.hint"))
     return result.unique
 
 

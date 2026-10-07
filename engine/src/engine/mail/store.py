@@ -108,26 +108,18 @@ class ConversationStore:
         raise MailStoreError(t("store.conversation_gone"))
 
     def messages(self, conversation_id: str) -> list[Message]:
-        folder = self._folder(conversation_id) / MESSAGES_FOLDER
-        if not folder.is_dir():
-            return []
-        found = []
-        for path in folder.glob("*.json"):
-            try:
-                found.append(Message.model_validate_json(path.read_text(encoding="utf-8")))
-            except (OSError, ValidationError) as error:
-                raise MailStoreError(t("store.message_unreadable"), file=path) from error
-        return sorted(found, key=lambda message: message.received_at)
+        return self._messages_in(self._folder(conversation_id))
+
+    def has_message(self, conversation_id: str, message_id: str) -> bool:
+        return self._message_path(conversation_id, message_id).is_file()
 
     def add_message(self, conversation_id: str, message: Message) -> bool:
         """Returns False when the message was already stored."""
-        folder = self._folder(conversation_id) / MESSAGES_FOLDER
-        path = folder / f"{safe_name(message.id)}.json"
+        path = self._message_path(conversation_id, message.id)
         if path.is_file():
             return False
         try:
-            folder.mkdir(parents=True, exist_ok=True)
-            path.write_text(message.model_dump_json(indent=2), encoding="utf-8")
+            write_json_atomically(path, message.model_dump(mode="json"))
         except OSError as error:
             raise OutputWriteError(t("store.message_save_failed"), file=path) from error
         return True
@@ -217,14 +209,24 @@ class ConversationStore:
             return []
         return [path for path in self.folder.iterdir() if (path / CONVERSATION_FILE).is_file()]
 
+    def _message_path(self, conversation_id: str, message_id: str) -> Path:
+        return self._folder(conversation_id) / MESSAGES_FOLDER / f"{safe_name(message_id)}.json"
+
     def _messages_in(self, folder: Path) -> list[Message]:
+        """The readable messages: one damaged file must not hide a whole conversation."""
         messages = []
         for path in (folder / MESSAGES_FOLDER).glob("*.json"):
-            try:
-                messages.append(Message.model_validate_json(path.read_text(encoding="utf-8")))
-            except (OSError, ValidationError) as error:
-                raise MailStoreError(t("store.message_unreadable"), file=path) from error
+            message = _read_message(path)
+            if message is not None:
+                messages.append(message)
         return sorted(messages, key=lambda message: message.received_at)
+
+
+def _read_message(path: Path) -> Message | None:
+    try:
+        return Message.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError):
+        return None
 
 
 def _conversation_id_in(folder: Path) -> str | None:

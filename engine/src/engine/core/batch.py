@@ -5,6 +5,7 @@ from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from engine.core.diagnostics import record_failure
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ProgressEvent, WarningEvent
 from engine.core.i18n import current_language, set_language
@@ -12,6 +13,7 @@ from engine.core.messages import t
 
 UNEXPECTED_ITEM_ERROR = t("batch.unexpected_item_error")
 INLINE_BATCH_SIZE = 1
+BATCH_LOG_COMMAND = "batch"
 
 type Completed[ResultT] = Iterator[tuple[Path, ResultT | Exception]]
 
@@ -35,16 +37,18 @@ def process_batch[ResultT](
     batch_size: int,
     emit: Emit,
     label: str,
+    settings_file: Path | None = None,
 ) -> BatchOutcome[ResultT]:
     """Runs `worker` on every file; a failing file is reported and never stops the others.
 
     In parallel mode `worker` must be picklable (a module-level function).
+    Unexpected failures are kept in the diagnostics log next to `settings_file`.
     """
     if batch_size <= INLINE_BATCH_SIZE or len(paths) <= 1:
         completed = _run_inline(paths, worker)
     else:
         completed = _run_in_pool(paths, worker, batch_size)
-    return _collect(paths, completed, emit, label)
+    return _collect(paths, completed, emit, label, settings_file)
 
 
 def _run_inline[ResultT](
@@ -74,14 +78,18 @@ def _run_in_pool[ResultT](
 
 
 def _collect[ResultT](
-    paths: Sequence[Path], completed: Completed[ResultT], emit: Emit, label: str
+    paths: Sequence[Path],
+    completed: Completed[ResultT],
+    emit: Emit,
+    label: str,
+    settings_file: Path | None,
 ) -> BatchOutcome[ResultT]:
     total = max(len(paths), 1)
     by_path: dict[Path, ResultT] = {}
     failures: list[BatchFailure] = []
     for done, (path, value) in enumerate(completed, start=1):
         if isinstance(value, Exception):
-            failures.append(_report_failure(path, value, emit))
+            failures.append(_report_failure(path, value, emit, settings_file))
         else:
             by_path[path] = value
         message = t("batch.progress", label=label, name=path.name)
@@ -90,11 +98,18 @@ def _collect[ResultT](
     return BatchOutcome(results=results, failures=failures)
 
 
-def _report_failure(path: Path, error: Exception, emit: Emit) -> BatchFailure:
+def _report_failure(
+    path: Path, error: Exception, emit: Emit, settings_file: Path | None
+) -> BatchFailure:
     if isinstance(error, EngineError):
         message, hint = error.message, error.hint
     else:
         traceback.print_exception(error, file=sys.stderr)
+        record_failure(settings_file, [_log_command(path)], error)
         message, hint = UNEXPECTED_ITEM_ERROR, t("batch.unexpected_item_hint")
     emit(WarningEvent(message=message, file=str(path), hint=hint))
     return BatchFailure(path=path, message=message)
+
+
+def _log_command(path: Path) -> str:
+    return f"{BATCH_LOG_COMMAND} {path}"

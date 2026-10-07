@@ -172,3 +172,22 @@ def test_latest_release_version_is_unknown_without_release_or_network() -> None:
 
     assert _latest(no_release) is None
     assert _latest(httpx.MockTransport(offline)) is None
+
+
+def test_backslash_and_drive_members_are_never_written(tmp_path: Path) -> None:
+    plugins = tmp_path / "plugins"
+    plugins.mkdir()
+    hostile = plugin_zip(
+        (f"{PLUGIN}\\..\\evil3.txt", b"x"),
+        (f"{PLUGIN}/bin\\..\\..\\evil4.txt", b"x"),
+        (f"{PLUGIN}/C:/evil5.txt", b"x"),
+    )
+
+    install_plugin(plugins, PLUGIN, ASSET_URL, release(hostile))
+
+    assert not (tmp_path / "evil3.txt").exists() and not (plugins / "evil3.txt").exists()
+    assert not (tmp_path / "evil4.txt").exists() and not (plugins / "evil4.txt").exists()
+    written = sorted(
+        str(path.relative_to(plugins / PLUGIN)) for path in (plugins / PLUGIN).rglob("*")
+    )
+    assert not any("evil" in name for name in written)

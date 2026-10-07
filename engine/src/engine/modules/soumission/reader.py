@@ -1,5 +1,6 @@
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
+from itertools import islice
 from pathlib import Path
 from typing import IO
 from zipfile import BadZipFile
@@ -133,7 +134,7 @@ def _read_sheet(
 def _find_header(
     rows: Sequence[Sequence[object]], settings: SoumissionSettings
 ) -> tuple[int, dict[str, int]] | None:
-    for index, row in enumerate(rows[: settings.header_search_rows]):
+    for index, row in enumerate(islice(rows, settings.header_search_rows)):
         positions = match_columns(row, settings.columns)
         if len(positions) >= MIN_HEADER_MATCHES:
             return index, positions

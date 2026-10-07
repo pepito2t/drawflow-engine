@@ -85,3 +85,11 @@ def test_mapping_schema_exposes_ui_labels() -> None:
     assert columns["x-ui"] == "mapping"
     assert columns["x-ui-key-label"] == "Colonne"
     assert columns["x-ui-value-label"] == "Attribut du bloc"
+
+
+@pytest.mark.parametrize("raw", ["inf", "-inf", "nan", "1e999"])
+def test_non_finite_quantity_counts_one_and_warns(raw: str) -> None:
+    outcome = map_parts([part("A", REF="1", LONGUEUR="5", QTE=raw)], settings())
+
+    assert outcome.parts[0].quantity == 1.0
+    assert "illisible" in outcome.warnings[-1].message
