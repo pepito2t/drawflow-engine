@@ -22,24 +22,23 @@ def extract_plan(path: Path, *, settings: PdfReportSettings) -> PlanExtraction:
     """Runs in a worker process; reads the PDF one page at a time."""
     zone = Zone.title_block(settings)
     title_block: list[TextLine] = []
-    all_lines: list[TextLine] = []
+    references: set[str] = set()
     pages = 0
+    has_text = False
     for page in read_pages(path):
         pages += 1
+        has_text = has_text or bool(page.lines)
         title_block.extend(lines_in_zone(page, zone))
-        all_lines.extend(page.lines)
+        references.update(find_references(page.lines, settings.reference_pattern))
     fields = extract_fields(title_block, settings.fields)
     plan = PlanData(
-        file_name=path.name,
-        pages=pages,
-        fields=fields.values,
-        references=find_references(all_lines, settings.reference_pattern),
+        file_name=path.name, pages=pages, fields=fields.values, references=sorted(references)
     )
-    return PlanExtraction(plan=plan, warnings=_warnings(all_lines, fields.missing))
+    return PlanExtraction(plan=plan, warnings=_warnings(has_text, fields.missing))
 
 
-def _warnings(lines: list[TextLine], missing: list[str]) -> list[Anomaly]:
-    if not lines:
+def _warnings(has_text: bool, missing: list[str]) -> list[Anomaly]:
+    if not has_text:
         return [Anomaly(t("worker.no_text"), hint=t("worker.no_text.hint"))]
     if missing:
         return [
