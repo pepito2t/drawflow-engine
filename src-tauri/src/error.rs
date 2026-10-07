@@ -50,6 +50,8 @@ pub enum BridgeError {
     AccessFileCorrupted,
     #[error("Impossible d'enregistrer le code d'accès.")]
     AccessHashing,
+    #[error("Impossible de générer un jeton pour l'API locale : {0}")]
+    TokenGeneration(getrandom::Error),
     #[error("Le fichier produit est introuvable : {0}")]
     OutputMissing(String),
     #[error("Ce fichier n'a pas été produit par Drawflow : {0}")]

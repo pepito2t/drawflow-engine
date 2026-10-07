@@ -237,7 +237,7 @@ pub async fn integration_update(
     updated.enabled = enabled;
     updated.port = port;
     if regenerate_token {
-        updated.token = config::generate_token();
+        updated.token = config::generate_token()?;
     }
     config::save(&path, &updated)?;
     apply(&app, &updated).await;

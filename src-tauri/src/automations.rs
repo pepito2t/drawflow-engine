@@ -246,7 +246,11 @@ pub fn fingerprint_of(path: &Path) -> std::io::Result<String> {
         }
         hasher.update(&buffer[..read]);
     }
-    Ok(format!("{:x}", hasher.finalize()))
+    Ok(hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 
 fn seen_file(app: &AppHandle) -> Result<PathBuf, BridgeError> {
