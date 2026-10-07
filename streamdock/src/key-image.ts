@@ -1,7 +1,8 @@
 import type { ConnectionState } from "./drawflow-client";
 import { progressRatio, type RunView } from "./run-tracker";
 
-export type KeyTone = "idle" | "running" | "succeeded" | "failed" | "offline" | "locked";
+export type KeyTone =
+  "idle" | "running" | "succeeded" | "failed" | "offline" | "locked" | "refused";
 
 export interface KeyFace {
   tone: KeyTone;
@@ -21,6 +22,7 @@ const BACKGROUNDS: Record<KeyTone, string> = {
   failed: "#8a2420",
   offline: "#2b2f36",
   locked: "#6b4d12",
+  refused: "#5c1f3a",
 };
 
 /** Chooses what a key shows from the connection and the run of its feature. */
@@ -30,6 +32,9 @@ export function faceFor(connection: ConnectionState, label: string, run: RunView
   }
   if (connection === "locked") {
     return { tone: "locked", label, detail: "Verrouillé", progress: null };
+  }
+  if (connection === "refused") {
+    return { tone: "refused", label, detail: "Jeton invalide", progress: null };
   }
   if (run === null) {
     return { tone: "idle", label, detail: null, progress: null };

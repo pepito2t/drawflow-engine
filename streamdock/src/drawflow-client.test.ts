@@ -94,6 +94,38 @@ describe("DrawflowClient", () => {
     expect(sockets).toHaveLength(2);
   });
 
+  it("marks the token as refused when Drawflow answers with an error instead of welcome", async () => {
+    const { client, sockets, timers } = setup();
+    client.configure({ port: 51717, token: "wrong" });
+    const socket = sockets[0];
+    socket?.open();
+
+    socket?.receive({ type: "error", message: "Jeton ou version de protocole invalide." });
+    socket?.remoteClose();
+
+    expect(client.state).toBe("refused");
+    expect(socket?.closed).toBe(true);
+    expect(timers).toHaveLength(0);
+    await expect(client.command("app.state")).resolves.toMatchObject({
+      ok: false,
+      error: expect.stringContaining("Jeton") as string,
+    });
+  });
+
+  it("tries again only once the settings change after a refusal", () => {
+    const { client, sockets } = setup();
+    client.configure({ port: 51717, token: "wrong" });
+    sockets[0]?.open();
+    sockets[0]?.receive({ type: "error", message: "Jeton ou version de protocole invalide." });
+
+    client.configure({ port: 51717, token: "wrong" });
+    expect(sockets).toHaveLength(1);
+
+    client.configure({ port: 51717, token: "right" });
+    expect(sockets).toHaveLength(2);
+    expect(client.state).toBe("offline");
+  });
+
   it("ignores malformed server messages", () => {
     const { client, socket } = readyClient();
 

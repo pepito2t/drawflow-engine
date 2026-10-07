@@ -5,7 +5,8 @@ import {
   type ServerMessage,
 } from "./protocol";
 
-export type ConnectionState = "offline" | "locked" | "ready";
+/** `refused`: Drawflow rejected the token; nothing to retry until the settings change. */
+export type ConnectionState = "offline" | "locked" | "ready" | "refused";
 
 /** Minimal socket surface, implemented by `ws` in production and by fakes in tests. */
 export interface SocketLike {
@@ -32,6 +33,14 @@ const MIN_RECONNECT_MS = 2_000;
 const MAX_RECONNECT_MS = 15_000;
 const OFFLINE_ERROR = "Drawflow n'est pas joignable (application fermée ou API locale désactivée).";
 const LOCKED_ERROR = "Drawflow est verrouillée : saisissez le code d'accès dans l'application.";
+const REFUSED_ERROR =
+  "Jeton refusé par Drawflow : vérifiez le jeton dans les réglages de la touche.";
+
+const COMMAND_ERRORS: Record<Exclude<ConnectionState, "ready">, string> = {
+  offline: OFFLINE_ERROR,
+  locked: LOCKED_ERROR,
+  refused: REFUSED_ERROR,
+};
 
 interface Pending {
   resolve: (result: CommandResult) => void;
@@ -81,11 +90,11 @@ export class DrawflowClient {
   }
 
   command(command: string, args: Record<string, unknown> = {}): Promise<CommandResult> {
-    if (this.state !== "ready" || this.socket === null) {
-      return Promise.resolve({
-        ok: false,
-        error: this.state === "locked" ? LOCKED_ERROR : OFFLINE_ERROR,
-      });
+    if (this.state !== "ready") {
+      return Promise.resolve({ ok: false, error: COMMAND_ERRORS[this.state] });
+    }
+    if (this.socket === null) {
+      return Promise.resolve({ ok: false, error: OFFLINE_ERROR });
     }
     const id = String(this.nextId++);
     const socket = this.socket;
@@ -161,7 +170,7 @@ export class DrawflowClient {
         this.setState(parsed.locked ? "locked" : "ready");
         return;
       case "error":
-        this.socket?.close();
+        this.refuse();
         return;
       case "result":
         this.resolve(
@@ -174,6 +183,15 @@ export class DrawflowClient {
       case "event":
         for (const listener of this.eventListeners) listener(parsed.event);
     }
+  }
+
+  /** Drawflow only sends `error` instead of `welcome`: the token is wrong, retrying is pointless. */
+  private refuse(): void {
+    const socket = this.socket;
+    this.socket = null;
+    this.failPending(REFUSED_ERROR);
+    this.setState("refused");
+    socket?.close();
   }
 
   private resolve(id: string, result: CommandResult): void {

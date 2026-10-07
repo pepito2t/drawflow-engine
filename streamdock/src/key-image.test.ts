@@ -13,6 +13,10 @@ describe("key faces", () => {
       tone: "locked",
       detail: "Verrouillé",
     });
+    expect(faceFor("refused", "Tour B", running)).toMatchObject({
+      tone: "refused",
+      detail: "Jeton invalide",
+    });
   });
 
   it("shows live progress while running", () => {
