@@ -1,6 +1,7 @@
 """Keeps the real cause of every failure on disk, so a user can send it when something breaks."""
 
 import json
+import subprocess
 import traceback
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ LOG_FILE = "engine.log"
 ROTATED_SUFFIX = ".1"
 MAX_LOG_BYTES = 1_000_000
 CAUSE_MAX_LENGTH = 2_000
+PROCESS_OUTPUT_MAX_LENGTH = 500
 
 
 def log_file(settings: Path | None) -> Path | None:
@@ -49,10 +51,33 @@ def _cause(error: BaseException) -> str:
     """The chain under the readable message: HTTP bodies, OS errors, tracebacks."""
     if isinstance(error, EngineError):
         cause = error.__cause__
-        text = "" if cause is None else f"{type(cause).__name__}: {cause}"
+        text = "" if cause is None else _describe(cause)
     else:
         text = "".join(traceback.format_exception(error))
     return text.strip()[:CAUSE_MAX_LENGTH]
+
+
+def _describe(cause: BaseException) -> str:
+    text = f"{type(cause).__name__}: {cause}"
+    if isinstance(cause, subprocess.CalledProcessError):
+        # Its str() only says the exit status; what the program printed is the actual reason.
+        text += _process_output(cause)
+    return text
+
+
+def _process_output(error: subprocess.CalledProcessError) -> str:
+    streams = (("stdout", error.output), ("stderr", error.stderr))
+    return "".join(
+        f"\n{label}: {_as_text(output)[:PROCESS_OUTPUT_MAX_LENGTH]}"
+        for label, output in streams
+        if _as_text(output)
+    )
+
+
+def _as_text(output: object) -> str:
+    if isinstance(output, bytes):
+        return output.decode("utf-8", errors="replace").strip()
+    return str(output).strip() if output else ""
 
 
 def _rotate(path: Path) -> None:
