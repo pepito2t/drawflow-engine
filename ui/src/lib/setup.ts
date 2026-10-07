@@ -130,6 +130,9 @@ export function setupRunReducer(run: SetupRun, message: SetupRunMessage): SetupR
 
 function applyLine(run: Extract<SetupRun, { status: "running" }>, line: string): SetupRun {
   const event = parseEventLine(line);
+  if (event === null) {
+    return run;
+  }
   switch (event.type) {
     case "progress":
       return {

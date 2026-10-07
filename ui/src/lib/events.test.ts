@@ -13,24 +13,20 @@ describe("parseEventLine", () => {
     });
   });
 
-  it("turns malformed JSON into a readable error event", () => {
-    const event = parseEventLine("not json");
-
-    expect(event).toMatchObject({
-      type: "error",
-      message: unreadableEventMessage(),
-      hint: "not json",
-    });
+  it("gives nothing for a line that is not JSON, so stray output is never an error", () => {
+    expect(parseEventLine("not json")).toBeNull();
+    expect(parseEventLine("")).toBeNull();
   });
 
   it("rejects unknown event types", () => {
-    expect(parseEventLine('{"type":"surprise"}')).toMatchObject({
-      type: "error",
-      message: unreadableEventMessage(),
-    });
+    expect(parseEventLine('{"type":"surprise"}')).toBeNull();
   });
 
   it("rejects events missing required fields", () => {
-    expect(parseEventLine('{"type":"progress","current":1}').type).toBe("error");
+    expect(parseEventLine('{"type":"progress","current":1}')).toBeNull();
+  });
+
+  it("keeps a readable message for unreadable assistant lines", () => {
+    expect(unreadableEventMessage()).not.toBe("");
   });
 });
