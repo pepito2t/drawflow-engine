@@ -12,15 +12,26 @@ if [[ "$target_triple" == *windows* ]]; then
   extension=".exe"
 fi
 
+# A clean build is only worth its time on a fresh CI runner; locally the cache is reused.
+clean_option=""
+if [[ -n "${CI:-}" ]]; then
+  clean_option="--clean"
+fi
+
 cd "$engine_dir"
+# Modules are collected by pyinstaller-hooks/hook-engine.modules.py, without their tests.
 uv run pyinstaller \
   --onedir \
-  --clean \
+  $clean_option \
   --noconfirm \
   --name engine \
   --paths src \
   --additional-hooks-dir pyinstaller-hooks \
-  --collect-submodules engine.modules \
+  --exclude-module mypy \
+  --exclude-module pydantic.mypy \
+  --exclude-module pydantic.v1.mypy \
+  --exclude-module pytest \
+  --exclude-module _pytest \
   --add-data "../../docs/guide.md:docs" \
   --add-data "../../docs/guide.en.md:docs" \
   --distpath dist \
