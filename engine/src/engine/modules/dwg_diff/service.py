@@ -86,7 +86,8 @@ def compare(
     sides_after = _group(after, key_indexes, increment)
     added, removed, changed, unchanged = [], [], [], []
     for key in sorted(sides_before.keys() | sides_after.keys()):
-        line = _line(key, sides_before.get(key), sides_after.get(key))
+        reference = sides_after.get(key) or sides_before[key]
+        line = _line(key, reference, sides_before.get(key), sides_after.get(key))
         if key not in sides_before:
             added.append(line)
         elif key not in sides_after:
@@ -161,9 +162,7 @@ def _group(
     return sides
 
 
-def _line(key: Key, before: _Side | None, after: _Side | None) -> DiffLine:
-    reference = after or before
-    assert reference is not None
+def _line(key: Key, reference: _Side, before: _Side | None, after: _Side | None) -> DiffLine:
     return DiffLine(
         key=key,
         values=reference.values,
