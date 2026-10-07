@@ -24,14 +24,14 @@ export class DrawflowHub {
     this.client.onState((state) => {
       this.connection = state;
       if (state === "ready") {
-        this.refresh().catch(() => undefined);
+        this.resync();
       }
       this.notify();
     });
     this.client.onEvent((event) => {
       this.runs = applyEvent(this.runs, event);
       if (isRecord(event) && event.type === "presetSaved") {
-        this.refresh().catch(() => undefined);
+        this.resync();
       }
       this.notify();
     });
@@ -73,17 +73,26 @@ export class DrawflowHub {
     return this.app.presets.find((preset) => preset.id === presetId) ?? null;
   }
 
-  async refresh(): Promise<void> {
+  /** Reloads features, presets and runs from Drawflow; false when it could not be read. */
+  async refresh(): Promise<boolean> {
     const result = await this.client.command("app.state");
     if (!result.ok) {
-      return;
+      return false;
     }
     const parsed = appStateSchema.safeParse(result.data);
-    if (parsed.success) {
-      this.app = parsed.data;
-      this.runs = runsFromState(parsed.data);
-      this.notify();
+    if (!parsed.success) {
+      return false;
     }
+    this.app = parsed.data;
+    this.runs = runsFromState(parsed.data);
+    this.notify();
+    return true;
+  }
+
+  private resync(): void {
+    this.refresh().catch((error: unknown) => {
+      console.error("Resynchronisation avec Drawflow impossible :", error);
+    });
   }
 
   private notify(): void {

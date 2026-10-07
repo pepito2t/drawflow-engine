@@ -82,21 +82,21 @@ const openLast = commandKey("result.open-last", (hub) =>
   faceFor(hub.connection, "Dernier résultat", null),
 );
 
-const runsCounter = commandKey("app.state", (hub) => {
-  const running = runningCount(hub.runs);
-  const face = faceFor(hub.connection, "Traitements", null);
-  if (face.tone !== "idle") {
-    return face;
-  }
-  return running > 0
-    ? {
-        tone: "running",
-        label: "Traitements",
-        detail: `${String(running)} en cours`,
-        progress: null,
-      }
-    : { ...face, detail: "Aucun" };
-});
+const runsCounter: KeyBehavior = {
+  face(hub) {
+    const running = runningCount(hub.runs);
+    const face = faceFor(hub.connection, "Traitements", null);
+    if (face.tone !== "idle") {
+      return face;
+    }
+    return running > 0
+      ? { ...face, tone: "running", detail: `${String(running)} en cours` }
+      : { ...face, detail: "Aucun" };
+  },
+  async press(hub) {
+    return (await hub.refresh()) ? "ok" : "alert";
+  },
+};
 
 export const BEHAVIORS: Readonly<Record<string, KeyBehavior>> = {
   "ch.drawflow.preset": preset,

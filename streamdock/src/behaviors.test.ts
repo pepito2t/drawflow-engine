@@ -28,3 +28,35 @@ describe("cancel-all key", () => {
     expect(behavior?.face(hub, {})).toMatchObject({ tone: "idle", detail: null });
   });
 });
+
+describe("runs-counter key", () => {
+  it("reloads the state from Drawflow when pressed", async () => {
+    const { hub, socket } = readyHub();
+    const behavior = BEHAVIORS["ch.drawflow.runs-counter"];
+
+    const pressed = behavior?.press(hub, {});
+    const request = socket.sent.at(-1) as { id: string; command: string };
+    expect(request.command).toBe("app.state");
+    socket.receive({
+      type: "result",
+      id: request.id,
+      ok: true,
+      data: {
+        modules: [{ id: "a", name: "Pièces", icon: "parts" }],
+        presets: [],
+        runs: [{ moduleId: "a", status: "running", current: 1, total: 4 }],
+      },
+    });
+
+    await expect(pressed).resolves.toBe("ok");
+    expect(hub.moduleName("a")).toBe("Pièces");
+    expect(behavior?.face(hub, {})).toMatchObject({ tone: "running", detail: "1 en cours" });
+  });
+
+  it("warns when Drawflow cannot be read", async () => {
+    const socket = new FakeSocket();
+    const hub = new DrawflowHub(() => socket);
+
+    await expect(BEHAVIORS["ch.drawflow.runs-counter"]?.press(hub, {})).resolves.toBe("alert");
+  });
+});
