@@ -178,7 +178,10 @@ def _record(history: HistoryStore, entry: HistoryEntry, emit: Emit) -> None:
 def _count(counters: UsageCounters, module: AnyModule, inputs: dict[str, Any], emit: Emit) -> None:
     try:
         counters.store.record(
-            module.manifest.id, module.manifest.name, count_files(inputs), counters.minutes_per_file
+            module.manifest.id,
+            module.manifest.name,
+            count_files(module.inputs_model, inputs),
+            counters.minutes_per_file,
         )
     except EngineError as error:
         # The output is already written: a broken counter file must not fail the run.
