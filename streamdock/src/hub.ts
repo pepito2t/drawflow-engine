@@ -13,6 +13,7 @@ const EMPTY_STATE: AppState = { modules: [], presets: [], runs: [] };
 // Drawflow's relay may drop events under load; a periodic reload catches a missed `runFinished`.
 const RESYNC_WHILE_RUNNING_MS = 30_000;
 const RESYNC_EVENTS: ReadonlySet<string> = new Set(["presetSaved", "resync"]);
+const UNREADABLE_STATE_ERROR = "Réponse de Drawflow illisible : mettez à jour le plugin.";
 
 /** Shared view of Drawflow for every key: connection, features, presets and runs. */
 export class DrawflowHub {
@@ -81,20 +82,20 @@ export class DrawflowHub {
     return this.app.presets.find((preset) => preset.id === presetId) ?? null;
   }
 
-  /** Reloads features, presets and runs from Drawflow; false when it could not be read. */
-  async refresh(): Promise<boolean> {
+  /** Reloads features, presets and runs from Drawflow. */
+  async refresh(): Promise<CommandResult> {
     const result = await this.client.command("app.state");
     if (!result.ok) {
-      return false;
+      return result;
     }
     const parsed = appStateSchema.safeParse(result.data);
     if (!parsed.success) {
-      return false;
+      return { ok: false, error: UNREADABLE_STATE_ERROR };
     }
     this.app = parsed.data;
     this.runs = runsFromState(parsed.data);
     this.notify();
-    return true;
+    return { ok: true };
   }
 
   private resync(): void {

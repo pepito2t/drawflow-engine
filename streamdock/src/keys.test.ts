@@ -6,17 +6,40 @@ import { KeyController } from "./keys";
 
 const ARGV = ["-port", "1", "-pluginUUID", "plugin", "-registerEvent", "registerPlugin"];
 
-function setup(): { host: FakeSocket; drawflow: FakeSocket[] } {
+interface Timer {
+  callback: () => void;
+  delayMs: number;
+}
+
+function setup(): { host: FakeSocket; drawflow: FakeSocket[]; timers: Timer[] } {
   const host = new FakeSocket();
   const drawflow: FakeSocket[] = [];
+  const timers: Timer[] = [];
+  const fakeTimers = {
+    setTimer: (callback: () => void, delayMs: number): Timer => {
+      const timer = { callback, delayMs };
+      timers.push(timer);
+      return timer;
+    },
+    clearTimer: (timer: unknown): void => {
+      timers.splice(timers.indexOf(timer as Timer), 1);
+    },
+  };
   const hub = new DrawflowHub(() => {
     const socket = new FakeSocket();
     drawflow.push(socket);
     return socket;
-  });
-  new KeyController(new StreamDockHost(host, parseLaunchArguments(ARGV)), hub);
-  return { host, drawflow };
+  }, fakeTimers);
+  new KeyController(new StreamDockHost(host, parseLaunchArguments(ARGV)), hub, fakeTimers);
+  return { host, drawflow, timers };
 }
+
+const PRESET_KEY = { action: "ch.drawflow.preset", context: "k1" };
+
+const lastImage = (host: FakeSocket): string => {
+  const image = host.sent.findLast((message) => message.event === "setImage");
+  return decodeURIComponent((image?.payload as { image: string }).image);
+};
 
 describe("KeyController", () => {
   it("draws a key as soon as it appears, offline while Drawflow is not configured", () => {
@@ -43,19 +66,31 @@ describe("KeyController", () => {
     expect(host.sentEvents()).not.toContain("setImage");
   });
 
-  it("warns on the key when a preset key has no preset", async () => {
-    const { host } = setup();
-    host.receive({
-      event: "willAppear",
-      action: "ch.drawflow.preset",
-      context: "k1",
-      payload: { settings: {} },
-    });
+  it("shows why a press failed on the key for three seconds", async () => {
+    const { host, timers } = setup();
+    host.receive({ event: "willAppear", ...PRESET_KEY, payload: { settings: {} } });
 
-    host.receive({ event: "keyUp", action: "ch.drawflow.preset", context: "k1" });
+    host.receive({ event: "keyUp", ...PRESET_KEY });
     await Promise.resolve();
 
-    expect(host.sent.at(-1)).toEqual({ event: "showAlert", context: "k1" });
+    expect(host.sentEvents()).toContain("showAlert");
+    expect(lastImage(host)).toContain("Choisissez un");
+    const notice = timers.find((timer) => timer.delayMs === 3_000);
+    if (!notice) throw new Error("no notice timer");
+    notice.callback();
+    expect(lastImage(host)).not.toContain("Choisissez un");
+    expect(lastImage(host)).toContain("Hors ligne");
+  });
+
+  it("forgets a pending notice when the key disappears", async () => {
+    const { host, timers } = setup();
+    host.receive({ event: "willAppear", ...PRESET_KEY, payload: { settings: {} } });
+    host.receive({ event: "keyUp", ...PRESET_KEY });
+    await Promise.resolve();
+
+    host.receive({ event: "willDisappear", ...PRESET_KEY });
+
+    expect(timers.filter((timer) => timer.delayMs === 3_000)).toHaveLength(0);
   });
 
   it("connects to Drawflow with the port and token from the global settings", () => {

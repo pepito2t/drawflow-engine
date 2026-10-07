@@ -13,6 +13,15 @@ export interface KeyFace {
 
 const KEY_SIZE = 144;
 const MAX_LABEL_CHARS = 12;
+const MAX_DETAIL_CHARS = 16;
+const MAX_LINES = 2;
+const LABEL_LINE_HEIGHT = 22;
+const DETAIL_LINE_HEIGHT = 20;
+const LABEL_ALONE_Y = 66;
+const LABEL_SHIFT_PER_DETAIL_LINE = 14;
+const DETAIL_SINGLE_Y = 104;
+const DETAIL_DOUBLE_Y = 84;
+const ELLIPSIS = "…";
 const PERCENT = 100;
 
 const BACKGROUNDS: Record<KeyTone, string> = {
@@ -58,17 +67,15 @@ export function faceFor(connection: ConnectionState, label: string, run: RunView
 }
 
 export function renderKey(face: KeyFace): string {
-  const lines = wrap(face.label);
-  const firstLineY = face.detail ? 52 : 66;
-  const text = lines
-    .map(
-      (line, index) =>
-        `<text x="72" y="${String(firstLineY + index * 22)}" class="label">${escapeXml(line)}</text>`,
-    )
-    .join("");
-  const detail = face.detail
-    ? `<text x="72" y="104" class="detail">${escapeXml(face.detail)}</text>`
-    : "";
+  const detailLines = face.detail ? wrap(face.detail, MAX_DETAIL_CHARS) : [];
+  const labelLines = wrap(face.label, MAX_LABEL_CHARS).slice(
+    0,
+    MAX_LINES - Math.max(detailLines.length - 1, 0),
+  );
+  const labelY = LABEL_ALONE_Y - LABEL_SHIFT_PER_DETAIL_LINE * detailLines.length;
+  const detailY = detailLines.length > 1 ? DETAIL_DOUBLE_Y : DETAIL_SINGLE_Y;
+  const text = textLines(labelLines, "label", labelY, LABEL_LINE_HEIGHT);
+  const detail = textLines(detailLines, "detail", detailY, DETAIL_LINE_HEIGHT);
   const bar =
     face.progress === null
       ? ""
@@ -77,18 +84,37 @@ export function renderKey(face: KeyFace): string {
   return `data:image/svg+xml;charset=utf8,${encodeURIComponent(svg)}`;
 }
 
-function wrap(label: string): string[] {
-  const words = label.trim().split(/\s+/);
+function textLines(lines: string[], className: string, firstY: number, lineHeight: number): string {
+  return lines
+    .map(
+      (line, index) =>
+        `<text x="72" y="${String(firstY + index * lineHeight)}" class="${className}">${escapeXml(line)}</text>`,
+    )
+    .join("");
+}
+
+/** Word-wraps on at most two lines; what does not fit ends with an ellipsis. */
+function wrap(text: string, maxChars: number): string[] {
   const lines: string[] = [];
-  for (const word of words) {
+  for (const word of text.trim().split(/\s+/)) {
     const last = lines.at(-1);
-    if (last !== undefined && `${last} ${word}`.length <= MAX_LABEL_CHARS) {
+    if (last !== undefined && `${last} ${word}`.length <= maxChars) {
       lines[lines.length - 1] = `${last} ${word}`;
     } else {
-      lines.push(word.length > MAX_LABEL_CHARS ? `${word.slice(0, MAX_LABEL_CHARS - 1)}…` : word);
+      lines.push(clip(word, maxChars));
     }
   }
-  return lines.slice(0, 2);
+  if (lines.length <= MAX_LINES) {
+    return lines;
+  }
+  const kept = lines.slice(0, MAX_LINES);
+  const last = kept[MAX_LINES - 1] ?? "";
+  kept[MAX_LINES - 1] = last.endsWith(ELLIPSIS) ? last : clip(`${last}${ELLIPSIS}`, maxChars);
+  return kept;
+}
+
+function clip(text: string, maxChars: number): string {
+  return text.length > maxChars ? `${text.slice(0, maxChars - 1)}${ELLIPSIS}` : text;
 }
 
 function escapeXml(text: string): string {

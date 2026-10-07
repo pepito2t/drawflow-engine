@@ -1,4 +1,5 @@
 import { BEHAVIORS, type Settings } from "./behaviors";
+import { DEFAULT_TIMERS, type Timers } from "./drawflow-client";
 import type { HostEvent, StreamDockHost } from "./host";
 import type { DrawflowHub } from "./hub";
 import { renderKey } from "./key-image";
@@ -8,16 +9,26 @@ interface VisibleKey {
   settings: Settings;
 }
 
+interface Notice {
+  message: string;
+  timer: unknown;
+}
+
 const DEFAULT_PORT = 51717;
+const NOTICE_MS = 3_000;
 
 /** Keeps every visible key in sync with Drawflow and runs its command when pressed. */
 export class KeyController {
   private readonly keys = new Map<string, VisibleKey>();
+  private readonly notices = new Map<string, Notice>();
+  private readonly timers: Timers;
 
   constructor(
     private readonly host: StreamDockHost,
     private readonly hub: DrawflowHub,
+    timers: Partial<Timers> = {},
   ) {
+    this.timers = { ...DEFAULT_TIMERS, ...timers };
     host.onEvent((event) => {
       this.handle(event).catch((error: unknown) => {
         console.error(`Événement ${event.event} non traité :`, error);
@@ -43,7 +54,10 @@ export class KeyController {
         }
         return;
       case "willDisappear":
-        if (context) this.keys.delete(context);
+        if (context) {
+          this.keys.delete(context);
+          this.clearNotice(context);
+        }
         return;
       case "keyUp":
         if (context) await this.press(context);
@@ -63,9 +77,19 @@ export class KeyController {
   private render(context: string): void {
     const key = this.keys.get(context);
     const behavior = key ? BEHAVIORS[key.action] : undefined;
-    if (key && behavior) {
-      this.host.setImage(context, renderKey(behavior.face(this.hub, key.settings)));
+    if (!key || !behavior) {
+      return;
     }
+    const face = behavior.face(this.hub, key.settings);
+    const notice = this.notices.get(context);
+    this.host.setImage(
+      context,
+      renderKey(
+        notice
+          ? { tone: "failed", label: face.label, detail: notice.message, progress: null }
+          : face,
+      ),
+    );
   }
 
   private async press(context: string): Promise<void> {
@@ -75,8 +99,30 @@ export class KeyController {
       return;
     }
     const outcome = await behavior.press(this.hub, key.settings);
-    if (outcome === "ok") this.host.showOk(context);
-    if (outcome === "alert") this.host.showAlert(context);
+    if (outcome === "ok") {
+      this.host.showOk(context);
+    } else if (outcome !== "silent") {
+      this.host.showAlert(context);
+      this.showNotice(context, outcome.failed);
+    }
+  }
+
+  private showNotice(context: string, message: string): void {
+    this.clearNotice(context);
+    const timer = this.timers.setTimer(() => {
+      this.notices.delete(context);
+      this.render(context);
+    }, NOTICE_MS);
+    this.notices.set(context, { message, timer });
+    this.render(context);
+  }
+
+  private clearNotice(context: string): void {
+    const notice = this.notices.get(context);
+    if (notice) {
+      this.timers.clearTimer(notice.timer);
+      this.notices.delete(context);
+    }
   }
 
   private answerInspector(action: string, context: string, request: Settings): void {

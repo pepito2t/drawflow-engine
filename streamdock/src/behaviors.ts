@@ -3,7 +3,12 @@ import { faceFor, type KeyFace } from "./key-image";
 import { runFor, runningCount } from "./run-tracker";
 
 export type Settings = Record<string, unknown>;
-export type PressOutcome = "ok" | "alert" | "silent";
+/** `silent`: the key will show the run itself; `failed`: the message is shown on the key. */
+export type PressOutcome = "ok" | "silent" | { failed: string };
+
+const PRESET_NOT_CHOSEN = "Choisissez un préréglage dans les réglages de la touche";
+const PRESET_GONE = "Ce préréglage n'existe plus dans Drawflow";
+const TAB_NOT_CHOSEN = "Choisissez un onglet dans les réglages de la touche";
 
 /** What one kind of key shows and does; the host wiring stays in keys.ts. */
 export interface KeyBehavior {
@@ -31,13 +36,16 @@ const preset: KeyBehavior = {
   },
   async press(hub, settings) {
     const presetId = text(settings, "presetId");
-    const found = presetId ? hub.presetModule(presetId) : null;
-    if (presetId === null || found === null) {
-      return "alert";
+    if (presetId === null) {
+      return { failed: PRESET_NOT_CHOSEN };
+    }
+    const found = hub.presetModule(presetId);
+    if (found === null) {
+      return { failed: PRESET_GONE };
     }
     hub.acknowledge(found.module);
     const result = await hub.command("preset.run", { presetId });
-    return result.ok ? "silent" : "alert";
+    return result.ok ? "silent" : { failed: result.error };
   },
 };
 
@@ -52,11 +60,11 @@ const openTab: KeyBehavior = {
   async press(hub, settings) {
     const moduleId = text(settings, "moduleId");
     if (moduleId === null) {
-      return "alert";
+      return { failed: TAB_NOT_CHOSEN };
     }
     hub.acknowledge(moduleId);
     const result = await hub.command("tab.open", { moduleId });
-    return result.ok ? "silent" : "alert";
+    return result.ok ? "silent" : { failed: result.error };
   },
 };
 
@@ -65,7 +73,7 @@ function commandKey(command: string, face: KeyBehavior["face"]): KeyBehavior {
     face,
     async press(hub) {
       const result = await hub.command(command);
-      return result.ok ? "ok" : "alert";
+      return result.ok ? "ok" : { failed: result.error };
     },
   };
 }
@@ -94,7 +102,8 @@ const runsCounter: KeyBehavior = {
       : { ...face, detail: "Aucun" };
   },
   async press(hub) {
-    return (await hub.refresh()) ? "ok" : "alert";
+    const result = await hub.refresh();
+    return result.ok ? "ok" : { failed: result.error };
   },
 };
 

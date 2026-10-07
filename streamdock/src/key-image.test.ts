@@ -56,6 +56,21 @@ describe("key faces", () => {
     expect(svg).toContain('width="56"');
   });
 
+  it("wraps a long detail on two lines and ends it with an ellipsis", () => {
+    const svg = decode(
+      renderKey({
+        tone: "failed",
+        label: "Tour B",
+        detail: "Un traitement est déjà en cours pour cette fonctionnalité",
+        progress: null,
+      }),
+    );
+
+    expect(svg.match(/class="detail"/g)).toHaveLength(2);
+    expect(svg).toContain("est déjà en…</text>");
+    expect(svg.match(/class="label"/g)).toHaveLength(1);
+  });
+
   it("wraps long labels on two lines at most", () => {
     const svg = decode(
       renderKey({

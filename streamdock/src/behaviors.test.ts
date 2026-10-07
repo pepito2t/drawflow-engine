@@ -57,6 +57,8 @@ describe("runs-counter key", () => {
     const socket = new FakeSocket();
     const hub = new DrawflowHub(() => socket);
 
-    await expect(BEHAVIORS["ch.drawflow.runs-counter"]?.press(hub, {})).resolves.toBe("alert");
+    await expect(BEHAVIORS["ch.drawflow.runs-counter"]?.press(hub, {})).resolves.toEqual({
+      failed: expect.stringContaining("Drawflow") as string,
+    });
   });
 });
