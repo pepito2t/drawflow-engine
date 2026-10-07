@@ -1,14 +1,15 @@
-"""Stops the work in flight when the other side goes away.
+"""Stops the work in flight when the other side asks for it or goes away.
 
-The app may die while a run is in progress: the sidecar notices its stdin closing, a worker
-notices its parent dying. Whoever notices runs the registered hooks (pool, ODA command, output
-being written) from its own thread, then exits the process at once.
+The app may cancel or die while a run is in progress: the sidecar notices a byte or the end of
+its stdin, a worker notices its parent dying. Whoever notices runs the registered hooks (pool, ODA
+command, output being written) from its own thread, then exits the process at once.
 """
 
 import multiprocessing
 import os
 import select
 import stat
+import struct
 import sys
 import threading
 import traceback
@@ -20,7 +21,8 @@ from typing import IO, Protocol, TextIO
 Hook = Callable[[], None]
 EXIT_CANCELLED = 3
 ORPHAN_WORKER_EXIT_CODE = 0
-READ_CHUNK_BYTES = 4096
+STOP_SIGNAL_BYTES = 1
+PENDING_BYTES_FORMAT = "i"
 STDIN_GUARD_NAME = "stdin-guard"
 PARENT_GUARD_NAME = "parent-guard"
 
@@ -71,12 +73,12 @@ def stop_process(exit_code: int) -> None:
 
 
 def watch_stdin(stream: IO[bytes], on_close: Hook) -> threading.Thread:
-    """The read returns nothing once the other end closed the pipe or died."""
+    """The read returns once the app writes to the pipe, closes it or dies."""
 
     def wait() -> None:
         try:
-            while stream.read(READ_CHUNK_BYTES):
-                pass
+            # Any byte is the app cancelling: a killed sidecar could not stop ODA or its workers.
+            stream.read(STOP_SIGNAL_BYTES)
         except (OSError, ValueError):
             return
         on_close()
@@ -122,7 +124,8 @@ def exit_when_parent_dies() -> threading.Thread | None:
 
 
 def pipe_is_held_open(descriptor: int) -> bool:
-    """False once the writer is gone: the pipe then reads as ended straight away."""
+    """False once the writer is gone: the pipe then reads as ended straight away. A cancel
+    written before the guard is armed also makes it readable, but leaves bytes to read."""
     if sys.platform == "win32":
         import _winapi
         import msvcrt
@@ -133,4 +136,13 @@ def pipe_is_held_open(descriptor: int) -> bool:
             return False
         return True
     readable, _, _ = select.select([descriptor], [], [], 0)
-    return not readable
+    return not readable or pending_bytes(descriptor) > 0
+
+
+def pending_bytes(descriptor: int) -> int:
+    import fcntl
+    import termios
+
+    buffer = fcntl.ioctl(descriptor, termios.FIONREAD, bytes(struct.calcsize(PENDING_BYTES_FORMAT)))
+    count: int = struct.unpack(PENDING_BYTES_FORMAT, buffer)[0]
+    return count
