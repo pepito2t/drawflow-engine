@@ -4,8 +4,11 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 
 ## Non publié
 
-- **Moteur en français ou en anglais** : messages, avertissements, étiquettes de formulaires, noms des fonctionnalités, feuilles Excel, écran d'installation et assistant suivent la langue réglée ; aide intégrée servie depuis le guide traduit ; `engine --lang en` en ligne de commande (#121).
 - **Chaîne de publication (audit)** : installeur allégé (tests et outils de développement exclus), release publiée en une fois avec le plugin, notes de version tirées du changelog, installeur NSIS en français et en anglais.
+
+## 0.20.0 — 2026-10-06
+
+- **Moteur en français ou en anglais** : messages, avertissements, étiquettes de formulaires, noms des fonctionnalités, feuilles Excel, écran d'installation et assistant suivent la langue réglée ; aide intégrée servie depuis le guide traduit ; `engine --lang en` en ligne de commande (#121).
 
 ## 0.19.0 — 2026-10-06
 
