@@ -21,7 +21,7 @@ const launch = parseLaunchArguments(process.argv);
 const hostSocket = createWsSocket(`ws://127.0.0.1:${String(launch.port)}`);
 hostSocket.onClose(() => process.exit(0));
 
-const hub = new DrawflowHub(createWsSocket);
+const hub = new DrawflowHub(createWsSocket, { language: launch.language });
 const autoConfigure = (): void => {
   hub.setAutomatic(loadDrawflowConnection(readFile, process.env, sep));
 };

@@ -3,7 +3,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["ch.drawflow.sdPlugin/bin", "dist"] },
+  { ignores: ["ch.drawflow.sdPlugin/bin", "ch.drawflow.sdPlugin/ui/pi.js", "dist"] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {
@@ -13,13 +13,4 @@ export default tseslint.config(
     },
   },
   { files: ["eslint.config.js", "rollup.config.js"], ...tseslint.configs.disableTypeChecked },
-  {
-    files: ["ch.drawflow.sdPlugin/ui/*.js"],
-    ...tseslint.configs.disableTypeChecked,
-    languageOptions: {
-      globals: globals.browser,
-      sourceType: "script",
-      parserOptions: { projectService: false, project: null },
-    },
-  },
 );

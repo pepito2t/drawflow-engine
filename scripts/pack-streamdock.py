@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_FOLDER = ROOT / "streamdock" / "ch.drawflow.sdPlugin"
 OUTPUT = ROOT / "streamdock" / "dist" / "ch.drawflow.sdPlugin.zip"
-REQUIRED = ("manifest.json", "bin/plugin.js")
+REQUIRED = ("manifest.json", "bin/plugin.js", "ui/key.html", "ui/pi.js")
 EXCLUDED_PARTS = {"logs"}
 EXCLUDED_SUFFIXES = {".svg", ".map"}
 

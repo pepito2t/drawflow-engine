@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 
 export const PROTOCOL_VERSION = 1;
 
@@ -11,8 +11,8 @@ export const appStateSchema = z.object({
     z.object({
       moduleId: z.string(),
       status: runStatusSchema,
-      current: z.number().nullable(),
-      total: z.number().nullable(),
+      current: z.nullable(z.number()),
+      total: z.nullable(z.number()),
     }),
   ),
 });
@@ -31,6 +31,7 @@ export const appEventSchema = z.discriminatedUnion("type", [
     outcome: z.enum(["succeeded", "failed", "cancelled"]),
   }),
   z.object({ type: z.literal("presetSaved") }),
+  z.object({ type: z.literal("resync") }),
 ]);
 
 export const serverMessageSchema = z.discriminatedUnion("type", [
@@ -41,8 +42,8 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
     type: z.literal("result"),
     id: z.string(),
     ok: z.boolean(),
-    error: z.string().optional(),
-    data: z.unknown().optional(),
+    error: z.optional(z.string()),
+    data: z.optional(z.unknown()),
   }),
   z.object({ type: z.literal("event"), event: z.unknown() }),
 ]);

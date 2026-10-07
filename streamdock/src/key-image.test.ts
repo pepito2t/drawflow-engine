@@ -8,15 +8,26 @@ describe("key faces", () => {
   it("shows offline and locked states before anything else", () => {
     const running = { status: "running" as const, current: 1, total: 2 };
 
-    expect(faceFor("offline", "Tour B", running).tone).toBe("offline");
-    expect(faceFor("locked", "Tour B", running)).toMatchObject({
+    expect(faceFor("fr", "offline", "Tour B", running).tone).toBe("offline");
+    expect(faceFor("fr", "locked", "Tour B", running)).toMatchObject({
       tone: "locked",
       detail: "Verrouillé",
     });
+    expect(faceFor("fr", "refused", "Tour B", running)).toMatchObject({
+      tone: "refused",
+      detail: "Jeton invalide",
+    });
+  });
+
+  it("speaks English when Stream Dock does", () => {
+    expect(faceFor("en", "offline", "Tour B", null).detail).toBe("Offline");
+    expect(
+      faceFor("en", "ready", "A", { status: "failed", current: null, total: null }).detail,
+    ).toBe("Failed");
   });
 
   it("shows live progress while running", () => {
-    expect(faceFor("ready", "Tour B", { status: "running", current: 3, total: 4 })).toEqual({
+    expect(faceFor("fr", "ready", "Tour B", { status: "running", current: 3, total: 4 })).toEqual({
       tone: "running",
       label: "Tour B",
       detail: "75 %",
@@ -25,12 +36,23 @@ describe("key faces", () => {
   });
 
   it("shows green or red results", () => {
-    expect(faceFor("ready", "A", { status: "succeeded", current: null, total: null }).tone).toBe(
-      "succeeded",
-    );
-    expect(faceFor("ready", "A", { status: "failed", current: null, total: null }).tone).toBe(
+    expect(
+      faceFor("fr", "ready", "A", { status: "succeeded", current: null, total: null }).tone,
+    ).toBe("succeeded");
+    expect(faceFor("fr", "ready", "A", { status: "failed", current: null, total: null }).tone).toBe(
       "failed",
     );
+  });
+
+  it("says that a run was cancelled until the key is pressed again", () => {
+    expect(
+      faceFor("fr", "ready", "A", { status: "cancelled", current: null, total: null }),
+    ).toEqual({
+      tone: "idle",
+      label: "A",
+      detail: "Annulé",
+      progress: null,
+    });
   });
 
   it("renders an escaped svg with a progress bar", () => {
@@ -41,6 +63,21 @@ describe("key faces", () => {
     expect(svg).toContain("R&amp;D");
     expect(svg).toContain("&lt;Tour&gt;");
     expect(svg).toContain('width="56"');
+  });
+
+  it("wraps a long detail on two lines and ends it with an ellipsis", () => {
+    const svg = decode(
+      renderKey({
+        tone: "failed",
+        label: "Tour B",
+        detail: "Un traitement est déjà en cours pour cette fonctionnalité",
+        progress: null,
+      }),
+    );
+
+    expect(svg.match(/class="detail"/g)).toHaveLength(2);
+    expect(svg).toContain("est déjà en…</text>");
+    expect(svg.match(/class="label"/g)).toHaveLength(1);
   });
 
   it("wraps long labels on two lines at most", () => {

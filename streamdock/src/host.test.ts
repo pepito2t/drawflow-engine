@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FakeSocket } from "./fake-socket.test-helper";
 import { LaunchError, StreamDockHost, parseHostEvent, parseLaunchArguments } from "./host";
+import { isMessageKey, translate } from "./i18n";
 
 const ARGV = [
   "node",
@@ -21,7 +22,18 @@ describe("parseLaunchArguments", () => {
       port: 23519,
       pluginUUID: "abc123",
       registerEvent: "registerPlugin",
+      language: "fr",
     });
+  });
+
+  it("follows the language of Stream Dock, French unless it says English", () => {
+    const withInfo = (info: string) => parseLaunchArguments([...ARGV.slice(0, -1), info]).language;
+
+    expect(withInfo('{"application":{"language":"en"}}')).toBe("en");
+    expect(withInfo('{"application":{"language":"en-US"}}')).toBe("en");
+    expect(withInfo('{"application":{"language":"de"}}')).toBe("fr");
+    expect(withInfo("not json")).toBe("fr");
+    expect(parseLaunchArguments(ARGV.slice(0, -2)).language).toBe("fr");
   });
 
   it("refuses to start outside Stream Dock", () => {
@@ -49,5 +61,14 @@ describe("StreamDockHost", () => {
       event: "keyUp",
       context: "k1",
     });
+  });
+});
+
+describe("translations", () => {
+  it("only accepts keys that exist in both languages", () => {
+    expect(isMessageKey("pi.port")).toBe(true);
+    expect(isMessageKey("pi.unknown")).toBe(false);
+    expect(isMessageKey(undefined)).toBe(false);
+    expect(translate("en", "key.runs.count", { count: "3" })).toBe("3 running");
   });
 });

@@ -1,3 +1,4 @@
+import { DEFAULT_LANGUAGE, translate, type Language, type MessageKey } from "./i18n";
 import {
   PROTOCOL_VERSION,
   serverMessageSchema,
@@ -5,7 +6,8 @@ import {
   type ServerMessage,
 } from "./protocol";
 
-export type ConnectionState = "offline" | "locked" | "ready";
+/** `refused`: Drawflow rejected the token; nothing to retry until the settings change. */
+export type ConnectionState = "offline" | "locked" | "ready" | "refused";
 
 /** Minimal socket surface, implemented by `ws` in production and by fakes in tests. */
 export interface SocketLike {
@@ -16,11 +18,22 @@ export interface SocketLike {
   onClose: (listener: () => void) => void;
 }
 
-export interface ClientOptions {
-  createSocket: (url: string) => SocketLike;
-  setTimer?: (callback: () => void, delayMs: number) => unknown;
-  clearTimer?: (timer: unknown) => void;
+export interface Timers {
+  setTimer: (callback: () => void, delayMs: number) => unknown;
+  clearTimer: (timer: unknown) => void;
 }
+
+export interface ClientOptions extends Partial<Timers> {
+  createSocket: (url: string) => SocketLike;
+  language?: Language;
+}
+
+export const DEFAULT_TIMERS: Timers = {
+  setTimer: (callback, delayMs) => setTimeout(callback, delayMs),
+  clearTimer: (timer) => {
+    clearTimeout(timer as ReturnType<typeof setTimeout>);
+  },
+};
 
 export interface Connection {
   port: number;
@@ -30,8 +43,11 @@ export interface Connection {
 const COMMAND_TIMEOUT_MS = 20_000;
 const MIN_RECONNECT_MS = 2_000;
 const MAX_RECONNECT_MS = 15_000;
-const OFFLINE_ERROR = "Drawflow n'est pas joignable (application fermée ou API locale désactivée).";
-const LOCKED_ERROR = "Drawflow est verrouillée : saisissez le code d'accès dans l'application.";
+const CONNECTION_ERRORS: Record<Exclude<ConnectionState, "ready">, MessageKey> = {
+  offline: "error.offline",
+  locked: "error.locked",
+  refused: "error.refused",
+};
 
 interface Pending {
   resolve: (result: CommandResult) => void;
@@ -49,16 +65,14 @@ export class DrawflowClient {
   private readonly pending = new Map<string, Pending>();
   private readonly stateListeners = new Set<(state: ConnectionState) => void>();
   private readonly eventListeners = new Set<(event: unknown) => void>();
-  private readonly setTimer: (callback: () => void, delayMs: number) => unknown;
-  private readonly clearTimer: (timer: unknown) => void;
+  private readonly setTimer: Timers["setTimer"];
+  private readonly clearTimer: Timers["clearTimer"];
+  private readonly language: Language;
 
   constructor(private readonly options: ClientOptions) {
-    this.setTimer = options.setTimer ?? ((callback, delayMs) => setTimeout(callback, delayMs));
-    this.clearTimer =
-      options.clearTimer ??
-      ((timer) => {
-        clearTimeout(timer as ReturnType<typeof setTimeout>);
-      });
+    this.setTimer = options.setTimer ?? DEFAULT_TIMERS.setTimer;
+    this.clearTimer = options.clearTimer ?? DEFAULT_TIMERS.clearTimer;
+    this.language = options.language ?? DEFAULT_LANGUAGE;
   }
 
   configure(connection: Connection | null): void {
@@ -81,18 +95,18 @@ export class DrawflowClient {
   }
 
   command(command: string, args: Record<string, unknown> = {}): Promise<CommandResult> {
-    if (this.state !== "ready" || this.socket === null) {
-      return Promise.resolve({
-        ok: false,
-        error: this.state === "locked" ? LOCKED_ERROR : OFFLINE_ERROR,
-      });
+    if (this.state !== "ready") {
+      return Promise.resolve({ ok: false, error: this.text(CONNECTION_ERRORS[this.state]) });
+    }
+    if (this.socket === null) {
+      return Promise.resolve({ ok: false, error: this.text("error.offline") });
     }
     const id = String(this.nextId++);
     const socket = this.socket;
     return new Promise((resolve) => {
       const timer = this.setTimer(() => {
         this.pending.delete(id);
-        resolve({ ok: false, error: "Drawflow n'a pas répondu à temps." });
+        resolve({ ok: false, error: this.text("error.timeout") });
       }, COMMAND_TIMEOUT_MS);
       this.pending.set(id, { resolve, timer });
       socket.send(JSON.stringify({ type: "command", id, command, args }));
@@ -116,7 +130,7 @@ export class DrawflowClient {
       if (this.socket === socket) {
         this.socket = null;
         this.setState("offline");
-        this.failPending(OFFLINE_ERROR);
+        this.failPending(this.text("error.offline"));
         this.scheduleReconnect();
       }
     });
@@ -130,7 +144,7 @@ export class DrawflowClient {
     const socket = this.socket;
     this.socket = null;
     socket?.close();
-    this.failPending(OFFLINE_ERROR);
+    this.failPending(this.text("error.offline"));
     this.setState("offline");
   }
 
@@ -161,19 +175,32 @@ export class DrawflowClient {
         this.setState(parsed.locked ? "locked" : "ready");
         return;
       case "error":
-        this.socket?.close();
+        if (this.state === "offline") {
+          this.refuse();
+        } else {
+          console.error("Drawflow a rejeté un message du plugin :", parsed.message);
+        }
         return;
       case "result":
         this.resolve(
           parsed.id,
           parsed.ok
             ? { ok: true, data: parsed.data }
-            : { ok: false, error: parsed.error ?? "Erreur inconnue." },
+            : { ok: false, error: parsed.error ?? this.text("error.unknown") },
         );
         return;
       case "event":
         for (const listener of this.eventListeners) listener(parsed.event);
     }
+  }
+
+  /** An `error` instead of `welcome` means the token is wrong: retrying is pointless. */
+  private refuse(): void {
+    const socket = this.socket;
+    this.socket = null;
+    this.failPending(this.text("error.refused"));
+    this.setState("refused");
+    socket?.close();
   }
 
   private resolve(id: string, result: CommandResult): void {
@@ -187,6 +214,10 @@ export class DrawflowClient {
 
   private failPending(error: string): void {
     for (const [id] of this.pending) this.resolve(id, { ok: false, error });
+  }
+
+  private text(key: MessageKey): string {
+    return translate(this.language, key);
   }
 
   private setState(state: ConnectionState): void {

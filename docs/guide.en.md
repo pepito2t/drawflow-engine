@@ -134,7 +134,7 @@ Drawflow works with the Mirabox **Stream Dock** (Stream Dock software for Window
 
 The plugin connects on its own to the Drawflow installed on this computer: there is no port or token to enter. The key's fields are only needed if Drawflow runs under another Windows account (port and token in Settings → Local API).
 
-Keys run a preset (progress, then green or red), open a tab, cancel runs, open the last result or count runs. They show "Locked" while Drawflow is locked and "Offline" when Drawflow is closed.
+Keys run a preset (progress, then green or red), open a tab, cancel runs, open the last result or count runs. They show "Locked" while Drawflow is locked, "Offline" when Drawflow is closed or the port does not answer, and "Invalid token" when Drawflow is open but the token or port entered in the key is wrong: copy the token from Settings → Local API. After a refused press (deleted preset, run already going…), the key shows the reason for three seconds.
 
 **AutoCAD plugin**: the **AutoCAD plugin for Stream Dock** line installs in the same way the [streamdock_autocad](https://github.com/pepito2t/streamdock_autocad) plugin: macros, layers, toggles (ORTHO, snaps…) and AutoCAD status on the keys. It requires full AutoCAD (not LT), open while in use.
 
@@ -173,4 +173,5 @@ Settings → **About** counts the completed runs and the files processed on this
 | "The model … cannot be found" | Settings → Setup → **Download**, or choose an installed model in the panel |
 | "The settings file is unreadable" | It is never overwritten: restore a backup or delete `settings.json` |
 | Another error, or an error that keeps coming back | Settings → Setup → **Logs**: send `engine.log` (every failure is recorded there with the exact cause, for example Ollama's reply) |
-| Stream Dock keys "Offline" | Launch Drawflow, check the local API and the token |
+| Stream Dock keys "Offline" | Launch Drawflow and check that the local API is enabled (Settings → Local API) |
+| Stream Dock keys "Invalid token" | Drawflow is open but refuses the key: copy the token from Settings → Local API into the key settings, or clear the fields if Drawflow runs under the same Windows account |
