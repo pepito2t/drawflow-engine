@@ -2,6 +2,7 @@ import { t } from "../i18n/shell";
 import { dropFieldProps } from "../hooks/use-file-drop";
 import {
   fieldInputId,
+  fieldLabelId,
   isFolderKind,
   isMultipleKind,
   mergeDroppedPaths,
@@ -36,7 +37,12 @@ export function PathField({ moduleId, field, value, disabled, onChange }: PathFi
   };
 
   return (
-    <div className="path-field" {...dropFieldProps(moduleId, field.name)}>
+    <div
+      className="path-field"
+      role="group"
+      aria-labelledby={fieldLabelId(moduleId, field.name)}
+      {...dropFieldProps(moduleId, field.name)}
+    >
       <ul id={fieldInputId(moduleId, field.name)} className="path-list">
         {paths.length === 0 && <li className="placeholder">{t("pathField.placeholder")}</li>}
         {paths.map((path) => (
@@ -46,7 +52,12 @@ export function PathField({ moduleId, field, value, disabled, onChange }: PathFi
         ))}
       </ul>
       <div className="path-actions">
-        <button type="button" disabled={disabled} onClick={browse}>
+        <button
+          type="button"
+          aria-label={t("pathField.browseFor", { field: field.label })}
+          disabled={disabled}
+          onClick={browse}
+        >
           {t("pathField.browse")}
         </button>
         {paths.length > 0 && (

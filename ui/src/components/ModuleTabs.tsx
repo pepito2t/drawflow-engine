@@ -1,12 +1,13 @@
 import { t } from "../i18n/shell";
 import type { ReactNode } from "react";
-import { useRunsStore } from "../hooks/runs-context";
+import { useRunsSelector } from "../hooks/runs-context";
 import { useLanguage } from "../hooks/use-language";
-import type { CatalogModule } from "../lib/catalog";
+import type { CatalogModule, ModuleManifest } from "../lib/catalog";
 import { entryFor } from "../lib/runs-store";
 import type { RunStatus } from "../lib/run-state";
 import { ModuleIconView } from "./ModuleIconView";
 import { Spinner } from "./Spinner";
+import { onTablistKeyDown } from "./tablist-keys";
 
 export interface ExtraTab {
   id: string;
@@ -34,7 +35,6 @@ export function ModuleTabs({
   footer,
 }: ModuleTabsProps) {
   useLanguage();
-  const { state } = useRunsStore();
 
   return (
     <aside className="sidebar">
@@ -43,6 +43,7 @@ export function ModuleTabs({
         role="tablist"
         aria-orientation="vertical"
         aria-label={t("moduleTabs.title")}
+        onKeyDown={onTablistKeyDown}
       >
         {leadingTabs.map((tab) => (
           <ExtraTabButton
@@ -52,29 +53,14 @@ export function ModuleTabs({
             onSelect={onSelect}
           />
         ))}
-        {modules.map(({ manifest }) => {
-          const entry = entryFor(state, manifest.id);
-          const isSelected = manifest.id === selectedId;
-          return (
-            <button
-              key={manifest.id}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              aria-controls={tabPanelId(manifest.id)}
-              className={isSelected ? "side-tab selected" : "side-tab"}
-              onClick={() => {
-                onSelect(manifest.id);
-              }}
-            >
-              <span className="side-tab-label">
-                <ModuleIconView name={manifest.icon} />
-                {manifest.name}
-              </span>
-              <TabRunBadge status={entry.run.status} unseen={entry.unseenOutcome && !isSelected} />
-            </button>
-          );
-        })}
+        {modules.map(({ manifest }) => (
+          <ModuleTab
+            key={manifest.id}
+            manifest={manifest}
+            selected={manifest.id === selectedId}
+            onSelect={onSelect}
+          />
+        ))}
         {extraTabs.map((tab) => (
           <ExtraTabButton
             key={tab.id}
@@ -87,6 +73,36 @@ export function ModuleTabs({
       </nav>
       <div className="sidebar-footer">{footer}</div>
     </aside>
+  );
+}
+
+interface ModuleTabProps {
+  manifest: ModuleManifest;
+  selected: boolean;
+  onSelect: (tabId: string) => void;
+}
+
+function ModuleTab({ manifest, selected, onSelect }: ModuleTabProps) {
+  const status = useRunsSelector((state) => entryFor(state, manifest.id).run.status);
+  const unseen = useRunsSelector((state) => entryFor(state, manifest.id).unseenOutcome);
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={selected}
+      aria-controls={tabPanelId(manifest.id)}
+      tabIndex={selected ? 0 : -1}
+      className={selected ? "side-tab selected" : "side-tab"}
+      onClick={() => {
+        onSelect(manifest.id);
+      }}
+    >
+      <span className="side-tab-label">
+        <ModuleIconView name={manifest.icon} />
+        {manifest.name}
+      </span>
+      <TabRunBadge status={status} unseen={unseen && !selected} />
+    </button>
   );
 }
 
@@ -105,6 +121,7 @@ function ExtraTabButton({ tab, selected, onSelect, separated = false }: ExtraTab
       role="tab"
       aria-selected={selected}
       aria-controls={tabPanelId(tab.id)}
+      tabIndex={selected ? 0 : -1}
       className={classes.filter(Boolean).join(" ")}
       onClick={() => {
         onSelect(tab.id);

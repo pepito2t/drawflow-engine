@@ -1,14 +1,13 @@
-import { Suspense, use, useEffect, useState } from "react";
+import { Suspense, use, useState } from "react";
 import { useCommands } from "../hooks/command-registry";
-import { useNotificationCenter } from "../hooks/notification-center";
-import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { useHistory } from "../hooks/history-context";
 import { plural } from "../i18n";
 import { t } from "../i18n/panels";
 import { COMMANDS } from "../lib/commands";
 import { toReadableError } from "../lib/error-message";
 import { describeDuration, describeStart, lastOutput, type HistoryEntry } from "../lib/history";
 import { fileName } from "../lib/paths";
-import { clearHistory, listHistory, removeHistoryEntry } from "../lib/tauri/history";
+import { clearHistory, removeHistoryEntry } from "../lib/tauri/history";
 import { openOutput } from "../lib/tauri/window";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
@@ -21,17 +20,7 @@ const STATUS_LABELS = {
 } as const;
 
 export function HistoryPanel() {
-  const { id, promise, retry } = useRetryablePromise(listHistory);
-  const { subscribe } = useNotificationCenter();
-  useEffect(
-    () =>
-      subscribe((event) => {
-        if (event.type === "runFinished") {
-          retry();
-        }
-      }),
-    [subscribe, retry],
-  );
+  const { id, promise, reload: retry } = useHistory();
 
   return (
     <section className="module-workspace">

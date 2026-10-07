@@ -102,7 +102,7 @@ export function mergeReloadedSettings(
 export const GENERAL_SECTION_ID = "general";
 const LANGUAGE_FIELD = "language";
 const NOTIFICATION_THRESHOLD_FIELD = "notification_threshold_seconds";
-const DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10;
+export const DEFAULT_NOTIFICATION_THRESHOLD_SECONDS = 10;
 
 export function readLanguage(rawJson: string): Language {
   const general = parseSettings(rawJson).find((section) => section.id === GENERAL_SECTION_ID);

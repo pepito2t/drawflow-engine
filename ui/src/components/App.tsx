@@ -1,14 +1,17 @@
 import { t } from "../i18n/shell";
 import { Suspense, use, useCallback, useState } from "react";
-import { RunsProvider, useRunsStore } from "../hooks/runs-context";
+import { RunsProvider, useRunsSelector, useRunsState, useRunsStore } from "../hooks/runs-context";
 import { SetupRunsProvider } from "../hooks/setup-runs-context";
 import { runningModuleIds } from "../lib/runs-store";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { CommandProvider } from "../hooks/command-registry";
 import { NotificationProvider } from "../hooks/notification-center";
+import { HistoryProvider } from "../hooks/history-context";
+import { SettingsFeedProvider } from "../hooks/settings-feed";
 import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
 import { useAppCommands } from "../hooks/use-app-commands";
+import { useGlobalShortcuts } from "../hooks/use-global-shortcuts";
 import { useIntegrationBridge } from "../hooks/use-integration-bridge";
 import { useLanguage } from "../hooks/use-language";
 import { loadCatalog, useModuleCatalog } from "../hooks/use-module-catalog";
@@ -107,9 +110,11 @@ function CatalogApp() {
         <RunsProvider>
           <SetupRunsProvider>
             <NotificationProvider>
-              <CommandProvider>
-                <StartupGate startupPromise={promise} />
-              </CommandProvider>
+              <SettingsFeedProvider>
+                <CommandProvider>
+                  <StartupGate startupPromise={promise} />
+                </CommandProvider>
+              </SettingsFeedProvider>
             </NotificationProvider>
           </SetupRunsProvider>
         </RunsProvider>
@@ -122,7 +127,9 @@ function StartupGate({ startupPromise }: { startupPromise: Promise<Startup> }) {
   const { modules, presets } = use(startupPromise);
   return (
     <PresetsProvider initialPresets={presets}>
-      <CatalogView initialModules={modules} />
+      <HistoryProvider>
+        <CatalogView initialModules={modules} />
+      </HistoryProvider>
     </PresetsProvider>
   );
 }
@@ -149,8 +156,8 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
   const [settingsTab, setSettingsTab] = useState<string | null>(null);
   const [help, setHelp] = useState<{ topic: string | undefined } | null>(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const { state, dispatch } = useRunsStore();
-  useRunEvents(state, modules);
+  const { dispatch } = useRunsStore();
+  const canInstallUpdate = useRunsSelector((state) => runningModuleIds(state).length === 0);
   useLanguageSync();
   useSystemNotifications();
   useSetupCheck();
@@ -186,6 +193,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
   }, []);
   useAppCommands({
     modules,
+    selectedId,
     selectModule: select,
     openSettings,
     toggleAssistant,
@@ -195,6 +203,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
     openMail,
   });
   useIntegrationBridge();
+  useGlobalShortcuts();
 
   const sidebarActions = (
     <>
@@ -202,6 +211,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
         type="button"
         className="icon-button"
         aria-label={t("app.settings")}
+        aria-keyshortcuts="Control+,"
         title={t("app.settings")}
         onClick={() => {
           openSettings();
@@ -224,6 +234,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
         type="button"
         className="icon-button"
         aria-label={t("app.help")}
+        aria-keyshortcuts="F1"
         title={t("app.help")}
         onClick={() => {
           openHelp();
@@ -235,7 +246,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
   );
 
   return (
-    <UpdateProvider canInstall={runningModuleIds(state).length === 0}>
+    <UpdateProvider canInstall={canInstallUpdate}>
       <AppShell
         engine={{ state: "ready", moduleCount: modules.length }}
         updates={<UpdateIndicator />}
@@ -293,6 +304,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
             }}
           />
         </div>
+        <RunEventsPublisher modules={modules} />
         <Toaster onOpenModule={select} />
         {settingsTab !== null && (
           <SettingsDialog
@@ -316,4 +328,10 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
       </AppShell>
     </UpdateProvider>
   );
+}
+
+/** Follows every run message; isolated so the rest of the screen does not re-render with it. */
+function RunEventsPublisher({ modules }: { modules: CatalogModule[] }) {
+  useRunEvents(useRunsState(), modules);
+  return null;
 }

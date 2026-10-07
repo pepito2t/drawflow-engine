@@ -61,6 +61,16 @@ Drawflow s'ouvre sur **Aujourd'hui** : les prérequis manquants (bouton **Config
 
 Vous pouvez changer d'onglet ou lancer une autre fonctionnalité pendant un traitement. L'icône **Traitements** (à côté de la roue) montre ceux en cours ; **Annuler** arrête un traitement. Un message signale la fin, et une notification Windows si le traitement a été long ou si Drawflow était en arrière-plan.
 
+### Raccourcis clavier
+
+| Raccourci | Effet |
+|---|---|
+| **Ctrl+Entrée** | Lance la fonctionnalité affichée, comme **Lancer** |
+| **Ctrl+,** | Ouvre les paramètres |
+| **F1** | Ouvre l'aide |
+
+Dans la liste des onglets, les flèches **haut** et **bas** passent d'un onglet à l'autre, **Début** et **Fin** vont au premier et au dernier. Les raccourcis sont sans effet quand une fenêtre (Paramètres, Aide) est ouverte ; **Échap** la ferme.
+
 ### Historique
 
 L'onglet **Historique** liste les derniers traitements (200 au plus) : date, durée, résultat ou erreur, nombre d'avertissements. **Ouvrir le résultat** ouvre le dernier fichier produit ; **Relancer** recharge les mêmes fichiers et relance ; **×** retire une ligne. Commandes `history.open` et `history.rerun` pour le Stream Dock et l'assistant.

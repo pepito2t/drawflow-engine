@@ -1,7 +1,7 @@
 import { plural } from "../i18n";
 import { t } from "../i18n/shell";
 import { t as panelText } from "../i18n/panels";
-import { useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useThrottledValue } from "../hooks/use-throttled-value";
 import type { TableEvent } from "../lib/events";
 import { anomaliesAsText, groupAnomalies, type AnomalyGroup } from "../lib/anomalies";
@@ -27,6 +27,11 @@ export function RunPanel({ state, missingFields, onStart, onExport, onCancel }: 
   const [dismissedTable, setDismissedTable] = useState<TableEvent | null>(null);
   const preview = isPreview(state) && state.table !== dismissedTable ? state.table : null;
   const isIncomplete = missingFields.length > 0;
+  const anomalyGroups = useMemo(() => groupAnomalies(state.log), [state.log]);
+  const logEntries = useMemo(
+    () => state.log.filter((entry) => entry.level !== "warning"),
+    [state.log],
+  );
 
   return (
     <section className="run-panel">
@@ -36,7 +41,13 @@ export function RunPanel({ state, missingFields, onStart, onExport, onCancel }: 
             {state.cancelRequested ? t("runPanel.cancelling") : t("runPanel.cancel")}
           </button>
         ) : (
-          <button type="button" className="primary" onClick={onStart} disabled={isIncomplete}>
+          <button
+            type="button"
+            className="primary"
+            aria-keyshortcuts="Control+Enter"
+            onClick={onStart}
+            disabled={isIncomplete}
+          >
             {t("runPanel.start")}
           </button>
         )}
@@ -62,10 +73,8 @@ export function RunPanel({ state, missingFields, onStart, onExport, onCancel }: 
       ) : (
         <RunOutcome state={state} />
       )}
-      {!isRunning && <AnomaliesReport groups={groupAnomalies(state.log)} />}
-      {state.log.length > 0 && (
-        <RunLog entries={state.log.filter((entry) => entry.level !== "warning")} />
-      )}
+      {!isRunning && <AnomaliesReport groups={anomalyGroups} />}
+      {state.log.length > 0 && <RunLog entries={logEntries} />}
     </section>
   );
 }
@@ -146,7 +155,7 @@ function RunOutcome({ state }: { state: RunState }) {
 const COPIED_FEEDBACK_MS = 1500;
 
 /** Every anomaly of the run, by file: what is off, where, and what to do. */
-function AnomaliesReport({ groups }: { groups: AnomalyGroup[] }) {
+const AnomaliesReport = memo(function AnomaliesReport({ groups }: { groups: AnomalyGroup[] }) {
   const [copied, setCopied] = useState(false);
   const count = groups.reduce((total, group) => total + group.items.length, 0);
   if (count === 0) {
@@ -195,14 +204,24 @@ function AnomaliesReport({ groups }: { groups: AnomalyGroup[] }) {
       ))}
     </section>
   );
-}
+});
 
-function RunLog({ entries }: { entries: LogEntry[] }) {
+/** A batch of thousands of files would otherwise keep that many nodes in the page. */
+export const RUN_LOG_VISIBLE_LINES = 500;
+
+const RunLog = memo(function RunLog({ entries }: { entries: LogEntry[] }) {
+  const visible = entries.slice(-RUN_LOG_VISIBLE_LINES);
+  const hidden = entries.length - visible.length;
   return (
     <details className="run-log" open>
       <summary>{t("runPanel.log", { count: entries.length })}</summary>
+      {hidden > 0 && (
+        <p className="muted run-log-hidden">
+          {plural(hidden, t("runPanel.hiddenLines.one"), t("runPanel.hiddenLines.other"))}
+        </p>
+      )}
       <ol>
-        {entries.map((entry) => (
+        {visible.map((entry) => (
           <li key={entry.id} className={`log-entry ${entry.level}`}>
             <span>{entry.message}</span>
             {entry.file && (
@@ -214,4 +233,4 @@ function RunLog({ entries }: { entries: LogEntry[] }) {
       </ol>
     </details>
   );
-}
+});

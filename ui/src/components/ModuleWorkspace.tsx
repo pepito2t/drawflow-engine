@@ -4,12 +4,45 @@ import { usePresets } from "../hooks/presets-context";
 import { useFieldDrop } from "../hooks/use-field-drop";
 import { useModuleRun } from "../hooks/use-module-run";
 import type { CatalogModule } from "../lib/catalog";
-import { initialValues, missingRequired, toEngineInputs, type FormValue } from "../lib/form-schema";
-import { formValuesFrom, presetFormValues } from "../lib/presets";
+import type { AppEvent } from "../lib/app-events";
+import {
+  initialValues,
+  missingRequired,
+  toEngineInputs,
+  type FieldDescriptor,
+  type FormValue,
+  type FormValues,
+} from "../lib/form-schema";
+import { formValuesFrom, presetFormValues, type Preset } from "../lib/presets";
 import { ModuleForm } from "./ModuleForm";
 import { ModuleInstructions } from "./ModuleInstructions";
 import { PresetBar } from "./PresetBar";
 import { RunPanel } from "./RunPanel";
+
+/** The form values a run request for this module asks for: given inputs, a preset's, or the form as it stands. */
+function requestedValues(
+  event: AppEvent,
+  moduleId: string,
+  presets: Preset[],
+  fields: FieldDescriptor[],
+  current: FormValues,
+): FormValues | null {
+  if (!("moduleId" in event) || event.moduleId !== moduleId) {
+    return null;
+  }
+  switch (event.type) {
+    case "featureRunRequested":
+      return formValuesFrom(event.inputs, fields);
+    case "presetRunRequested": {
+      const preset = presets.find((candidate) => candidate.id === event.presetId);
+      return preset ? formValuesFrom(preset.inputs, fields) : null;
+    }
+    case "formRunRequested":
+      return current;
+    default:
+      return null;
+  }
+}
 
 /** Modules that can show their table first expose this boolean input. */
 const PREVIEW_FIELD = "preview";
@@ -35,33 +68,24 @@ export function ModuleWorkspace({ module }: ModuleWorkspaceProps) {
   useEffect(
     () =>
       subscribe((event) => {
-        if (event.type !== "presetRunRequested" && event.type !== "featureRunRequested") {
+        const requested = requestedValues(event, manifest.id, presets, fields, values);
+        if (!requested) {
           return;
         }
-        if (event.moduleId !== manifest.id) {
+        setValues(requested);
+        const missing = missingRequired(fields, requested);
+        if (missing.length > 0) {
+          publish({
+            type: "featureRunIncomplete",
+            moduleId: manifest.id,
+            moduleName: manifest.name,
+            missing,
+          });
           return;
         }
-        const inputs =
-          event.type === "featureRunRequested"
-            ? event.inputs
-            : presets.find((candidate) => candidate.id === event.presetId)?.inputs;
-        if (inputs) {
-          const requested = formValuesFrom(inputs, fields);
-          setValues(requested);
-          const missing = missingRequired(fields, requested);
-          if (missing.length > 0) {
-            publish({
-              type: "featureRunIncomplete",
-              moduleId: manifest.id,
-              moduleName: manifest.name,
-              missing,
-            });
-            return;
-          }
-          start(toEngineInputs(fields, requested));
-        }
+        start(toEngineInputs(fields, requested));
       }),
-    [subscribe, publish, presets, fields, manifest.id, manifest.name, start],
+    [subscribe, publish, presets, fields, values, manifest.id, manifest.name, start],
   );
 
   return (

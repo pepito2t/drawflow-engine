@@ -8,5 +8,21 @@ export default defineConfig({
   clearScreen: false,
   server: { port: DEV_SERVER_PORT, strictPort: true },
   build: { target: "es2022" },
-  test: { environment: "node", include: ["src/**/*.test.ts"] },
+  test: {
+    projects: [
+      {
+        extends: true,
+        test: { name: "node", environment: "node", include: ["src/**/*.test.ts"] },
+      },
+      {
+        extends: true,
+        test: {
+          name: "dom",
+          environment: "jsdom",
+          include: ["src/**/*.test.tsx"],
+          setupFiles: ["src/test/setup-dom.ts"],
+        },
+      },
+    ],
+  },
 });

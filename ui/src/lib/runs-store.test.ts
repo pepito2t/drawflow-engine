@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RunAction } from "./run-state";
 import {
+  createRunsStore,
   entryFor,
   overallProgress,
   pendingCancellations,
@@ -121,5 +122,39 @@ describe("visibleRunIds", () => {
     ]);
 
     expect(visibleRunIds(state)).toEqual(["a"]);
+  });
+});
+
+describe("createRunsStore", () => {
+  it("applies each action and notifies subscribers of the new state", () => {
+    const store = createRunsStore();
+    let notified = 0;
+    store.subscribe(() => {
+      notified += 1;
+    });
+
+    store.dispatch(run("a", { type: "started" }));
+
+    expect(entryFor(store.getState(), "a").run.status).toBe("running");
+    expect(notified).toBe(1);
+  });
+
+  it("keeps untouched entries and stays silent when nothing changes", () => {
+    const store = createRunsStore();
+    store.dispatch(run("a", { type: "started" }));
+    store.dispatch(run("b", { type: "started" }));
+    const idleEntry = entryFor(store.getState(), "b");
+    let notified = 0;
+    const unsubscribe = store.subscribe(() => {
+      notified += 1;
+    });
+
+    store.dispatch(progress("a", 1, 2));
+    store.dispatch({ type: "acknowledge", moduleId: "b" });
+    unsubscribe();
+    store.dispatch(progress("a", 2, 2));
+
+    expect(entryFor(store.getState(), "b")).toBe(idleEntry);
+    expect(notified).toBe(1);
   });
 });

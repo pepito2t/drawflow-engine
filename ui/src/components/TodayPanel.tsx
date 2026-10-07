@@ -2,14 +2,14 @@ import { Suspense, use, useEffect, useState } from "react";
 import { useCommands } from "../hooks/command-registry";
 import { useNotificationCenter } from "../hooks/notification-center";
 import { usePresets } from "../hooks/presets-context";
-import { useRetryablePromise } from "../hooks/use-retryable-promise";
+import { useHistory } from "../hooks/history-context";
 import { plural } from "../i18n";
 import { t } from "../i18n/panels";
 import type { CatalogModule } from "../lib/catalog";
 import { COMMANDS } from "../lib/commands";
 import { toReadableError } from "../lib/error-message";
 import type { HistoryEntry } from "../lib/history";
-import { listHistory, removeHistoryEntry } from "../lib/tauri/history";
+import { removeHistoryEntry } from "../lib/tauri/history";
 import { openOutput } from "../lib/tauri/window";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
@@ -24,16 +24,15 @@ interface TodayPanelProps {
 
 /** The first screen: what needs attention, what was just done, what can run in one click. */
 export function TodayPanel({ modules }: TodayPanelProps) {
-  const { id, promise, retry } = useRetryablePromise(listHistory);
+  const { id, promise, reload } = useHistory();
   const { subscribe } = useNotificationCenter();
   const [missingSetup, setMissingSetup] = useState(0);
   useEffect(
     () =>
       subscribe((event) => {
-        if (event.type === "runFinished") retry();
         if (event.type === "setupNeeded") setMissingSetup(event.missing);
       }),
-    [subscribe, retry],
+    [subscribe],
   );
 
   return (
@@ -51,7 +50,7 @@ export function TodayPanel({ modules }: TodayPanelProps) {
         )}
       >
         <Suspense fallback={<Loader label={t("today.recent_loading")} />}>
-          <RecentRuns entriesPromise={promise} onChanged={retry} />
+          <RecentRuns entriesPromise={promise} onChanged={reload} />
         </Suspense>
       </ErrorBoundary>
     </section>

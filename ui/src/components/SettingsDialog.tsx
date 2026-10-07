@@ -27,6 +27,7 @@ import type { CatalogModule } from "../lib/catalog";
 import { AutomationsPanel } from "./AutomationsPanel";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useNotificationCenter } from "../hooks/notification-center";
+import { useSettingsFeed } from "../hooks/settings-feed";
 import { t } from "../i18n/settings";
 import { ErrorPanel } from "./ErrorPanel";
 import { AboutPanel } from "./AboutPanel";
@@ -39,7 +40,9 @@ import { AiModelsPanel } from "./AiModelsPanel";
 import { SetupPanel } from "./SetupPanel";
 import { TemplatesPanel } from "./TemplatesPanel";
 import { CloseIcon } from "./icons";
+import { ModalDialog } from "./ModalDialog";
 import { ModuleForm } from "./ModuleForm";
+import { onTablistKeyDown } from "./tablist-keys";
 import { Loader, Spinner } from "./Spinner";
 
 const ACCESS_CODE_TAB_ID = "access-code";
@@ -87,63 +90,53 @@ export function SettingsDialog({ initialTab, modules, onClose }: SettingsDialogP
   };
 
   return (
-    <div
-      className="dialog-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          requestClose();
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "Escape") {
-          return;
-        }
+    <ModalDialog
+      labelledBy="settings-title"
+      onCancel={() => {
         if (confirmClose) {
           setConfirmClose(false);
         } else {
           requestClose();
         }
       }}
+      onBackdropClick={requestClose}
     >
-      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-        <header className="dialog-header">
-          <h2 id="settings-title">{t("settings.title")}</h2>
+      <header className="dialog-header">
+        <h2 id="settings-title">{t("settings.title")}</h2>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label={t("settings.close")}
+          onClick={requestClose}
+        >
+          <CloseIcon />
+        </button>
+      </header>
+      {confirmClose && (
+        <div className="setup-confirm dialog-confirm" role="alert">
+          <span>{t("settings.unsavedEdits")}</span>
+          <button type="button" className="primary" onClick={onClose}>
+            {t("settings.closeWithoutSaving")}
+          </button>
           <button
             type="button"
-            className="icon-button"
-            aria-label={t("settings.close")}
-            autoFocus
-            onClick={requestClose}
+            onClick={() => {
+              setConfirmClose(false);
+            }}
           >
-            <CloseIcon />
+            {t("settings.keepEditing")}
           </button>
-        </header>
-        {confirmClose && (
-          <div className="setup-confirm dialog-confirm" role="alert">
-            <span>{t("settings.unsavedEdits")}</span>
-            <button type="button" className="primary" onClick={onClose}>
-              {t("settings.closeWithoutSaving")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setConfirmClose(false);
-              }}
-            >
-              {t("settings.keepEditing")}
-            </button>
-          </div>
-        )}
-        <SettingsContent
-          attemptId={id}
-          promise={promise}
-          retry={retry}
-          initialTab={initialTab}
-          modules={modules}
-          onEditedChange={setHasUnsavedEdits}
-        />
-      </div>
-    </div>
+        </div>
+      )}
+      <SettingsContent
+        attemptId={id}
+        promise={promise}
+        retry={retry}
+        initialTab={initialTab}
+        modules={modules}
+        onEditedChange={setHasUnsavedEdits}
+      />
+    </ModalDialog>
   );
 }
 
@@ -258,6 +251,7 @@ function SettingsEditor({
           role="tablist"
           aria-orientation="vertical"
           aria-label={t("settings.categories")}
+          onKeyDown={onTablistKeyDown}
         >
           {sections.map((section) => (
             <button
@@ -265,6 +259,7 @@ function SettingsEditor({
               type="button"
               role="tab"
               aria-selected={section.id === activeSection?.id}
+              tabIndex={section.id === activeSection?.id ? 0 : -1}
               className={section.id === activeSection?.id ? "side-tab selected" : "side-tab"}
               onClick={() => {
                 setActiveId(section.id);
@@ -280,6 +275,7 @@ function SettingsEditor({
               type="button"
               role="tab"
               aria-selected={activeId === tab.id}
+              tabIndex={activeId === tab.id ? 0 : -1}
               className={activeId === tab.id ? "side-tab selected" : "side-tab"}
               onClick={() => {
                 setActiveId(tab.id);
@@ -345,25 +341,21 @@ function useExternalSettingsChanges(
   setSections: (sections: SettingsSection[]) => void,
   setValues: (update: SetStateAction<SettingsValues>) => void,
 ): void {
-  const { subscribe } = useNotificationCenter();
+  const { subscribe } = useSettingsFeed();
   const latest = useRef(sections);
   useEffect(() => {
     latest.current = sections;
   }, [sections]);
   useEffect(
     () =>
-      subscribe((event) => {
-        if (event.type !== "settingsSaved") {
-          return;
+      subscribe((rawSettings) => {
+        try {
+          const reloaded = parseSettings(rawSettings);
+          setValues((current) => mergeReloadedSettings(latest.current, current, reloaded));
+          setSections(reloaded);
+        } catch (error: unknown) {
+          console.error("Paramètres non rechargés :", error);
         }
-        loadSettings()
-          .then((reloaded) => {
-            setValues((current) => mergeReloadedSettings(latest.current, current, reloaded));
-            setSections(reloaded);
-          })
-          .catch((error: unknown) => {
-            console.error("Paramètres non rechargés :", error);
-          });
       }),
     [subscribe, setSections, setValues],
   );

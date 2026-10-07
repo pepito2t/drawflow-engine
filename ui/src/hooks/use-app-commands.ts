@@ -18,6 +18,8 @@ import { useRunsStore } from "./runs-context";
 
 interface AppCommandTargets {
   modules: CatalogModule[];
+  /** The tab on screen; only a feature tab can be run with `feature.run-current`. */
+  selectedId: string | null;
   selectModule: (moduleId: string) => void;
   openSettings: (tab?: string) => void;
   toggleAssistant: () => void;
@@ -30,6 +32,7 @@ interface AppCommandTargets {
 /** Registers the app-level commands shared by the UI, the Stream Dock and future integrations. */
 export function useAppCommands({
   modules,
+  selectedId,
   selectModule,
   openSettings,
   toggleAssistant,
@@ -38,7 +41,7 @@ export function useAppCommands({
   openToday,
   openMail,
 }: AppCommandTargets): void {
-  const { state, dispatch } = useRunsStore();
+  const runs = useRunsStore();
   const { presets } = usePresets();
   const { publish, subscribe } = useNotificationCenter();
   const lastOutput = useRef<string | null>(null);
@@ -72,41 +75,53 @@ export function useAppCommands({
       if (!preset) {
         throw new Error(t("appCommands.presetGone"));
       }
-      if (entryFor(state, preset.module).run.status === "running") {
+      if (entryFor(runs.getState(), preset.module).run.status === "running") {
         throw new Error(t("appCommands.alreadyRunning"));
       }
       await openTab({ moduleId: preset.module });
       publish({ type: "presetRunRequested", presetId, moduleId: preset.module });
     },
-    [presets, state, openTab, publish],
+    [presets, runs, openTab, publish],
   );
   useCommand(COMMANDS.runPreset, runPreset);
 
   const runFeature = useCallback(
     async ({ moduleId, inputs }: { moduleId: string; inputs: Record<string, unknown> }) => {
-      if (entryFor(state, moduleId).run.status === "running") {
+      if (entryFor(runs.getState(), moduleId).run.status === "running") {
         throw new Error(t("appCommands.alreadyRunning"));
       }
       await openTab({ moduleId });
       publish({ type: "featureRunRequested", moduleId, inputs });
     },
-    [state, openTab, publish],
+    [runs, openTab, publish],
   );
   useCommand(COMMANDS.runFeature, runFeature);
 
+  const runCurrentFeature = useCallback(() => {
+    const module = modules.find((candidate) => candidate.manifest.id === selectedId);
+    if (!module) {
+      throw new Error(t("appCommands.noFeatureShown"));
+    }
+    if (entryFor(runs.getState(), module.manifest.id).run.status === "running") {
+      throw new Error(t("appCommands.alreadyRunning"));
+    }
+    publish({ type: "formRunRequested", moduleId: module.manifest.id });
+  }, [modules, selectedId, runs, publish]);
+  useCommand(COMMANDS.runCurrentFeature, runCurrentFeature);
+
   const requestCancellation = useCallback(
     (moduleIds: readonly string[]) => {
-      for (const action of cancellationRequests(state, moduleIds)) {
-        dispatch(action);
+      for (const action of cancellationRequests(runs.getState(), moduleIds)) {
+        runs.dispatch(action);
       }
       return Promise.resolve();
     },
-    [state, dispatch],
+    [runs],
   );
 
   const cancelAll = useCallback(
-    () => requestCancellation(runningModuleIds(state)),
-    [state, requestCancellation],
+    () => requestCancellation(runningModuleIds(runs.getState())),
+    [runs, requestCancellation],
   );
   useCommand(COMMANDS.cancelAllRuns, cancelAll);
 
@@ -182,14 +197,14 @@ export function useAppCommands({
         icon: manifest.icon,
       })),
       presets: presets.map(({ id, name, module }) => ({ id, name, module })),
-      runs: Object.entries(state).map(([moduleId, entry]) => ({
+      runs: Object.entries(runs.getState()).map(([moduleId, entry]) => ({
         moduleId,
         status: entry.run.status,
         current: entry.run.progress?.current ?? null,
         total: entry.run.progress?.total ?? null,
       })),
     }),
-    [modules, presets, state],
+    [modules, presets, runs],
   );
   useCommand(COMMANDS.appState, appState);
 

@@ -3,7 +3,7 @@ import type { FormValues } from "../lib/form-schema";
 import type { RunState } from "../lib/run-state";
 import { entryFor } from "../lib/runs-store";
 import { describeBridgeError, runModule } from "../lib/tauri/engine";
-import { useRunsStore } from "./runs-context";
+import { useRunsSelector, useRunsStore } from "./runs-context";
 
 interface ModuleRun {
   state: RunState;
@@ -12,8 +12,8 @@ interface ModuleRun {
 }
 
 export function useModuleRun(moduleId: string): ModuleRun {
-  const { state, dispatch } = useRunsStore();
-  const { run } = entryFor(state, moduleId);
+  const { dispatch } = useRunsStore();
+  const run = useRunsSelector((state) => entryFor(state, moduleId).run);
 
   const bridgeFailed = useCallback(
     (message: string) => {
