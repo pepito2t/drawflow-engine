@@ -89,7 +89,8 @@ def test_command_failure_carries_what_the_program_printed() -> None:
         run_command([sys.executable, "-c", FAILING_PROGRAM])
 
     assert caught.value.returncode == 3
-    assert "Licence refusée" in caught.value.stderr.decode("utf-8")
+    # The child writes in the platform encoding: compare on the accent-free prefix.
+    assert b"Licence refus" in caught.value.stderr
 
 
 def test_cancelling_the_run_kills_the_converter() -> None:

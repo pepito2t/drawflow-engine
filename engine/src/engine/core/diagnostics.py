@@ -1,6 +1,7 @@
 """Keeps the real cause of every failure on disk, so a user can send it when something breaks."""
 
 import json
+import locale
 import subprocess
 import traceback
 from datetime import UTC, datetime
@@ -76,8 +77,16 @@ def _process_output(error: subprocess.CalledProcessError) -> str:
 
 def _as_text(output: object) -> str:
     if isinstance(output, bytes):
-        return output.decode("utf-8", errors="replace").strip()
+        return _decode(output).strip()
     return str(output).strip() if output else ""
+
+
+def _decode(output: bytes) -> str:
+    # Windows programs such as ODA write in the system code page, not in UTF-8.
+    try:
+        return output.decode("utf-8")
+    except UnicodeDecodeError:
+        return output.decode(locale.getpreferredencoding(False), errors="replace")
 
 
 def _rotate(path: Path) -> None:

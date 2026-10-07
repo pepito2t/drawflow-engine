@@ -1,4 +1,5 @@
 import json
+import locale
 import subprocess
 from pathlib import Path
 
@@ -75,3 +76,17 @@ def test_what_a_failed_program_printed_is_kept_in_the_cause(tmp_path: Path) -> N
     assert "exit status 1" in str(entry["cause"])
     assert "stderr: Licence refusée" in str(entry["cause"])
     assert "stdout" not in str(entry["cause"])
+
+
+def test_program_output_in_the_system_code_page_is_still_readable(tmp_path: Path) -> None:
+    settings = tmp_path / "settings.json"
+    expected = "Licence refusée".encode(locale.getpreferredencoding(False), errors="replace")
+    failed = subprocess.CalledProcessError(1, ["ODAFileConverter"], output=b"", stderr=expected)
+    try:
+        raise EngineError("Conversion impossible.") from failed
+    except EngineError as error:
+        record_failure(settings, ["run", "dwg-parts"], error)
+
+    [entry] = _entries(settings)
+    assert "Licence refus" in str(entry["cause"])
+    assert "\ufffd" not in str(entry["cause"])
