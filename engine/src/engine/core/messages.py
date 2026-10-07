@@ -126,6 +126,10 @@ t = define_messages(
         "naming.output_folder_unreachable_hint": (
             "Choisissez un autre dossier de sortie, ou vérifiez vos droits dessus."
         ),
+        "naming.output_finalize_failed": "Le fichier de sortie n'a pas pu être finalisé.",
+        "naming.output_finalize_failed_hint": (
+            "Vérifiez qu'aucun programme ne bloque le dossier de sortie, puis relancez."
+        ),
         "cache.invalid_entry": "Entrée de cache invalide, nouveau calcul.",
         "cache.folder_unreachable": "Le dossier de cache est inaccessible.",
         "cache.folder_unreachable_hint": "Choisissez un autre dossier de cache dans Paramètres.",
@@ -306,6 +310,10 @@ t = define_messages(
         "naming.output_folder_unreachable": "The output folder cannot be accessed.",
         "naming.output_folder_unreachable_hint": (
             "Choose another output folder, or check your permissions on it."
+        ),
+        "naming.output_finalize_failed": "The output file could not be finalized.",
+        "naming.output_finalize_failed_hint": (
+            "Check that no program is locking the output folder, then run again."
         ),
         "cache.invalid_entry": "Invalid cache entry, computing again.",
         "cache.folder_unreachable": "The cache folder cannot be accessed.",

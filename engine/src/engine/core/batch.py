@@ -3,13 +3,15 @@ import traceback
 from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from functools import partial
 from pathlib import Path
 
 from engine.core.diagnostics import record_failure
 from engine.core.errors import EngineError
 from engine.core.events import Emit, ProgressEvent, WarningEvent
-from engine.core.i18n import current_language, set_language
+from engine.core.i18n import Language, current_language, set_language
 from engine.core.messages import t
+from engine.core.shutdown import exit_when_parent_dies, hooks
 
 UNEXPECTED_ITEM_ERROR = t("batch.unexpected_item_error")
 INLINE_BATCH_SIZE = 1
@@ -64,10 +66,12 @@ def _run_inline[ResultT](
 def _run_in_pool[ResultT](
     paths: Sequence[Path], worker: Callable[[Path], ResultT], batch_size: int
 ) -> Completed[ResultT]:
-    # Spawned workers import everything afresh: they must inherit the language of this run.
-    with ProcessPoolExecutor(
-        max_workers=batch_size, initializer=set_language, initargs=(current_language(),)
-    ) as pool:
+    with (
+        ProcessPoolExecutor(
+            max_workers=batch_size, initializer=prepare_worker, initargs=(current_language(),)
+        ) as pool,
+        hooks.registered(partial(_stop_pool, pool)),
+    ):
         futures: dict[Future[ResultT], Path] = {pool.submit(worker, path): path for path in paths}
         for future in as_completed(futures):
             error = future.exception()
@@ -75,6 +79,20 @@ def _run_in_pool[ResultT](
                 yield futures[future], error
             else:
                 yield futures[future], future.result()
+
+
+def prepare_worker(language: Language) -> None:
+    """Spawned workers import everything afresh: they inherit the run's language and its end."""
+    set_language(language)
+    exit_when_parent_dies()
+
+
+def _stop_pool(pool: ProcessPoolExecutor) -> None:
+    # The executor forgets its processes on shutdown: take them first, kill them after.
+    processes = list(pool._processes.values())
+    pool.shutdown(wait=False, cancel_futures=True)
+    for process in processes:
+        process.kill()
 
 
 def _collect[ResultT](

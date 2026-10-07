@@ -61,11 +61,11 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
     target = _target(inputs, settings, plans, moment)
     emit(LogEvent(message=t("pipeline.writing", name=target.name)))
     total = total_of(by_project) if inputs.multi_project else None
-    with writing_output(target):
+    with writing_output(target) as draft:
         export_parts(
             parts_list.lines,
             parts_list.headers,
-            target,
+            draft,
             inputs.template,
             settings,
             total=(total.headers, total.lines) if total else None,

@@ -8,9 +8,11 @@ from typing import Annotated, Any
 
 from pydantic import AfterValidator
 
-from engine.core.errors import EngineError
+from engine.core.errors import EngineError, OutputWriteError
 from engine.core.fields import ui_field
+from engine.core.json_files import replace_file
 from engine.core.messages import t
+from engine.core.shutdown import hooks
 
 NAMING_VARIABLES: dict[str, str] = {
     "projet": t("naming.variable.projet"),
@@ -32,6 +34,7 @@ RESERVED_WINDOWS_NAMES = frozenset(
 )
 FORBIDDEN_REPLACEMENT = "-"
 FALLBACK_STEM = "export"
+PARTIAL_SUFFIX = ".partial"
 
 
 def validate_template(template: str) -> str:
@@ -121,13 +124,36 @@ def unique_output_path(folder: Path, file_name: str) -> Path:
 
 
 @contextmanager
-def writing_output(path: Path) -> Iterator[Path]:
-    """Removes the reserved file when the writer fails, so no empty document is left behind."""
+def writing_output(target: Path) -> Iterator[Path]:
+    """Yields the file to write; it takes the reserved name only once complete.
+
+    A failure or a cancellation mid-write leaves neither a half-written document nor an empty
+    one under the final name.
+    """
+    partial = target.with_name(f"{target.name}{PARTIAL_SUFFIX}")
+
+    def discard() -> None:
+        partial.unlink(missing_ok=True)
+        target.unlink(missing_ok=True)
+
     try:
-        yield path
+        with hooks.registered(discard):
+            yield partial
+            _finalize(partial, target)
     except BaseException:
-        path.unlink(missing_ok=True)
+        discard()
         raise
+
+
+def _finalize(partial: Path, target: Path) -> None:
+    try:
+        replace_file(partial, target)
+    except OSError as error:
+        raise OutputWriteError(
+            t("naming.output_finalize_failed"),
+            file=target,
+            hint=t("naming.output_finalize_failed_hint"),
+        ) from error
 
 
 def _safe_stem(raw: str) -> str:

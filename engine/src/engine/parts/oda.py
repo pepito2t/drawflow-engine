@@ -9,6 +9,7 @@ from engine.core.cache import FileCache
 from engine.core.errors import EngineError
 from engine.core.events import Emit
 from engine.core.settings_models import GeneralSettings
+from engine.core.shutdown import hooks
 from engine.parts.messages import t
 
 ODA_OUTPUT_VERSION = "ACAD2018"
@@ -49,14 +50,25 @@ def require_oda(general: GeneralSettings) -> Path:
 
 
 def run_command(arguments: Sequence[str]) -> None:
+    """Like `subprocess.run(check=True)`, but a cancelled run kills the converter too."""
     flags = WINDOWS_NO_WINDOW_FLAG if sys.platform == "win32" else 0
-    subprocess.run(
-        list(arguments),
-        check=True,
-        capture_output=True,
-        timeout=CONVERSION_TIMEOUT_SECONDS,
-        creationflags=flags,
-    )
+    with (
+        subprocess.Popen(
+            list(arguments),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            creationflags=flags,
+        ) as process,
+        hooks.registered(process.kill),
+    ):
+        try:
+            stdout, stderr = process.communicate(timeout=CONVERSION_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise
+    if process.returncode != 0:
+        raise subprocess.CalledProcessError(process.returncode, list(arguments), stdout, stderr)
 
 
 class OdaConverter:

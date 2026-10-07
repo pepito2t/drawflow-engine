@@ -6,6 +6,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 from engine.core.naming import (
+    PARTIAL_SUFFIX,
     FileNameTemplate,
     OutputFolderError,
     naming_values,
@@ -15,6 +16,7 @@ from engine.core.naming import (
     validate_template,
     writing_output,
 )
+from engine.core.shutdown import hooks
 
 MOMENT = datetime(2026, 10, 1, 9, 5)
 
@@ -112,13 +114,38 @@ def test_unique_output_path_creates_the_folder_and_reports_an_unwritable_one(
     assert caught.value.file == blocked / "sous-dossier"
 
 
-def test_writing_output_removes_the_reserved_file_on_failure(tmp_path: Path) -> None:
+def test_writing_output_takes_the_reserved_name_only_once_complete(tmp_path: Path) -> None:
     target = unique_output_path(tmp_path, "liste.xlsx")
 
-    with pytest.raises(RuntimeError), writing_output(target):
+    with writing_output(target) as draft:
+        assert draft == tmp_path / f"liste.xlsx{PARTIAL_SUFFIX}"
+        draft.write_text("contenu", encoding="utf-8")
+        assert target.stat().st_size == 0
+
+    assert target.read_text(encoding="utf-8") == "contenu"
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["liste.xlsx"]
+
+
+def test_writing_output_leaves_nothing_behind_on_failure(tmp_path: Path) -> None:
+    target = unique_output_path(tmp_path, "liste.xlsx")
+
+    with pytest.raises(RuntimeError), writing_output(target) as draft:
+        draft.write_text("à moitié", encoding="utf-8")
         raise RuntimeError("export impossible")
 
-    assert not target.exists()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_writing_output_leaves_nothing_behind_when_the_run_is_cancelled(tmp_path: Path) -> None:
+    target = unique_output_path(tmp_path, "liste.xlsx")
+
+    with writing_output(target) as draft:
+        draft.write_text("à moitié", encoding="utf-8")
+        hooks.trigger()
+        assert list(tmp_path.iterdir()) == []
+        draft.write_text("fin", encoding="utf-8")
+
+    assert target.read_text(encoding="utf-8") == "fin"
 
 
 def test_output_target_renders_then_reserves(tmp_path: Path) -> None:

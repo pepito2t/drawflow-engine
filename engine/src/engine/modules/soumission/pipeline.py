@@ -53,8 +53,8 @@ def run_soumission(inputs: SoumissionInputs, context: RunContext, moment: dateti
         return ModuleResult(summary=summary, preview=True)
     target = _target(inputs, settings, moment)
     context.emit(LogEvent(message=t("pipeline.writing", name=target.name)))
-    with writing_output(target):
-        count = export_submissions(tables, columns, target)
+    with writing_output(target) as draft:
+        count = export_submissions(tables, columns, draft)
     summary = t("pipeline.summary", rows=count, tables=len(tables), files=len(sources))
     return ModuleResult(summary=summary, outputs=[target])
 
