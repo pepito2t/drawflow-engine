@@ -15,7 +15,12 @@ use access::AccessLock;
 use assistant::AssistantTurn;
 use integrations::IntegrationState;
 use sidecar::{EngineRuns, OneShotChildren};
+use std::time::Duration;
+
 use tauri::{Manager, RunEvent};
+
+/// Quitting must stay quick: whatever has not stopped by then is killed.
+const EXIT_STOP_TIMEOUT: Duration = Duration::from_secs(2);
 
 pub fn run() {
     let app = tauri::Builder::default()
@@ -72,9 +77,11 @@ pub fn run() {
     }
 }
 
-/// Single exit cleanup, shared by the normal exit and the updater's restart.
+/// Single exit cleanup, shared by the normal exit and the updater's restart. Blocks the calling
+/// thread, which must not be an async task.
 pub(crate) fn stop_engine_processes(handle: &tauri::AppHandle) {
-    for error in handle.state::<EngineRuns>().cancel_all() {
+    let runs = handle.state::<EngineRuns>();
+    for error in tauri::async_runtime::block_on(runs.cancel_all(EXIT_STOP_TIMEOUT)) {
         eprintln!("Arrêt d'un traitement impossible : {error}");
     }
     for error in handle.state::<OneShotChildren>().kill_all() {

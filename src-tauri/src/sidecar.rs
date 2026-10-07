@@ -12,7 +12,7 @@ use crate::access::AccessLock;
 use crate::error::BridgeError;
 use crate::outputs::KnownOutputs;
 use crate::paths::settings_file;
-use crate::runs::{ChildRegistry, Killable, RunId, RunRegistry};
+use crate::runs::{ChildRegistry, Killable, RunId, RunRegistry, Stoppable};
 
 pub(crate) const SIDECAR_NAME: &str = "engine";
 const INPUT_FILE_PREFIX: &str = "drawflow-input-";
@@ -22,6 +22,10 @@ const QUERY_TIMEOUT: Duration = Duration::from_secs(120);
 const MAIL_QUERY_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 const MAIL_COMMAND_GROUP: &str = "mail";
 const NEWLINE: u8 = b'\n';
+// The engine's stdin guard treats any byte as a cancel; the word only helps reading traces.
+const CANCEL_REQUEST: &[u8] = b"cancel\n";
+/// Lets the engine stop its pool and ODA itself: killing it would orphan a running conversion.
+const GRACEFUL_EXIT_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub type EngineRuns = RunRegistry<CommandChild>;
 pub type OneShotChildren = ChildRegistry<CommandChild>;
@@ -29,6 +33,12 @@ pub type OneShotChildren = ChildRegistry<CommandChild>;
 impl Killable for CommandChild {
     fn kill_process(self) -> Result<(), BridgeError> {
         Ok(self.kill()?)
+    }
+}
+
+impl Stoppable for CommandChild {
+    fn request_stop(&mut self) -> Result<(), BridgeError> {
+        Ok(self.write(CANCEL_REQUEST)?)
     }
 }
 
@@ -284,13 +294,13 @@ pub(crate) fn start_streaming_run(
 }
 
 #[tauri::command]
-pub fn cancel_run(
+pub async fn cancel_run(
     runs: State<'_, EngineRuns>,
     lock: State<'_, AccessLock>,
     run_id: RunId,
 ) -> Result<(), BridgeError> {
     lock.ensure_unlocked()?;
-    runs.cancel(&run_id)
+    runs.cancel(&run_id, GRACEFUL_EXIT_TIMEOUT).await
 }
 
 /// Runs a one-shot engine command; the child is registered so exit or a timeout can kill it.

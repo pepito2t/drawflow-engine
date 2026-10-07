@@ -47,6 +47,18 @@ time.sleep({WAIT_SECONDS * 4})
 """
 
 
+HOOKED_SLEEP = f"""
+import sys, time
+from engine.core.shutdown import exit_when_stdin_closes, hooks
+
+with hooks.registered(lambda: print("hook", flush=True)):
+    exit_when_stdin_closes()
+    print("ready", flush=True)
+    time.sleep({WAIT_SECONDS * 4})
+"""
+CANCEL_REQUEST = b"cancel\n"
+
+
 def _wait_until(condition: Callable[[], bool], seconds: float = WAIT_SECONDS) -> bool:
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
@@ -94,6 +106,20 @@ def test_stdin_guard_fires_once_the_writer_closes_the_pipe() -> None:
         assert closed.wait(WAIT_SECONDS)
 
 
+def test_stdin_guard_fires_when_the_app_writes_a_cancel() -> None:
+    read_end, write_end = os.pipe()
+    stopped = threading.Event()
+
+    try:
+        with os.fdopen(read_end, "rb") as stream:
+            watch_stdin(stream, stopped.set)
+            assert not stopped.wait(POLL_SECONDS)
+            os.write(write_end, CANCEL_REQUEST)
+            assert stopped.wait(WAIT_SECONDS)
+    finally:
+        os.close(write_end)
+
+
 def test_stdin_guard_ignores_a_stream_that_cannot_be_read() -> None:
     closed = threading.Event()
 
@@ -115,6 +141,16 @@ def test_pipe_is_held_open_only_while_the_writer_lives() -> None:
         assert not pipe_is_held_open(read_end)
     finally:
         os.close(read_end)
+
+
+def test_a_cancel_written_before_the_guard_still_counts_as_held_open() -> None:
+    read_end, write_end = os.pipe()
+    try:
+        os.write(write_end, CANCEL_REQUEST)
+        assert pipe_is_held_open(read_end)
+    finally:
+        os.close(read_end)
+        os.close(write_end)
 
 
 def test_guard_watches_only_a_pipe_held_open() -> None:
@@ -156,6 +192,26 @@ def test_engine_run_exits_when_the_app_closes_its_stdin() -> None:
     process.stdin.close()
 
     assert process.wait(WAIT_SECONDS) == EXIT_CANCELLED, process.stderr
+
+
+def test_engine_run_runs_its_hooks_and_exits_when_the_app_writes_a_cancel() -> None:
+    process = subprocess.Popen(
+        [sys.executable, "-c", HOOKED_SLEEP],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert process.stdin is not None and process.stdout is not None
+    try:
+        assert process.stdout.readline().rstrip() == b"ready"
+        process.stdin.write(CANCEL_REQUEST)
+        process.stdin.flush()
+
+        assert process.wait(WAIT_SECONDS) == EXIT_CANCELLED, process.stderr
+        assert process.stdout.read().splitlines() == [b"hook"]
+    finally:
+        process.stdin.close()
+        process.kill()
 
 
 def test_pool_workers_die_with_their_parent() -> None:
