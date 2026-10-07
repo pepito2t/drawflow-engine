@@ -103,6 +103,7 @@ export function appEventDraft(event: AppEvent): ConsoleDraft | null {
         message: t("capture.presetRunRequested"),
       };
     case "featureRunRequested":
+    case "formRunRequested":
       return {
         ...app,
         level: "debug",

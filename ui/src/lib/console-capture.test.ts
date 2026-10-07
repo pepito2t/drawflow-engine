@@ -105,6 +105,12 @@ describe("appEventDraft", () => {
     });
     expect(JSON.stringify(draft)).not.toContain("Privé");
   });
+
+  it("logs a run launched from the form shortcut like any run request", () => {
+    expect(appEventDraft({ type: "formRunRequested", moduleId: "a" })).toEqual(
+      appEventDraft({ type: "featureRunRequested", moduleId: "a", inputs: {} }),
+    );
+  });
 });
 
 describe("error drafts", () => {
