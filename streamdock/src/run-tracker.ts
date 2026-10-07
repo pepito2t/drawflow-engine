@@ -4,6 +4,7 @@ export interface RunView {
   status: RunStatus;
   current: number | null;
   total: number | null;
+  cancelRequested?: boolean;
 }
 
 export type Runs = ReadonlyMap<string, RunView>;
@@ -14,13 +15,20 @@ export function runFor(runs: Runs, moduleId: string): RunView {
   return runs.get(moduleId) ?? IDLE;
 }
 
-export function runsFromState(state: AppState): Runs {
+/** Drawflow does not report pending cancellations, so the ones asked from a key survive a reload. */
+export function runsFromState(state: AppState, previous: Runs = new Map()): Runs {
   return new Map(
-    state.runs.map((run) => [
-      run.moduleId,
-      { status: run.status, current: run.current, total: run.total },
-    ]),
+    state.runs.map((run) => {
+      const view: RunView = { status: run.status, current: run.current, total: run.total };
+      return [run.moduleId, keepCancellation(view, runFor(previous, run.moduleId))];
+    }),
   );
+}
+
+function keepCancellation(next: RunView, previous: RunView): RunView {
+  return next.status === "running" && previous.cancelRequested === true
+    ? { ...next, cancelRequested: true }
+    : next;
 }
 
 /** Applies a Drawflow event; unrelated or unknown events leave the runs unchanged. */
@@ -36,7 +44,13 @@ export function applyEvent(runs: Runs, raw: unknown): Runs {
       next.set(event.moduleId, { status: "running", current: null, total: null });
       return next;
     case "runProgress":
-      next.set(event.moduleId, { status: "running", current: event.current, total: event.total });
+      next.set(
+        event.moduleId,
+        keepCancellation(
+          { status: "running", current: event.current, total: event.total },
+          runFor(runs, event.moduleId),
+        ),
+      );
       return next;
     case "runFinished":
       next.set(event.moduleId, { status: event.outcome, current: null, total: null });
@@ -61,6 +75,22 @@ export function acknowledge(runs: Runs, moduleId: string): Runs {
   }
   const next = new Map(runs);
   next.set(moduleId, IDLE);
+  return next;
+}
+
+/** Only a running run can be cancelled; withdrawing restores the plain running view. */
+export function markCancelRequested(runs: Runs, moduleId: string, requested: boolean): Runs {
+  const run = runFor(runs, moduleId);
+  if (run.status !== "running" || (run.cancelRequested === true) === requested) {
+    return runs;
+  }
+  const next = new Map(runs);
+  next.set(moduleId, {
+    status: run.status,
+    current: run.current,
+    total: run.total,
+    ...(requested ? { cancelRequested: true } : {}),
+  });
   return next;
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   acknowledge,
   applyEvent,
+  markCancelRequested,
   needsResync,
   progressRatio,
   runFor,
@@ -64,5 +65,43 @@ describe("run tracker", () => {
     });
 
     expect(runFor(runs, "a")).toEqual({ status: "running", current: 1, total: 2 });
+  });
+
+  it("keeps a cancellation asked from a key until the run ends", () => {
+    const started = apply([{ type: "runStarted", moduleId: "a" }]);
+    const requested = markCancelRequested(started, "a", true);
+
+    const progressed = applyEvent(requested, {
+      type: "runProgress",
+      moduleId: "a",
+      current: 1,
+      total: 2,
+    });
+    expect(runFor(progressed, "a").cancelRequested).toBe(true);
+
+    const reloaded = runsFromState(
+      {
+        modules: [],
+        presets: [],
+        runs: [{ moduleId: "a", status: "running", current: 1, total: 2 }],
+      },
+      progressed,
+    );
+    expect(runFor(reloaded, "a").cancelRequested).toBe(true);
+
+    const finished = applyEvent(reloaded, {
+      type: "runFinished",
+      moduleId: "a",
+      outcome: "cancelled",
+    });
+    expect(runFor(finished, "a")).toEqual({ status: "cancelled", current: null, total: null });
+  });
+
+  it("only marks a running run and can withdraw the request", () => {
+    expect(markCancelRequested(new Map(), "a", true).size).toBe(0);
+
+    const started = apply([{ type: "runStarted", moduleId: "a" }]);
+    const withdrawn = markCancelRequested(markCancelRequested(started, "a", true), "a", false);
+    expect(runFor(withdrawn, "a")).toEqual({ status: "running", current: null, total: null });
   });
 });

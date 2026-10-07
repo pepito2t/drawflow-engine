@@ -92,4 +92,15 @@ describe("key faces", () => {
 
     expect(svg.match(/class="label"/g)).toHaveLength(2);
   });
+
+  it("shows a requested cancellation while the run is still going", () => {
+    const run = { status: "running" as const, current: 1, total: 4, cancelRequested: true };
+
+    expect(faceFor("fr", "ready", "Tour B", run)).toEqual({
+      tone: "warning",
+      label: "Tour B",
+      detail: "Annulation…",
+      progress: 0.25,
+    });
+  });
 });

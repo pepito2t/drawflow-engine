@@ -1,3 +1,4 @@
+import { commandLabel } from "./commands";
 import type { DrawflowHub } from "./hub";
 import { translate, type MessageKey } from "./i18n";
 import { faceFor, type KeyFace } from "./key-image";
@@ -11,6 +12,8 @@ export type PressOutcome = "ok" | "silent" | { failed: string };
 export interface KeyBehavior {
   face: (hub: DrawflowHub, settings: Settings) => KeyFace;
   press: (hub: DrawflowHub, settings: Settings) => Promise<PressOutcome>;
+  /** Action of a key held down; null when holding it means nothing now, so release presses it. */
+  longPress?: (hub: DrawflowHub, settings: Settings) => Promise<PressOutcome> | null;
 }
 
 const text = (settings: Settings, name: string): string | null => {
@@ -43,6 +46,16 @@ const preset: KeyBehavior = {
     hub.acknowledge(found.module);
     const result = await hub.command("preset.run", { presetId });
     return result.ok ? "silent" : { failed: result.error };
+  },
+  longPress(hub, settings) {
+    const presetId = text(settings, "presetId");
+    const found = presetId ? hub.presetModule(presetId) : null;
+    if (found === null || runFor(hub.runs, found.module).status !== "running") {
+      return null;
+    }
+    return hub
+      .cancelRun(found.module)
+      .then((result) => (result.ok ? "silent" : { failed: result.error }));
   },
 };
 
@@ -113,10 +126,31 @@ const runsCounter: KeyBehavior = {
   },
 };
 
+const genericCommand: KeyBehavior = {
+  face(hub, settings) {
+    const commandId = text(settings, "commandId");
+    const label = commandId === null ? null : commandLabel(hub.language, commandId);
+    const shown = label ?? message(hub, commandId ? "key.command.gone" : "key.command.choose");
+    return faceFor(hub.language, hub.connection, shown, null);
+  },
+  async press(hub, settings) {
+    const commandId = text(settings, "commandId");
+    if (commandId === null) {
+      return { failed: message(hub, "error.commandNotChosen") };
+    }
+    if (commandLabel(hub.language, commandId) === null) {
+      return { failed: message(hub, "error.commandGone") };
+    }
+    const result = await hub.command(commandId);
+    return result.ok ? "ok" : { failed: result.error };
+  },
+};
+
 export const BEHAVIORS: Readonly<Record<string, KeyBehavior>> = {
   "ch.drawflow.preset": preset,
   "ch.drawflow.open-tab": openTab,
   "ch.drawflow.cancel-all": cancelAll,
   "ch.drawflow.open-last": openLast,
   "ch.drawflow.runs-counter": runsCounter,
+  "ch.drawflow.command": genericCommand,
 };

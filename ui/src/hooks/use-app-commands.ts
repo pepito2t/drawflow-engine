@@ -2,6 +2,7 @@ import { t } from "../i18n/shell";
 import { useCallback, useEffect, useRef } from "react";
 import type { CatalogModule } from "../lib/catalog";
 import { COMMANDS } from "../lib/commands";
+import { cancellationRequests } from "../lib/run-cancellation";
 import { entryFor, runningModuleIds } from "../lib/runs-store";
 import { engineRequest } from "../lib/tauri/engine";
 import { listHistory } from "../lib/tauri/history";
@@ -93,15 +94,27 @@ export function useAppCommands({
   );
   useCommand(COMMANDS.runFeature, runFeature);
 
-  const cancelAll = useCallback(() => {
-    for (const moduleId of runningModuleIds(state)) {
-      if (!entryFor(state, moduleId).run.cancelRequested) {
-        dispatch({ type: "run", moduleId, action: { type: "cancelRequested" } });
+  const requestCancellation = useCallback(
+    (moduleIds: readonly string[]) => {
+      for (const action of cancellationRequests(state, moduleIds)) {
+        dispatch(action);
       }
-    }
-    return Promise.resolve();
-  }, [state, dispatch]);
+      return Promise.resolve();
+    },
+    [state, dispatch],
+  );
+
+  const cancelAll = useCallback(
+    () => requestCancellation(runningModuleIds(state)),
+    [state, requestCancellation],
+  );
   useCommand(COMMANDS.cancelAllRuns, cancelAll);
+
+  const cancelRun = useCallback(
+    ({ moduleId }: { moduleId: string }) => requestCancellation([moduleId]),
+    [requestCancellation],
+  );
+  useCommand(COMMANDS.cancelRun, cancelRun);
 
   const openLastResult = useCallback(async () => {
     if (lastOutput.current === null) {
