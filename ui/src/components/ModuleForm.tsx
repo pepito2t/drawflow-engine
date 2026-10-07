@@ -1,4 +1,5 @@
 import {
+  fieldInputId,
   isPathKind,
   toTextValue,
   type FieldDescriptor,
@@ -26,7 +27,7 @@ export function ModuleForm({ moduleId, fields, values, disabled, onChange }: Mod
     >
       {fields.map((field) => (
         <div key={field.name} className="form-field">
-          <label htmlFor={field.name}>
+          <label htmlFor={fieldInputId(moduleId, field.name)}>
             {field.label}
             {field.required && <span className="required"> *</span>}
           </label>
@@ -67,12 +68,20 @@ function FieldInput({ moduleId, field, value, disabled, onChange }: FieldInputPr
     );
   }
   if (field.kind === "mapping") {
-    return <MappingField field={field} value={value} disabled={disabled} onChange={onChange} />;
+    return (
+      <MappingField
+        moduleId={moduleId}
+        field={field}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+      />
+    );
   }
   if (field.kind === "bool") {
     return (
       <input
-        id={field.name}
+        id={fieldInputId(moduleId, field.name)}
         type="checkbox"
         checked={value === true}
         disabled={disabled}
@@ -85,7 +94,7 @@ function FieldInput({ moduleId, field, value, disabled, onChange }: FieldInputPr
   if (field.kind === "enum") {
     return (
       <select
-        id={field.name}
+        id={fieldInputId(moduleId, field.name)}
         value={toTextValue(value)}
         disabled={disabled}
         onChange={(event) => {
@@ -100,7 +109,7 @@ function FieldInput({ moduleId, field, value, disabled, onChange }: FieldInputPr
   }
   return (
     <input
-      id={field.name}
+      id={fieldInputId(moduleId, field.name)}
       type={field.kind === "number" ? "number" : "text"}
       value={toTextValue(value)}
       disabled={disabled}
