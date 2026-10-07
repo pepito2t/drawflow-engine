@@ -3,9 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use argon2::password_hash::rand_core::OsRng;
-use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
-use argon2::Argon2;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use serde::{Deserialize, Serialize};
 use subtle::ConstantTimeEq;
 use tauri::{AppHandle, Manager, State};
@@ -168,9 +166,8 @@ fn validate_code(code: &str) -> Result<(), BridgeError> {
 }
 
 fn hash_code(code: &str) -> Result<String, BridgeError> {
-    let salt = SaltString::generate(&mut OsRng);
     Argon2::default()
-        .hash_password(code.as_bytes(), &salt)
+        .hash_password(code.as_bytes())
         .map(|hash| hash.to_string())
         .map_err(|_| BridgeError::AccessHashing)
 }
@@ -217,6 +214,18 @@ mod tests {
         assert!(content.contains("$argon2id$"));
         assert!(verify_code(&path, "482913").unwrap());
         assert!(!verify_code(&path, "0000").unwrap());
+    }
+
+    // Hash PHC figé, produit par argon2 0.5 : les codes déjà enregistrés doivent rester valides.
+    #[test]
+    fn hash_written_by_previous_crate_versions_still_verifies() {
+        const LEGACY_HASH: &str =
+            "$argon2id$v=19$m=19456,t=2,p=1$4Wxf++zxgWoycWaaYBNbSw$uJ+cYwVzM1xkbzVjFyP7mqDmp8TvmMxZ58wl3V3dK/8";
+        let folder = tempfile::tempdir().unwrap();
+        let path = folder.path().join(ACCESS_FILE_NAME);
+        write_code(&path, LEGACY_HASH).unwrap();
+        assert!(verify_code(&path, "482913").unwrap());
+        assert!(!verify_code(&path, "482914").unwrap());
     }
 
     #[test]

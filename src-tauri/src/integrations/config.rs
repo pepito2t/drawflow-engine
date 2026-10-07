@@ -1,7 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use argon2::password_hash::rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
@@ -21,12 +20,12 @@ pub struct IntegrationConfig {
 }
 
 impl IntegrationConfig {
-    pub fn generated() -> Self {
-        Self {
+    pub fn generated() -> Result<Self, BridgeError> {
+        Ok(Self {
             enabled: false,
             port: DEFAULT_PORT,
-            token: generate_token(),
-        }
+            token: generate_token()?,
+        })
     }
 }
 
@@ -40,7 +39,7 @@ pub fn load(path: &Path) -> Result<IntegrationConfig, BridgeError> {
     let content = match fs::read_to_string(path) {
         Ok(content) => content,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(IntegrationConfig::generated())
+            return IntegrationConfig::generated()
         }
         Err(error) => return Err(BridgeError::IntegrationsFile(error)),
     };
@@ -53,10 +52,10 @@ pub fn save(path: &Path, config: &IntegrationConfig) -> Result<(), BridgeError> 
     write_atomically(path, &content).map_err(BridgeError::IntegrationsFile)
 }
 
-pub fn generate_token() -> String {
+pub fn generate_token() -> Result<String, BridgeError> {
     let mut bytes = [0u8; TOKEN_BYTES];
-    OsRng.fill_bytes(&mut bytes);
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+    getrandom::fill(&mut bytes).map_err(BridgeError::TokenGeneration)?;
+    Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
 }
 
 #[cfg(test)]
@@ -98,6 +97,6 @@ mod tests {
 
     #[test]
     fn tokens_are_random() {
-        assert_ne!(generate_token(), generate_token());
+        assert_ne!(generate_token().unwrap(), generate_token().unwrap());
     }
 }

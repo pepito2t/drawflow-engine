@@ -27,11 +27,12 @@ thiserror = "2"
 tokio = { version = "1.53", features = ["net", "sync", "time", "macros", "rt"] }
 tokio-tungstenite = "0.30"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
-argon2 = { version = "0.5", features = ["std"] }
+argon2 = "0.6"
 subtle = "2.6"
-password-hash = { version = "0.5", features = ["getrandom"] }
+password-hash = { version = "0.6", features = ["getrandom"] }
+getrandom = "0.4"
 notify = "8"
-sha2 = "0.10"
+sha2 = "0.11"
 
 [lints.clippy]
 unwrap_used = "deny"
