@@ -1,7 +1,6 @@
 """Entry points of the `engine assistant` commands."""
 
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -9,7 +8,7 @@ import anyio
 import httpx
 from mcp import ClientSession
 from mcp.client.stdio import stdio_client
-from mcp.shared.exceptions import McpError
+from mcp.shared.exceptions import MCPError
 from pydantic import ValidationError
 
 from engine.assistant.agent import run_turn
@@ -25,7 +24,7 @@ from engine.core.settings import load_assistant_settings
 from engine.core.validation import describe_validation_error
 
 # The frozen sidecar takes a few seconds to start; past this, the MCP server is stuck.
-MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
+MCP_REQUEST_TIMEOUT_SECONDS = 60.0
 
 
 def chat(
@@ -40,11 +39,11 @@ def chat(
     async def turn() -> None:
         async with (
             stdio_client(server_parameters(settings)) as (read, write),
-            ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT) as session,
+            ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT_SECONDS) as session,
         ):
             try:
                 await session.initialize()
-            except McpError as error:
+            except MCPError as error:
                 raise AssistantError(
                     t("service.tools_not_started"), hint=t("service.tools_not_started.hint")
                 ) from error

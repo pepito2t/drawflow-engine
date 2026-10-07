@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from mcp import StdioServerParameters
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 from engine.assistant.inspect import inspect_file
@@ -37,8 +37,8 @@ SERVER_INSTRUCTIONS = t("mcp_server.instructions")
 READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
 
-def build_server(settings: Path) -> FastMCP:
-    server = FastMCP(SERVER_NAME, instructions=SERVER_INSTRUCTIONS, log_level="WARNING")
+def build_server(settings: Path) -> MCPServer:
+    server = MCPServer(SERVER_NAME, instructions=SERVER_INSTRUCTIONS, log_level="WARNING")
 
     @server.tool(description=t("mcp_server.list_features"), annotations=READ_ONLY)
     def list_features() -> dict[str, Any]:
