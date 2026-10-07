@@ -13,6 +13,7 @@ import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError, type ReadableError } from "../lib/error-message";
 import type { FormValue, FormValues } from "../lib/form-schema";
 import {
+  GENERAL_SECTION_ID,
   editedSections,
   mergeReloadedSettings,
   parseSettings,
@@ -42,7 +43,6 @@ import { ModuleForm } from "./ModuleForm";
 import { Loader, Spinner } from "./Spinner";
 
 const ACCESS_CODE_TAB_ID = "access-code";
-const GENERAL_SECTION_ID = "general";
 const TEMPLATES_TAB_ID = "templates";
 const INTEGRATIONS_TAB_ID = "integrations";
 const PROFILE_TAB_ID = "profile";

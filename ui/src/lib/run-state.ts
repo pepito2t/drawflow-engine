@@ -1,5 +1,5 @@
 import { t } from "../i18n/shell";
-import type { EngineMessage } from "./engine-message";
+import { SUCCESS_EXIT_CODE, type EngineMessage } from "./engine-message";
 import { parseEventLine, type EngineEvent, type ProgressEvent, type TableEvent } from "./events";
 
 export type RunStatus = "idle" | "running" | "succeeded" | "failed" | "cancelled";
@@ -39,8 +39,6 @@ export const INITIAL_RUN_STATE: RunState = {
   table: null,
   cancelRequested: false,
 };
-
-const SUCCESS_EXIT_CODE = 0;
 
 export function runReducer(state: RunState, action: RunAction): RunState {
   switch (action.type) {

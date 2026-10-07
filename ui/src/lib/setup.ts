@@ -1,6 +1,7 @@
 import { t } from "../i18n/settings";
 import { z } from "zod";
 import { CatalogError } from "./catalog";
+import { SUCCESS_EXIT_CODE } from "./engine-message";
 import type { ReadableError } from "./error-message";
 import { parseEventLine } from "./events";
 import { parseJsonOrNull } from "./json";
@@ -120,7 +121,7 @@ export function setupRunReducer(run: SetupRun, message: SetupRunMessage): SetupR
     case "failed":
       return { status: "failed", action: run.action, error: message.error };
     case "exit":
-      return message.code === 0
+      return message.code === SUCCESS_EXIT_CODE
         ? { status: "done", action: run.action, message: run.message }
         : { status: "failed", action: run.action, error: unexpectedExit() };
     case "line":
