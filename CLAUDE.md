@@ -12,7 +12,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
   src-tauri/              # Tauri 2 — pont sidecar, dialogues, updater
   engine/                 # Moteur Python (uv), packagé en sidecar PyInstaller
     src/engine/
-      cli.py              # list-modules, run
+      cli.py              # point d'entrée, voir `engine --help`
       core/               # contrat de module, événements, registry, config, erreurs
       assistant/          # serveur MCP, client du modèle local, boucle de l'assistant
       setup/              # analyse du poste et installations (ODA, Ollama, modèles, plugin)
@@ -22,10 +22,9 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
         service.py        # logique métier pure
         adapters.py       # I/O fichiers, ODA, PDF, XLSX, DOCX
         tests/
-  templates/              # modèles DOCX/XLSX
   fixtures/               # fichiers réels anonymisés + sorties attendues
   streamdock/             # plugin Stream Dock (SDK Mirabox, Node 20 intégré) — client de l'API locale
-  docs/                   # guide.md, architecture.md, api-locale.md
+  docs/                   # guide.md, guide.en.md, architecture.md, api-locale.md
   CHANGELOG.md            # historique des versions
   .github/workflows/      # ci.yml, release.yml
 ```
@@ -39,6 +38,7 @@ Développement sous macOS, cible Windows. Les builds Windows se font uniquement 
 - Assistant (dans `engine/`) : `uv run engine mcp --settings <fichier>` (serveur MCP stdio) · `uv run engine assistant models|chat --settings <fichier> [--input <conversation.json>]`
 - Dev complet : `pnpm dev` (build du sidecar puis `tauri dev`)
 - Plugin Stream Dock (dans `streamdock/`) : `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm build` · `pnpm run package` (→ `dist/ch.drawflow.sdPlugin.zip`)
+- Tout d'un coup (racine) : `pnpm check` (ou `check:engine`, `check:ui`, `check:rust`, `check:streamdock`) · `pnpm smoke` · `pnpm version:check` · `pnpm version:bump X.Y.Z`
 
 Avant tout commit : lint + typecheck + tests de la zone touchée doivent passer.
 

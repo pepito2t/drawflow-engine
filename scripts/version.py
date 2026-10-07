@@ -1,9 +1,12 @@
-"""Keeps the app version identical everywhere.
+"""Keeps the app version identical everywhere, and the changelog ready for a release.
 
 Usage:
   python scripts/version.py check [--tag vX.Y.Z]
+  python scripts/version.py notes
   python scripts/version.py bump X.Y.Z
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -57,6 +60,11 @@ STREAMDOCK_MANIFEST = ROOT / "streamdock" / "ch.drawflow.sdPlugin" / "manifest.j
 MANIFEST_VERSION = re.compile(r'(?m)^(  "Version": ")([^"]+)(")')
 PRERELEASE_SEPARATOR = "-"
 
+CHANGELOG = ROOT / "CHANGELOG.md"
+CHANGELOG_HEADING = re.compile(r"(?m)^## (.+)$")
+UNRELEASED_TITLE = "Non publié"
+RELEASE_TITLE_SEPARATOR = " — "
+
 
 def manifest_version(version: str) -> str:
     return version.split(PRERELEASE_SEPARATOR)[0]
@@ -74,7 +82,7 @@ def read_versions() -> dict[Path, str]:
     return versions
 
 
-def check(tag: str | None) -> None:
+def current_version() -> str:
     versions = read_versions()
     distinct = set(versions.values())
     if len(distinct) != 1:
@@ -88,9 +96,47 @@ def check(tag: str | None) -> None:
         raise SystemExit(
             f"Version du plugin Stream Dock incohérente (attendu {manifest_version(version)})"
         )
-    if tag is not None and tag != f"{TAG_PREFIX}{version}":
-        raise SystemExit(f"Le tag {tag} ne correspond pas à la version {version}")
+    return version
+
+
+def changelog_sections() -> dict[str, str]:
+    """Section bodies keyed by title: the version number, or 'Non publié'."""
+    content = CHANGELOG.read_text(encoding="utf-8")
+    headings = list(CHANGELOG_HEADING.finditer(content))
+    sections: dict[str, str] = {}
+    for index, heading in enumerate(headings):
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(content)
+        title = heading.group(1).split(RELEASE_TITLE_SEPARATOR)[0]
+        sections[title] = content[heading.end() : end].strip()
+    return sections
+
+
+def release_notes(version: str) -> str:
+    notes = changelog_sections().get(version, "")
+    if not notes:
+        raise SystemExit(f"Section « ## {version} » absente ou vide dans CHANGELOG.md")
+    return notes
+
+
+def check_changelog_ready(version: str) -> None:
+    release_notes(version)
+    if changelog_sections().get(UNRELEASED_TITLE):
+        raise SystemExit(
+            f"La section « ## {UNRELEASED_TITLE} » de CHANGELOG.md doit être vide avant le tag"
+        )
+
+
+def check(tag: str | None) -> None:
+    version = current_version()
+    if tag is not None:
+        if tag != f"{TAG_PREFIX}{version}":
+            raise SystemExit(f"Le tag {tag} ne correspond pas à la version {version}")
+        check_changelog_ready(version)
     sys.stdout.write(f"Version {version} cohérente\n")
+
+
+def notes() -> None:
+    sys.stdout.write(release_notes(current_version()) + "\n")
 
 
 def bump(version: str) -> None:
@@ -120,11 +166,14 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     check_parser = commands.add_parser("check")
     check_parser.add_argument("--tag")
+    commands.add_parser("notes")
     bump_parser = commands.add_parser("bump")
     bump_parser.add_argument("version")
     arguments = parser.parse_args()
     if arguments.command == "check":
         check(arguments.tag)
+    elif arguments.command == "notes":
+        notes()
     else:
         bump(arguments.version)
 

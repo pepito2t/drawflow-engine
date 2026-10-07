@@ -1,5 +1,6 @@
 packages:
   - ui
+minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@tauri-apps/cli-darwin-arm64@2.12.1'
   - '@tauri-apps/cli-darwin-x64@2.12.1'

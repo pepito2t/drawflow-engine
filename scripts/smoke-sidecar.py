@@ -1,6 +1,7 @@
-"""Runs the frozen sidecar end to end: catalog, settings, then every module."""
+"""Runs the frozen sidecar end to end: contents, catalog, settings, then every module."""
 
 import json
+import re
 import socket
 import subprocess
 import sys
@@ -9,31 +10,22 @@ from datetime import timedelta
 from pathlib import Path
 
 import anyio
-from engine.parts.tests.plans import build_facade_plan
-from engine.modules.pdf_report.tests.plans import build_report_plan
-from engine.modules.soumission.tests.workbooks import submission_bytes
-from engine.testing.pdf import PdfSpec, TextItem, write_pdf
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from PyInstaller.archive.readers import pkg_archive_contents
 
-EXPECTED_MODULE_IDS = ["dwg-parts", "dwg-diff", "pdf-report", "soumission"]
-EXPECTED_MCP_TOOLS = [
-    "inspect_file",
-    "inspect_submission_headers",
-    "list_features",
-    "list_help_topics",
-    "list_presets",
-    "list_runs",
-    "list_templates",
-    "propose_column_synonyms",
-    "propose_feature",
-    "propose_preset",
-    "read_help",
-    "read_run",
-    "read_today",
-]
+from engine.assistant.mcp_server import build_server
+from engine.core.registry import discover_modules
+from engine.modules.pdf_report.tests.plans import build_report_plan
+from engine.modules.soumission.tests.workbooks import submission_bytes
+from engine.parts.tests.plans import build_facade_plan
+from engine.testing.pdf import PdfSpec, TextItem, write_pdf
+
 PARALLEL_BATCH_SIZE = 2
 MCP_REQUEST_TIMEOUT = timedelta(seconds=120)
+INTERNAL_FOLDER = "_internal"
+DEVELOPMENT_ONLY_PACKAGES = frozenset({"_pytest", "pytest", "mypy"})
+ENGINE_TESTS_PACKAGE = re.compile(r"^engine\..*\.tests(\.|$)")
 
 
 def run_binary(binary: Path, *arguments: str) -> str:
@@ -52,10 +44,12 @@ def run_binary(binary: Path, *arguments: str) -> str:
 
 
 def main(binary: Path) -> None:
+    check_frozen_contents(binary)
     catalog = json.loads(run_binary(binary, "list-modules"))
     module_ids = [entry["manifest"]["id"] for entry in catalog]
-    if module_ids != EXPECTED_MODULE_IDS:
-        raise SystemExit(f"Unexpected modules: {module_ids}")
+    expected_ids = expected_module_ids()
+    if module_ids != expected_ids:
+        raise SystemExit(f"Unexpected modules: {module_ids} (expected {expected_ids})")
 
     with tempfile.TemporaryDirectory() as workdir:
         settings_file = Path(workdir) / "Réglages" / "settings.json"
@@ -72,8 +66,41 @@ def main(binary: Path) -> None:
     sys.stdout.write(f"Smoke OK: {len(events)} events\n")
 
 
+def expected_module_ids() -> list[str]:
+    """The source tree is the reference: the frozen catalog must list the same modules."""
+    return [module.manifest.id for module in discover_modules().values()]
+
+
+async def expected_mcp_tools(settings_file: Path) -> list[str]:
+    tools = await build_server(settings_file).list_tools()
+    return sorted(tool.name for tool in tools)
+
+
+def check_frozen_contents(binary: Path) -> None:
+    """Tests and development tools must not ship, neither as frozen modules nor as folders."""
+    frozen_modules = pkg_archive_contents(str(binary))
+    internal = binary.parent / INTERNAL_FOLDER
+    folders = (
+        ".".join(path.relative_to(internal).parts) for path in internal.rglob("*") if path.is_dir()
+    )
+    unexpected = sorted(
+        name for name in (*frozen_modules, *folders) if is_development_only(name)
+    )
+    if unexpected:
+        raise SystemExit(f"Development-only content in the sidecar: {unexpected}")
+
+
+def is_development_only(name: str) -> bool:
+    """Matches a top-level tool (mypy), a nested one (pydantic.mypy) or an engine tests package."""
+    segments = set(name.split("."))
+    if segments & DEVELOPMENT_ONLY_PACKAGES:
+        return True
+    return ENGINE_TESTS_PACKAGE.match(name) is not None
+
+
 async def smoke_mcp(binary: Path, settings_file: Path) -> None:
     """Handshakes with the frozen MCP server, as the assistant does."""
+    expected_tools = await expected_mcp_tools(settings_file)
     parameters = StdioServerParameters(
         command=str(binary), args=["mcp", "--settings", str(settings_file)]
     )
@@ -85,8 +112,10 @@ async def smoke_mcp(binary: Path, settings_file: Path) -> None:
         tools = sorted(tool.name for tool in (await session.list_tools()).tools)
         features = await session.call_tool("list_features", {})
         guide = await session.call_tool("read_help", {"topic": "premiers-pas"})
-    if tools != EXPECTED_MCP_TOOLS or features.isError or guide.isError:
-        raise SystemExit(f"Unexpected MCP server answer: {tools} {features} {guide}")
+    if tools != expected_tools or features.isError or guide.isError:
+        raise SystemExit(
+            f"Unexpected MCP server answer: {tools} (expected {expected_tools}) {features} {guide}"
+        )
 
 
 def smoke_assistant(binary: Path, workdir: Path) -> None:

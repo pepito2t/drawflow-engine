@@ -47,7 +47,9 @@
     "createUpdaterArtifacts": true,
     "windows": {
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "languages": ["French", "English"],
+        "displayLanguageSelector": true
       }
     }
   }

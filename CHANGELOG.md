@@ -5,12 +5,15 @@ Les numéros entre parenthèses renvoient aux pull requests GitHub.
 ## Non publié
 
 - **Correctifs moteur (audit)** : un fichier d'un préréglage déplacé ou supprimé devient un avertissement qui le nomme (liste de pièces, comparaison d'indices, rapport, soumission) au lieu d'une erreur interne ; un historique illisible ou non inscriptible n'échoue plus un traitement réussi ; un profil endommagé est refusé lisiblement et un fichier de réglages illisible bloque l'import avant toute écriture ; `setup scan` ne modifie plus `settings.json` (le modèle recommandé est dans le rapport et enregistré au téléchargement) ; courriels : jeton de session renouvelé enregistré immédiatement, date de dernière récupération prise avant le téléchargement, pièces jointes des messages déjà rangés non retéléchargées, message endommagé ignoré, Microsoft injoignable expliqué, fichier de session restreint au compte Windows (`icacls`) ; quantités infinies ou NaN signalées ; installeur absent ou bloqué expliqué ; plugin Stream Dock : membres `\` et `:` rejetés ; écritures JSON atomiques à nom unique avec `fsync` ; démarrage plus léger (openpyxl, pypdf, ezdxf, pdfplumber chargés seulement par les commandes qui lisent des documents) (#187).
+- **Chaîne de publication (audit)** : installeur allégé (tests et outils de développement exclus), release publiée en une fois avec le plugin, notes de version tirées du changelog, installeur NSIS en français et en anglais.
+
+## 0.20.0 — 2026-10-06
+
 - **Moteur en français ou en anglais** : messages, avertissements, étiquettes de formulaires, noms des fonctionnalités, feuilles Excel, écran d'installation et assistant suivent la langue réglée ; aide intégrée servie depuis le guide traduit ; `engine --lang en` en ligne de commande (#121).
 
 ## 0.19.0 — 2026-10-06
 
-- **Moteur en français ou en anglais** : messages, avertissements, étiquettes de formulaires, noms des fonctionnalités, feuilles Excel, écran d'installation et assistant suivent la langue réglée ; aide intégrée servie depuis le guide traduit ; `engine --lang en` en ligne de commande (#121).
-- **Interface en français ou en anglais** : réglage Paramètres → Général → Langue, appliqué immédiatement ; catalogue de messages typé (mêmes clés dans les deux langues) ; guide utilisateur traduit (`docs/guide.en.md`). Les messages du moteur restent en français pour l'instant (#121).
+- **Interface en français ou en anglais** : réglage Paramètres → Général → Langue, appliqué immédiatement ; catalogue de messages typé (mêmes clés dans les deux langues) ; guide utilisateur traduit (`docs/guide.en.md`) (#121).
 
 ## 0.18.0 — 2026-10-06
 
