@@ -58,6 +58,7 @@ t = define_messages(
         ),
         "reader.unreadable": "Le classeur Excel est illisible.",
         "reader.unreadable.hint": "Vérifiez qu'il s'ouvre dans Excel (format .xlsx).",
+        "reader.sheet_unreadable": "La feuille « {sheet} » du classeur Excel est illisible.",
         "reader.unreadable_amounts": "{count} montant(s) illisible(s) gardé(s) en texte.",
         "reader.unreadable_amounts.location": "feuille « {sheet} »",
         "reader.unreadable_amounts.hint": (
@@ -143,6 +144,7 @@ t = define_messages(
         ),
         "reader.unreadable": "The Excel workbook cannot be read.",
         "reader.unreadable.hint": "Check that it opens in Excel (.xlsx format).",
+        "reader.sheet_unreadable": "Sheet “{sheet}” of the Excel workbook cannot be read.",
         "reader.unreadable_amounts": "{count} unreadable amount(s) kept as text.",
         "reader.unreadable_amounts.location": "sheet “{sheet}”",
         "reader.unreadable_amounts.hint": (

@@ -1,5 +1,6 @@
 """Synthetic submission workbooks used by tests and the frozen-binary smoke test."""
 
+import zipfile
 from io import BytesIO
 from pathlib import Path
 
@@ -28,3 +29,16 @@ def submission_bytes(title_rows: int = 2) -> bytes:
 def write_submission(path: Path) -> Path:
     path.write_bytes(submission_bytes())
     return path
+
+
+def truncated_sheet_bytes() -> bytes:
+    """A workbook that opens, whose first sheet's XML stops halfway: Excel reports it damaged."""
+    source = BytesIO(submission_bytes())
+    target = BytesIO()
+    with zipfile.ZipFile(source) as original, zipfile.ZipFile(target, "w") as damaged:
+        for item in original.infolist():
+            content = original.read(item)
+            if item.filename == "xl/worksheets/sheet1.xml":
+                content = content[: len(content) // 2]
+            damaged.writestr(item, content)
+    return target.getvalue()

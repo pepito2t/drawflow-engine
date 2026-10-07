@@ -7,7 +7,11 @@ from openpyxl import Workbook
 
 from engine.modules.soumission.reader import WorkbookReadError, read_workbook
 from engine.modules.soumission.settings import SoumissionSettings
-from engine.modules.soumission.tests.workbooks import submission_bytes, write_submission
+from engine.modules.soumission.tests.workbooks import (
+    submission_bytes,
+    truncated_sheet_bytes,
+    write_submission,
+)
 
 
 def test_finds_the_header_and_normalizes_rows(tmp_path: Path) -> None:
@@ -77,3 +81,15 @@ def test_unreadable_workbook_is_reported(tmp_path: Path) -> None:
         read_workbook(path, str(path), SoumissionSettings())
 
     assert caught.value.file == path
+
+
+def test_a_damaged_sheet_is_reported_with_its_name(tmp_path: Path) -> None:
+    path = tmp_path / "tronqué.xlsx"
+    path.write_bytes(truncated_sheet_bytes())
+
+    with pytest.raises(WorkbookReadError) as caught:
+        read_workbook(path, str(path), SoumissionSettings())
+
+    assert caught.value.file == path
+    assert "« Offre »" in caught.value.message
+    assert caught.value.hint is not None

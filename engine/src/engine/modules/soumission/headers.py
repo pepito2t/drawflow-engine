@@ -1,7 +1,6 @@
 """What a submission file calls its columns, and how to teach the norm these names."""
 
 from io import BytesIO
-from itertools import islice
 from pathlib import Path
 from typing import IO, Any
 
@@ -12,7 +11,12 @@ from engine.core.settings import load_section, read_document, save_settings
 from engine.core.text import fold
 from engine.modules.soumission.attachments import embedded_workbooks
 from engine.modules.soumission.messages import t
-from engine.modules.soumission.reader import header_candidates, match_columns, open_workbook
+from engine.modules.soumission.reader import (
+    header_candidates,
+    match_columns,
+    open_workbook,
+    sheet_rows,
+)
 from engine.modules.soumission.settings import (
     SYNONYM_SEPARATOR,
     SoumissionSettings,
@@ -47,7 +51,7 @@ def inspect_headers(path: Path, settings: SoumissionSettings) -> dict[str, Any]:
         workbook = open_workbook(stream, name)
         try:
             for sheet in workbook.worksheets[:MAX_SHEETS]:
-                rows = list(islice(sheet.iter_rows(values_only=True), settings.header_search_rows))
+                rows = sheet_rows(sheet, name, settings.header_search_rows)
                 candidates = header_candidates(rows)
                 best = rows[candidates[0].row] if candidates else []
                 sheets.append(

@@ -4,11 +4,13 @@ from datetime import date
 from itertools import islice
 from pathlib import Path
 from typing import IO
+from xml.etree.ElementTree import ParseError
 from zipfile import BadZipFile
 
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl.workbook.workbook import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
 from engine.core.anomalies import Anomaly
 from engine.core.errors import EngineError
@@ -75,7 +77,7 @@ def read_workbook(
         warnings: list[Anomaly] = []
         first_rows: Sequence[Sequence[object]] = ()
         for sheet in workbook.worksheets:
-            rows = list(sheet.iter_rows(values_only=True))
+            rows = sheet_rows(sheet, source)
             if not first_rows:
                 first_rows = rows[: settings.header_search_rows]
             table, sheet_warnings = _read_sheet(rows, sheet.title, source, settings)
@@ -100,9 +102,22 @@ def read_workbook(
 def open_workbook(stream: Path | IO[bytes], source: str) -> Workbook:
     try:
         return load_workbook(stream, read_only=True, data_only=True)
-    except (OSError, BadZipFile, InvalidFileException, KeyError) as error:
+    except (OSError, BadZipFile, InvalidFileException, KeyError, ParseError) as error:
         raise WorkbookReadError(
             t("reader.unreadable"), file=Path(source), hint=t("reader.unreadable.hint")
+        ) from error
+
+
+def sheet_rows(sheet: Worksheet, source: str, limit: int | None = None) -> list[tuple[object, ...]]:
+    """In read-only mode a sheet's XML is only parsed here: a damaged one fails on this call."""
+    try:
+        rows = sheet.iter_rows(values_only=True)
+        return list(rows if limit is None else islice(rows, limit))
+    except (OSError, BadZipFile, KeyError, ParseError) as error:
+        raise WorkbookReadError(
+            t("reader.sheet_unreadable", sheet=sheet.title),
+            file=Path(source),
+            hint=t("reader.unreadable.hint"),
         ) from error
 
 
