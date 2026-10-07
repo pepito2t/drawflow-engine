@@ -80,13 +80,66 @@ jobs:
       - run: pnpm build
       - run: pnpm run package
 
+  # `tauri::generate_context!` only needs the sidecar file and the frontendDist folder to exist:
+  # a placeholder and an empty folder are enough for clippy and the unit tests.
+  rust:
+    name: Rust checks (macos-latest)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Rust channel from rust-toolchain.toml
+        id: rust
+        run: echo "channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' src-tauri/rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          toolchain: ${{ steps.rust.outputs.channel }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: src-tauri
+      - name: Placeholder sidecar and frontend
+        run: |
+          placeholder="src-tauri/binaries/engine-$(rustc --print host-tuple)"
+          mkdir -p src-tauri/binaries/_internal ui/dist
+          touch "$placeholder"
+          chmod +x "$placeholder"
+      - name: cargo fmt
+        working-directory: src-tauri
+        run: cargo fmt --check
+      - name: cargo clippy
+        working-directory: src-tauri
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: cargo test
+        working-directory: src-tauri
+        run: cargo test --locked
+
+  sidecar:
+    name: Sidecar smoke test (macos-latest)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+      - name: Rust channel from rust-toolchain.toml
+        id: rust
+        run: echo "channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' src-tauri/rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      # build-sidecar.sh names the binary after `rustc --print host-tuple`.
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          toolchain: ${{ steps.rust.outputs.channel }}
+      - name: Build sidecar
+        run: |
+          (cd engine && uv sync --locked)
+          ./scripts/build-sidecar.sh
+      - name: Smoke test frozen sidecar
+        run: uv run --project engine python scripts/smoke-sidecar.py "$(ls src-tauri/binaries/engine-*)"
+
   tauri:
-    name: Tauri + sidecar (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    name: Tauri + sidecar (windows-latest)
+    runs-on: windows-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -104,7 +157,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
         with:
           toolchain: ${{ steps.rust.outputs.channel }}
-          components: rustfmt, clippy
+          components: clippy
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           workspaces: src-tauri
@@ -116,10 +169,6 @@ jobs:
           ./scripts/build-sidecar.sh
       - name: Smoke test frozen sidecar
         run: uv run --project engine python scripts/smoke-sidecar.py "$(ls src-tauri/binaries/engine-*)"
-      - name: cargo fmt
-        if: matrix.os == 'macos-latest'
-        working-directory: src-tauri
-        run: cargo fmt --check
       - name: cargo clippy
         working-directory: src-tauri
         run: cargo clippy --locked --all-targets -- -D warnings
@@ -127,10 +176,10 @@ jobs:
         working-directory: src-tauri
         run: cargo test --locked
       - name: Windows installer (unsigned, no updater artifacts)
-        if: github.event_name == 'push' && matrix.os == 'windows-latest'
+        if: github.event_name == 'push'
         run: pnpm tauri build --bundles nsis --config '{"bundle":{"createUpdaterArtifacts":false}}' -- --locked
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: github.event_name == 'push' && matrix.os == 'windows-latest'
+        if: github.event_name == 'push'
         with:
           name: drawflow-windows-installer
           path: src-tauri/target/release/bundle/nsis/*.exe
