@@ -116,4 +116,16 @@ describe("dialogs", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
+
+  it("moves between the guide sections with the arrow keys", async () => {
+    await openFrom("help");
+    screen.getByRole("tab", { name: "Démarrer" }).focus();
+
+    fireEvent.keyDown(screen.getByRole("tablist"), { key: "ArrowDown" });
+
+    const parts = screen.getByRole("tab", { name: "Liste de pièces" });
+    expect(document.activeElement).toBe(parts);
+    expect(parts.getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tabpanel").textContent).toContain("Choisir les plans.");
+  });
 });

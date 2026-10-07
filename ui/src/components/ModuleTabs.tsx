@@ -7,6 +7,7 @@ import { entryFor } from "../lib/runs-store";
 import type { RunStatus } from "../lib/run-state";
 import { ModuleIconView } from "./ModuleIconView";
 import { Spinner } from "./Spinner";
+import { onTablistKeyDown } from "./tablist-keys";
 
 export interface ExtraTab {
   id: string;
@@ -42,6 +43,7 @@ export function ModuleTabs({
         role="tablist"
         aria-orientation="vertical"
         aria-label={t("moduleTabs.title")}
+        onKeyDown={onTablistKeyDown}
       >
         {leadingTabs.map((tab) => (
           <ExtraTabButton
@@ -89,6 +91,7 @@ function ModuleTab({ manifest, selected, onSelect }: ModuleTabProps) {
       role="tab"
       aria-selected={selected}
       aria-controls={tabPanelId(manifest.id)}
+      tabIndex={selected ? 0 : -1}
       className={selected ? "side-tab selected" : "side-tab"}
       onClick={() => {
         onSelect(manifest.id);
@@ -118,6 +121,7 @@ function ExtraTabButton({ tab, selected, onSelect, separated = false }: ExtraTab
       role="tab"
       aria-selected={selected}
       aria-controls={tabPanelId(tab.id)}
+      tabIndex={selected ? 0 : -1}
       className={classes.filter(Boolean).join(" ")}
       onClick={() => {
         onSelect(tab.id);

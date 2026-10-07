@@ -42,6 +42,7 @@ import { TemplatesPanel } from "./TemplatesPanel";
 import { CloseIcon } from "./icons";
 import { ModalDialog } from "./ModalDialog";
 import { ModuleForm } from "./ModuleForm";
+import { onTablistKeyDown } from "./tablist-keys";
 import { Loader, Spinner } from "./Spinner";
 
 const ACCESS_CODE_TAB_ID = "access-code";
@@ -250,6 +251,7 @@ function SettingsEditor({
           role="tablist"
           aria-orientation="vertical"
           aria-label={t("settings.categories")}
+          onKeyDown={onTablistKeyDown}
         >
           {sections.map((section) => (
             <button
@@ -257,6 +259,7 @@ function SettingsEditor({
               type="button"
               role="tab"
               aria-selected={section.id === activeSection?.id}
+              tabIndex={section.id === activeSection?.id ? 0 : -1}
               className={section.id === activeSection?.id ? "side-tab selected" : "side-tab"}
               onClick={() => {
                 setActiveId(section.id);
@@ -272,6 +275,7 @@ function SettingsEditor({
               type="button"
               role="tab"
               aria-selected={activeId === tab.id}
+              tabIndex={activeId === tab.id ? 0 : -1}
               className={activeId === tab.id ? "side-tab selected" : "side-tab"}
               onClick={() => {
                 setActiveId(tab.id);

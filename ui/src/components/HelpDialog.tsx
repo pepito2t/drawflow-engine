@@ -11,6 +11,7 @@ import { ErrorPanel } from "./ErrorPanel";
 import { CloseIcon } from "./icons";
 import { MarkdownText } from "./MarkdownText";
 import { ModalDialog } from "./ModalDialog";
+import { onTablistKeyDown } from "./tablist-keys";
 import { Loader } from "./Spinner";
 
 const EXTERNAL_LINK = /^https:\/\//;
@@ -105,6 +106,7 @@ function GuideView({
         role="tablist"
         aria-orientation="vertical"
         aria-label={t("helpDialog.sections")}
+        onKeyDown={onTablistKeyDown}
       >
         {sections.map((section) => (
           <button
@@ -112,6 +114,7 @@ function GuideView({
             type="button"
             role="tab"
             aria-selected={section.id === current?.id}
+            tabIndex={section.id === current?.id ? 0 : -1}
             className={section.id === current?.id ? "side-tab selected" : "side-tab"}
             onClick={() => {
               setCurrent(section);
