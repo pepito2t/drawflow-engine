@@ -16,7 +16,7 @@ from engine.modules.soumission.preview import preview_table
 from engine.modules.soumission.reader import SubmissionTable, WorkbookContent
 from engine.modules.soumission.schema import SoumissionInputs
 from engine.modules.soumission.settings import SoumissionSettings
-from engine.modules.soumission.worker import read_submission
+from engine.modules.soumission.worker import SubmissionRead, read_submission
 
 SOURCE_SUFFIXES = frozenset({".xlsx", ".pdf"})
 DOCUMENT_TYPE = "soumission"
@@ -33,16 +33,18 @@ def run_soumission(inputs: SoumissionInputs, context: RunContext, moment: dateti
         recursive=inputs.recursive,
         emit=context.emit,
     )
-    sources = _without_duplicates(collected, context)
     outcome = process_batch(
-        sources,
+        collected,
         partial(read_submission, settings=settings),
         batch_size=context.general.batch_size,
         emit=context.emit,
         label=t("pipeline.read_label"),
         settings_file=context.settings_file,
     )
-    tables = _tables(outcome.results, context)
+    if not outcome.results:
+        raise EngineError(t("pipeline.no_source"), hint=t("pipeline.no_source.hint"))
+    sources = _without_duplicates(outcome.results, context)
+    tables = _tables(sources, context)
     if not tables:
         raise EngineError(t("pipeline.no_table"), hint=t("pipeline.no_table.hint"))
     columns = [column.key for column in settings.columns]
@@ -59,18 +61,15 @@ def run_soumission(inputs: SoumissionInputs, context: RunContext, moment: dateti
     return ModuleResult(summary=summary, outputs=[target])
 
 
-def _without_duplicates(paths: list[Path], context: RunContext) -> list[Path]:
-    result = deduplicate(paths)
-    for duplicate in result.duplicates:
+def _without_duplicates(
+    results: list[tuple[Path, SubmissionRead]], context: RunContext
+) -> list[tuple[Path, WorkbookContent]]:
+    deduplicated = deduplicate([(path, read.digest) for path, read in results])
+    for duplicate in deduplicated.duplicates:
         message = t("pipeline.duplicate", name=duplicate.same_as.name)
         context.emit(WarningEvent(message=message, file=str(duplicate.path)))
-    for unreadable in result.unreadable:
-        message = t("pipeline.unreadable_source")
-        hint = t("pipeline.unreadable_source.hint")
-        context.emit(WarningEvent(message=message, file=str(unreadable), hint=hint))
-    if not result.unique:
-        raise EngineError(t("pipeline.no_source"), hint=t("pipeline.unreadable_source.hint"))
-    return result.unique
+    by_path = dict(results)
+    return [(path, by_path[path].content) for path in deduplicated.unique]
 
 
 def _tables(
