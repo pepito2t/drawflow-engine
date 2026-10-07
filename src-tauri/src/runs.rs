@@ -82,6 +82,58 @@ impl<C: Killable> RunRegistry<C> {
     }
 }
 
+pub type ChildId = u64;
+
+/// Short-lived engine processes (one-shot requests), kept only so they can be killed at exit
+/// or when they overrun their deadline.
+pub struct ChildRegistry<C> {
+    next_id: AtomicU64,
+    children: Mutex<HashMap<ChildId, C>>,
+}
+
+impl<C> Default for ChildRegistry<C> {
+    fn default() -> Self {
+        Self {
+            next_id: AtomicU64::new(1),
+            children: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+impl<C: Killable> ChildRegistry<C> {
+    pub fn register(&self, child: C) -> Result<ChildId, BridgeError> {
+        let id = self.next_id.fetch_add(1, Ordering::Relaxed);
+        self.lock()?.insert(id, child);
+        Ok(id)
+    }
+
+    pub fn take(&self, id: ChildId) -> Result<Option<C>, BridgeError> {
+        Ok(self.lock()?.remove(&id))
+    }
+
+    pub fn kill(&self, id: ChildId) -> Result<(), BridgeError> {
+        match self.take(id)? {
+            Some(child) => child.kill_process(),
+            None => Ok(()),
+        }
+    }
+
+    pub fn kill_all(&self) -> Vec<BridgeError> {
+        let drained: Vec<C> = match self.lock() {
+            Ok(mut children) => children.drain().map(|(_, child)| child).collect(),
+            Err(error) => return vec![error],
+        };
+        drained
+            .into_iter()
+            .filter_map(|child| child.kill_process().err())
+            .collect()
+    }
+
+    fn lock(&self) -> Result<MutexGuard<'_, HashMap<ChildId, C>>, BridgeError> {
+        self.children.lock().map_err(|_| BridgeError::StatePoisoned)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::unwrap_used)]
@@ -163,6 +215,28 @@ mod tests {
             .unwrap();
         registry.cancel(&first).unwrap();
         assert_eq!(*kills.lock().unwrap(), ["first"]);
+    }
+
+    #[test]
+    fn one_shot_children_are_killed_at_exit_unless_already_finished() {
+        let registry = ChildRegistry::default();
+        let kills: Arc<Mutex<Vec<String>>> = Arc::default();
+        let finished = registry.register(child(&kills, "finished")).unwrap();
+        registry.register(child(&kills, "running")).unwrap();
+        assert!(registry.take(finished).unwrap().is_some());
+        assert!(registry.take(finished).unwrap().is_none());
+        assert!(registry.kill_all().is_empty());
+        assert_eq!(*kills.lock().unwrap(), ["running"]);
+    }
+
+    #[test]
+    fn overrunning_child_is_killed_once() {
+        let registry = ChildRegistry::default();
+        let kills: Arc<Mutex<Vec<String>>> = Arc::default();
+        let id = registry.register(child(&kills, "slow")).unwrap();
+        registry.kill(id).unwrap();
+        registry.kill(id).unwrap();
+        assert_eq!(*kills.lock().unwrap(), ["slow"]);
     }
 
     #[test]

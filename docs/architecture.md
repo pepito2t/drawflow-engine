@@ -18,7 +18,7 @@ Comment les pièces s'assemblent et pourquoi. Les conventions de code et les com
 | Couche | Rôle | Ne fait pas |
 |---|---|---|
 | UI | Affiche, valide (zod) ce qu'elle reçoit, déclare les commandes nommées | Logique métier ; appels Tauri hors de `ui/src/lib/tauri/` |
-| Rust | Lance le moteur et relaie sa sortie telle quelle ; code d'accès, mises à jour, API locale, ouverture de fichiers et de pages | Interpréter les données du moteur |
+| Rust | Lance le moteur et relaie sa sortie telle quelle ; code d'accès, mises à jour, API locale, ouverture de fichiers et de pages | Interpréter les données du moteur, hormis la liste des fichiers produits (seuls ceux-là peuvent être ouverts) |
 | Moteur | Toute la logique métier | Écrire autre chose que le protocole sur stdout |
 
 Liste des commandes du moteur : `engine --help`.

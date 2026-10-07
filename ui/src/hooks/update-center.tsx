@@ -39,7 +39,10 @@ async function checkAtStartup(): Promise<StartupCheck> {
       ? { state: { status: "available", version: update.version }, update }
       : { state: { status: "upToDate" }, update: null };
   } catch (error: unknown) {
-    return { state: { status: "error", message: describeBridgeError(error) }, update: null };
+    return {
+      state: { status: "error", message: describeBridgeError(error), version: null },
+      update: null,
+    };
   }
 }
 

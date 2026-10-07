@@ -1,6 +1,7 @@
 mod access;
 mod assistant;
 mod automations;
+mod bounded_set;
 mod error;
 mod integrations;
 mod outputs;
@@ -13,7 +14,7 @@ mod updates;
 use access::AccessLock;
 use assistant::AssistantTurn;
 use integrations::IntegrationState;
-use sidecar::EngineRuns;
+use sidecar::{EngineRuns, OneShotChildren};
 use tauri::{Manager, RunEvent};
 
 pub fn run() {
@@ -25,6 +26,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(updates::register_updater)
         .manage(EngineRuns::default())
+        .manage(OneShotChildren::default())
         .manage(AccessLock::default())
         .manage(AssistantTurn::default())
         .manage(IntegrationState::default())
@@ -33,6 +35,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             access::lock_status,
             updates::updater_configured,
+            updates::prepare_for_update,
             outputs::open_output,
             outputs::open_logs_folder,
             integrations::integration_status,
@@ -69,9 +72,13 @@ pub fn run() {
     }
 }
 
-fn stop_engine_processes(handle: &tauri::AppHandle) {
+/// Single exit cleanup, shared by the normal exit and the updater's restart.
+pub(crate) fn stop_engine_processes(handle: &tauri::AppHandle) {
     for error in handle.state::<EngineRuns>().cancel_all() {
         eprintln!("Arrêt d'un traitement impossible : {error}");
+    }
+    for error in handle.state::<OneShotChildren>().kill_all() {
+        eprintln!("Arrêt d'une requête du moteur impossible : {error}");
     }
     if let Err(error) = handle.state::<AssistantTurn>().stop() {
         eprintln!("Arrêt de l'assistant impossible : {error}");

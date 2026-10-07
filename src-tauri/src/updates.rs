@@ -1,4 +1,7 @@
-use tauri::{App, AppHandle};
+use tauri::{App, AppHandle, State};
+
+use crate::access::AccessLock;
+use crate::error::BridgeError;
 
 const UPDATER_PLUGIN: &str = "updater";
 
@@ -17,6 +20,15 @@ pub fn register_updater(app: &mut App) -> Result<(), Box<dyn std::error::Error>>
 #[tauri::command]
 pub fn updater_configured(app: AppHandle) -> bool {
     is_configured(&app)
+}
+
+/// The installer replaces the sidecar binary: every engine process must be gone first, and the
+/// updater's own exit path never reaches `RunEvent::Exit`.
+#[tauri::command]
+pub fn prepare_for_update(app: AppHandle, lock: State<'_, AccessLock>) -> Result<(), BridgeError> {
+    lock.ensure_unlocked()?;
+    crate::stop_engine_processes(&app);
+    Ok(())
 }
 
 fn is_configured(app: &AppHandle) -> bool {

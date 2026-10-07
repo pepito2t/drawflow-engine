@@ -13,6 +13,7 @@ use tauri::{AppHandle, Manager, State};
 use crate::error::BridgeError;
 use crate::integrations::protocol::ServerMessage;
 use crate::integrations::IntegrationState;
+use crate::paths::write_atomically;
 
 const ACCESS_FILE_NAME: &str = "access-code.json";
 const DEFAULT_ACCESS_CODE: &str = "0000";
@@ -96,30 +97,33 @@ pub fn lock_status(lock: State<'_, AccessLock>) -> Result<LockStatus, BridgeErro
     })
 }
 
-#[tauri::command]
-pub fn unlock(
+/// Argon2 verification runs off the main thread; the lock is held only around the state updates.
+#[tauri::command(async)]
+pub async fn unlock(
     app: AppHandle,
     lock: State<'_, AccessLock>,
     code: String,
 ) -> Result<(), BridgeError> {
-    let mut state = lock.state()?;
-    let now = Instant::now();
-    if let Some(remaining) = state.attempts.remaining_block(now) {
+    if let Some(remaining) = lock.state()?.attempts.remaining_block(Instant::now()) {
         return Err(BridgeError::TooManyAttempts(remaining.as_secs().max(1)));
     }
-    if verify_code(&access_file(&app)?, &code)? {
+    let path = access_file(&app)?;
+    let accepted =
+        tauri::async_runtime::spawn_blocking(move || verify_code(&path, &code)).await??;
+    let mut state = lock.state()?;
+    if accepted {
         state.attempts.reset();
         state.unlocked = true;
         app.state::<IntegrationState>()
             .broadcast(&ServerMessage::Locked { locked: false });
         return Ok(());
     }
-    state.attempts.record_failure(now);
+    state.attempts.record_failure(Instant::now());
     Err(BridgeError::WrongAccessCode)
 }
 
-#[tauri::command]
-pub fn change_access_code(
+#[tauri::command(async)]
+pub async fn change_access_code(
     app: AppHandle,
     lock: State<'_, AccessLock>,
     current: String,
@@ -127,11 +131,15 @@ pub fn change_access_code(
 ) -> Result<(), BridgeError> {
     lock.ensure_unlocked()?;
     let path = access_file(&app)?;
-    if !verify_code(&path, &current)? {
+    tauri::async_runtime::spawn_blocking(move || replace_code(&path, &current, &new_code)).await?
+}
+
+fn replace_code(path: &Path, current: &str, new_code: &str) -> Result<(), BridgeError> {
+    if !verify_code(path, current)? {
         return Err(BridgeError::WrongAccessCode);
     }
-    validate_code(&new_code)?;
-    write_code(&path, &hash_code(&new_code)?)
+    validate_code(new_code)?;
+    write_code(path, &hash_code(new_code)?)
 }
 
 fn access_file(app: &AppHandle) -> Result<PathBuf, BridgeError> {
@@ -171,23 +179,18 @@ fn read_stored(path: &Path) -> Result<Option<StoredCode>, BridgeError> {
     if !path.exists() {
         return Ok(None);
     }
-    let content = fs::read_to_string(path)?;
+    let content = fs::read_to_string(path).map_err(BridgeError::AccessFile)?;
     serde_json::from_str(&content)
         .map(Some)
         .map_err(|_| BridgeError::AccessFileCorrupted)
 }
 
 fn write_code(path: &Path, hash: &str) -> Result<(), BridgeError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let temporary = path.with_extension("json.tmp");
     let stored = StoredCode {
         hash: hash.to_owned(),
     };
-    fs::write(&temporary, serde_json::to_vec(&stored)?)?;
-    fs::rename(&temporary, path)?;
-    Ok(())
+    let content = serde_json::to_vec(&stored)?;
+    write_atomically(path, &content).map_err(BridgeError::AccessFile)
 }
 
 #[cfg(test)]
@@ -225,6 +228,18 @@ mod tests {
             verify_code(&path, "0000"),
             Err(BridgeError::AccessFileCorrupted)
         ));
+    }
+
+    #[test]
+    fn replacing_the_code_requires_the_current_one() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = folder.path().join(ACCESS_FILE_NAME);
+        assert!(matches!(
+            replace_code(&path, "1111", "2222"),
+            Err(BridgeError::WrongAccessCode)
+        ));
+        replace_code(&path, "0000", "2222").unwrap();
+        assert!(verify_code(&path, "2222").unwrap());
     }
 
     #[test]

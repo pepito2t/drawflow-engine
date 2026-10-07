@@ -7,7 +7,7 @@ export type UpdateState =
   | { status: "available"; version: string }
   | { status: "downloading"; version: string; progress: number | null }
   | { status: "installing"; version: string }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; version: string | null };
 
 export type UpdateAction =
   | { type: "checked"; state: UpdateState }
@@ -20,10 +20,10 @@ export function updateReducer(state: UpdateState, action: UpdateAction): UpdateS
   switch (action.type) {
     case "checked":
       return state.status === "checking" ? action.state : state;
-    case "downloadStarted":
-      return state.status === "available"
-        ? { status: "downloading", version: state.version, progress: null }
-        : state;
+    case "downloadStarted": {
+      const version = retryableVersion(state);
+      return version === null ? state : { status: "downloading", version, progress: null };
+    }
     case "progressed":
       return state.status === "downloading"
         ? {
@@ -36,8 +36,23 @@ export function updateReducer(state: UpdateState, action: UpdateAction): UpdateS
         ? { status: "installing", version: state.version }
         : state;
     case "failed":
-      return { status: "error", message: action.message };
+      return {
+        status: "error",
+        message: action.message,
+        version: "version" in state ? state.version : null,
+      };
   }
+}
+
+/** A failed download or install can be retried as long as the update version is known. */
+function retryableVersion(state: UpdateState): string | null {
+  if (state.status === "available") {
+    return state.version;
+  }
+  if (state.status === "error") {
+    return state.version;
+  }
+  return null;
 }
 
 const PERCENT = 100;

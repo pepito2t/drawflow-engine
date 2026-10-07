@@ -49,7 +49,24 @@ describe("updateReducer", () => {
     expect(updateReducer({ status: "upToDate" }, { type: "failed", message: "réseau" })).toEqual({
       status: "error",
       message: "réseau",
+      version: null,
     });
+  });
+
+  it("allows a retry after a failed download, not after a failed check", () => {
+    const failed = reduce({ status: "available", version: "1.2.0" }, [
+      { type: "downloadStarted" },
+      { type: "failed", message: "réseau" },
+    ]);
+
+    expect(failed).toEqual({ status: "error", message: "réseau", version: "1.2.0" });
+    expect(updateReducer(failed, { type: "downloadStarted" })).toEqual({
+      status: "downloading",
+      version: "1.2.0",
+      progress: null,
+    });
+    const unknown: UpdateState = { status: "error", message: "réseau", version: null };
+    expect(updateReducer(unknown, { type: "downloadStarted" })).toBe(unknown);
   });
 });
 

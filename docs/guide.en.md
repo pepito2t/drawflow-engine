@@ -148,7 +148,7 @@ Initial code: `0000`, to be changed in **Settings → Access code**. After sever
 
 ## Updates
 
-At startup, Drawflow offers new versions (**Update** or **Later**). The update waits for the runs in progress to finish, then restarts the application.
+At startup, Drawflow offers new versions (**Update** or **Later**). The update downloads while you keep working; it only installs when no run is in progress, stops any engine process still open (assistant, mail), then restarts the application. If the download fails, clicking again retries the update.
 
 ## What Drawflow has saved you
 

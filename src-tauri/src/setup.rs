@@ -9,12 +9,13 @@ use crate::runs::RunId;
 use crate::sidecar::{path_argument, start_streaming_run, EngineMessage, EngineRuns};
 
 /// Only the official download pages of the tools Drawflow relies on can be opened.
+/// Every prefix ends with `/` so a sibling path (`…_evil/`) cannot match.
 const DOWNLOAD_PAGES: [&str; 5] = [
     "https://www.opendesign.com/",
     "https://ollama.com/",
     "https://mirabox.net/",
     "https://github.com/pepito2t/drawflow-engine/releases/",
-    "https://github.com/pepito2t/streamdock_autocad",
+    "https://github.com/pepito2t/streamdock_autocad/",
 ];
 
 /// Allow-listed installation fixes run by the engine.
@@ -194,5 +195,13 @@ mod tests {
         assert!(!is_download_page(
             "https://github.com/someone-else/releases/"
         ));
+        assert!(!is_download_page(
+            "https://github.com/pepito2t/streamdock_autocad_evil/releases/latest"
+        ));
+    }
+
+    #[test]
+    fn every_download_page_prefix_ends_with_a_slash() {
+        assert!(DOWNLOAD_PAGES.iter().all(|page| page.ends_with('/')));
     }
 }

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
 use crate::error::BridgeError;
+use crate::paths::write_atomically;
 
 const CONFIG_FILE_NAME: &str = "integrations.json";
 pub const DEFAULT_PORT: u16 = 51717;
@@ -20,7 +21,7 @@ pub struct IntegrationConfig {
 }
 
 impl IntegrationConfig {
-    fn generated() -> Self {
+    pub fn generated() -> Self {
         Self {
             enabled: false,
             port: DEFAULT_PORT,
@@ -33,22 +34,23 @@ pub fn config_file(app: &AppHandle) -> Result<PathBuf, BridgeError> {
     Ok(app.path().app_config_dir()?.join(CONFIG_FILE_NAME))
 }
 
-/// Missing or unreadable configuration yields a disabled default with a fresh token.
-pub fn load(path: &Path) -> IntegrationConfig {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|content| serde_json::from_str(&content).ok())
-        .unwrap_or_else(IntegrationConfig::generated)
+/// A missing file yields a disabled default with a fresh token; a corrupt one is an error,
+/// never silently replaced.
+pub fn load(path: &Path) -> Result<IntegrationConfig, BridgeError> {
+    let content = match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(IntegrationConfig::generated())
+        }
+        Err(error) => return Err(BridgeError::IntegrationsFile(error)),
+    };
+    serde_json::from_str(&content)
+        .map_err(|_| BridgeError::ConfigCorrupted(CONFIG_FILE_NAME.to_owned()))
 }
 
 pub fn save(path: &Path, config: &IntegrationConfig) -> Result<(), BridgeError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let temporary = path.with_extension("json.tmp");
-    fs::write(&temporary, serde_json::to_vec_pretty(config)?)?;
-    fs::rename(&temporary, path)?;
-    Ok(())
+    let content = serde_json::to_vec_pretty(config)?;
+    write_atomically(path, &content).map_err(BridgeError::IntegrationsFile)
 }
 
 pub fn generate_token() -> String {
@@ -66,10 +68,19 @@ mod tests {
     #[test]
     fn missing_file_gives_disabled_default_with_token() {
         let folder = tempfile::tempdir().unwrap();
-        let config = load(&folder.path().join(CONFIG_FILE_NAME));
+        let config = load(&folder.path().join(CONFIG_FILE_NAME)).unwrap();
         assert!(!config.enabled);
         assert_eq!(config.port, DEFAULT_PORT);
         assert_eq!(config.token.len(), TOKEN_BYTES * 2);
+    }
+
+    #[test]
+    fn corrupt_file_is_an_error_not_a_fresh_token() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = folder.path().join(CONFIG_FILE_NAME);
+        fs::write(&path, "{ pas du json").unwrap();
+        assert!(matches!(load(&path), Err(BridgeError::ConfigCorrupted(_))));
+        assert_eq!(fs::read_to_string(&path).unwrap(), "{ pas du json");
     }
 
     #[test]
@@ -82,7 +93,7 @@ mod tests {
             token: "abc".to_owned(),
         };
         save(&path, &config).unwrap();
-        assert_eq!(load(&path), config);
+        assert_eq!(load(&path).unwrap(), config);
     }
 
     #[test]
