@@ -22,6 +22,7 @@ from engine.assistant.model_client import ModelClient
 from engine.assistant.toolbox import McpToolBox
 from engine.core.errors import EngineError, InvalidInputError
 from engine.core.settings import load_assistant_settings
+from engine.core.validation import describe_validation_error
 
 # The frozen sidecar takes a few seconds to start; past this, the MCP server is stuck.
 MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
@@ -79,7 +80,10 @@ def _parse_request(raw: dict[str, Any]) -> ChatRequest:
     try:
         return ChatRequest.model_validate(raw)
     except ValidationError as error:
-        raise InvalidInputError(t("service.invalid_conversation"), hint=str(error)) from error
+        raise InvalidInputError(
+            t("service.invalid_conversation"),
+            hint=describe_validation_error(ChatRequest, error),
+        ) from error
 
 
 def _run(task: Callable[[], Awaitable[None]]) -> None:

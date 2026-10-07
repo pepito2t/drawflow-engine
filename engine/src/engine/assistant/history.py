@@ -10,6 +10,7 @@ from engine.assistant.conversation import MAX_HISTORY_MESSAGES, ChatMessage
 from engine.assistant.messages import t
 from engine.core.errors import InvalidInputError, OutputWriteError
 from engine.core.json_files import write_json_atomically
+from engine.core.validation import describe_validation_error
 
 HISTORY_FILE = "assistant-history.json"
 
@@ -36,7 +37,9 @@ def save_history(settings: Path, raw: dict[str, Any]) -> dict[str, Any]:
     try:
         conversation = SavedConversation.model_validate(raw)
     except ValidationError as error:
-        raise InvalidInputError(t("history.invalid"), hint=str(error)) from error
+        raise InvalidInputError(
+            t("history.invalid"), hint=describe_validation_error(SavedConversation, error)
+        ) from error
     kept = SavedConversation(messages=conversation.messages[-MAX_HISTORY_MESSAGES:])
     path = _history_file(settings)
     try:

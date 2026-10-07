@@ -53,6 +53,14 @@ def test_empty_list_clears_the_conversation(tmp_path: Path) -> None:
     assert json.loads((tmp_path / HISTORY_FILE).read_text(encoding="utf-8")) == {"messages": []}
 
 
-def test_invalid_conversation_is_refused(tmp_path: Path) -> None:
-    with pytest.raises(InvalidInputError):
-        save_history(tmp_path / "settings.json", {"messages": [{"role": "system", "content": "x"}]})
+def test_invalid_conversation_is_refused_without_echoing_its_content(tmp_path: Path) -> None:
+    secret = "Texte confidentiel"
+
+    with pytest.raises(InvalidInputError) as caught:
+        save_history(
+            tmp_path / "settings.json", {"messages": [{"role": "system", "content": secret}]}
+        )
+
+    assert caught.value.hint is not None
+    assert "messages.0.role" in caught.value.hint
+    assert secret not in caught.value.hint and "input_value" not in caught.value.hint
