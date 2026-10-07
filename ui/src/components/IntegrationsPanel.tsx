@@ -2,6 +2,7 @@ import { Suspense, use, useState } from "react";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError, type ReadableError } from "../lib/error-message";
 import { t } from "../i18n/settings";
+import { translateBridgeError } from "../lib/tauri/bridge-error";
 import {
   getIntegrationStatus,
   updateIntegration,
@@ -138,10 +139,11 @@ function IntegrationsEditor({ statusPromise }: { statusPromise: Promise<Integrat
         </div>
       </div>
       <p className={status.error ? "lock-error" : "muted"}>
-        {status.error ??
-          (status.address
+        {status.error
+          ? translateBridgeError(status.error)
+          : status.address
             ? t("integrations.listening", { address: status.address })
-            : t("integrations.disabled"))}
+            : t("integrations.disabled")}
       </p>
       {isBusy && <Spinner label={t("integrations.applying")} />}
       {error && (

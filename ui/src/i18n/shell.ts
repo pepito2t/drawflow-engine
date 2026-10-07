@@ -135,6 +135,64 @@ export const t = defineMessages({
     "engineChannel.invalidMessage":
       "Le moteur a envoyé un message que l'application ne comprend pas. Mettez l'application à jour puis réessayez.",
     "bridge.unknownError": "Erreur de communication avec le moteur.",
+    "bridge.engineLaunch":
+      "Impossible de lancer le moteur ({detail}). Réinstallez la dernière version de Drawflow si le problème persiste.",
+    "bridge.inputFile":
+      "Impossible de préparer les paramètres du traitement ({detail}). Vérifiez l'espace disque libre puis réessayez.",
+    "bridge.engineTimeout":
+      "Le moteur n'a pas répondu dans le délai imparti ({seconds} s) ; il a été arrêté. Réessayez avec moins de fichiers à la fois.",
+    "bridge.accessFile":
+      "Impossible de lire ou d'écrire le fichier du code d'accès ({detail}). Vérifiez les droits sur le dossier de configuration.",
+    "bridge.logsFolder":
+      "Impossible de créer le dossier des journaux ({detail}). Vérifiez les droits sur le dossier de configuration.",
+    "bridge.automationsFile":
+      "Impossible d'enregistrer les automatisations ({detail}). Vérifiez les droits sur le dossier de configuration.",
+    "bridge.integrationsFile":
+      "Impossible d'enregistrer les réglages de l'API locale ({detail}). Vérifiez les droits sur le dossier de configuration.",
+    "bridge.configCorrupted":
+      "Le fichier {file} est illisible : corrigez-le ou supprimez-le dans le dossier de configuration.",
+    "bridge.serialization":
+      "Paramètres impossibles à transmettre au moteur ({detail}). Redémarrez Drawflow si le problème persiste.",
+    "bridge.appError":
+      "Erreur de l'application ({detail}). Redémarrez Drawflow si le problème persiste.",
+    "bridge.runInProgress":
+      "Cette fonctionnalité est déjà en cours d'exécution. Attendez la fin du traitement ou annulez-le.",
+    "bridge.invalidModelName":
+      "« {name} » n'est pas un nom de modèle valide. Choisissez un modèle dans la liste.",
+    "bridge.invalidModuleId":
+      "« {id} » n'est pas un identifiant de fonctionnalité valide. Mettez l'application à jour.",
+    "bridge.pageNotAllowed": "Cette adresse n'est pas une page de téléchargement autorisée.",
+    "bridge.assistantBusy": "L'assistant répond déjà à une question. Attendez sa réponse.",
+    "bridge.statePoisoned": "État interne de l'application indisponible. Redémarrez Drawflow.",
+    "bridge.invalidPort":
+      "Le port {port} n'est pas utilisable : choisissez un port entre {min} et {max}.",
+    "bridge.portUnavailable":
+      "Le port {port} est indisponible ({detail}). Choisissez un autre port.",
+    "bridge.locked": "Drawflow est verrouillée : saisissez le code d'accès dans l'application.",
+    "bridge.wrongAccessCode": "Code d'accès incorrect.",
+    "bridge.automationWithoutPreset": "Chaque automatisation doit avoir un préréglage.",
+    "bridge.automationFolderMissing":
+      "Le dossier « {folder} » n'existe pas. Choisissez un dossier existant ou désactivez l'automatisation.",
+    "bridge.automationWatchFailed":
+      "Surveillance impossible pour « {folder} » ({detail}). Vérifiez que le dossier est accessible.",
+    "bridge.tooManyAttempts": "Trop de tentatives. Réessayez dans {seconds} s.",
+    "bridge.invalidAccessCode":
+      "Le code doit contenir uniquement des chiffres, entre {min} et {max}.",
+    "bridge.accessFileCorrupted":
+      "Le fichier du code d'accès est illisible. Supprimez access-code.json dans le dossier de configuration pour revenir au code 0000.",
+    "bridge.accessHashing": "Impossible d'enregistrer le code d'accès. Réessayez.",
+    "bridge.tokenGeneration":
+      "Impossible de générer un jeton pour l'API locale ({detail}). Réessayez.",
+    "bridge.outputMissing":
+      "Le fichier produit est introuvable : {path}. Il a peut-être été déplacé ou supprimé.",
+    "bridge.outputNotAllowed": "Ce fichier n'a pas été produit par Drawflow : {path}.",
+    "bridge.openFailed":
+      "Impossible d'ouvrir le fichier ({detail}). Vérifiez qu'un programme est associé à ce type de fichier.",
+    "bridge.invalidToken":
+      "Jeton ou version de protocole invalide. Vérifiez le jeton dans les réglages de l'API locale.",
+    "bridge.unknownMessage": "Message non reconnu par Drawflow.",
+    "bridge.noReply":
+      "Drawflow n'a pas répondu à temps ; l'action a peut-être été exécutée quand même.",
     "anomalies.general": "Général",
     "guide.invalid": "Le guide reçu du moteur est invalide.",
     "presets.invalid": "La liste des préréglages reçue du moteur est invalide.",
@@ -283,6 +341,56 @@ export const t = defineMessages({
     "engineChannel.invalidMessage":
       "The engine sent a message the application does not understand. Update the application, then try again.",
     "bridge.unknownError": "Communication error with the engine.",
+    "bridge.engineLaunch":
+      "Cannot start the engine ({detail}). Reinstall the latest version of Drawflow if the problem persists.",
+    "bridge.inputFile":
+      "Cannot prepare the run parameters ({detail}). Check the free disk space, then try again.",
+    "bridge.engineTimeout":
+      "The engine did not answer within {seconds} s; it was stopped. Try again with fewer files at once.",
+    "bridge.accessFile":
+      "Cannot read or write the access code file ({detail}). Check the permissions on the configuration folder.",
+    "bridge.logsFolder":
+      "Cannot create the logs folder ({detail}). Check the permissions on the configuration folder.",
+    "bridge.automationsFile":
+      "Cannot save the automations ({detail}). Check the permissions on the configuration folder.",
+    "bridge.integrationsFile":
+      "Cannot save the local API settings ({detail}). Check the permissions on the configuration folder.",
+    "bridge.configCorrupted":
+      "The file {file} is unreadable: fix or delete it in the configuration folder.",
+    "bridge.serialization":
+      "The parameters cannot be passed to the engine ({detail}). Restart Drawflow if the problem persists.",
+    "bridge.appError": "Application error ({detail}). Restart Drawflow if the problem persists.",
+    "bridge.runInProgress":
+      "This feature is already running. Wait for the run to finish or cancel it.",
+    "bridge.invalidModelName": "“{name}” is not a valid model name. Choose a model from the list.",
+    "bridge.invalidModuleId": "“{id}” is not a valid feature identifier. Update the application.",
+    "bridge.pageNotAllowed": "This address is not an allowed download page.",
+    "bridge.assistantBusy": "The assistant is already answering a question. Wait for its answer.",
+    "bridge.statePoisoned": "Internal application state unavailable. Restart Drawflow.",
+    "bridge.invalidPort": "Port {port} cannot be used: choose a port between {min} and {max}.",
+    "bridge.portUnavailable": "Port {port} is unavailable ({detail}). Choose another port.",
+    "bridge.locked": "Drawflow is locked: enter the access code in the application.",
+    "bridge.wrongAccessCode": "Wrong access code.",
+    "bridge.automationWithoutPreset": "Every automation needs a preset.",
+    "bridge.automationFolderMissing":
+      "The folder “{folder}” does not exist. Choose an existing folder or turn the automation off.",
+    "bridge.automationWatchFailed":
+      "Cannot watch “{folder}” ({detail}). Check that the folder is reachable.",
+    "bridge.tooManyAttempts": "Too many attempts. Try again in {seconds} s.",
+    "bridge.invalidAccessCode": "The code must contain digits only, between {min} and {max}.",
+    "bridge.accessFileCorrupted":
+      "The access code file is unreadable. Delete access-code.json in the configuration folder to go back to code 0000.",
+    "bridge.accessHashing": "Cannot save the access code. Try again.",
+    "bridge.tokenGeneration": "Cannot generate a token for the local API ({detail}). Try again.",
+    "bridge.outputMissing":
+      "The produced file cannot be found: {path}. It may have been moved or deleted.",
+    "bridge.outputNotAllowed": "This file was not produced by Drawflow: {path}.",
+    "bridge.openFailed":
+      "Cannot open the file ({detail}). Check that a program is associated with this file type.",
+    "bridge.invalidToken":
+      "Invalid token or protocol version. Check the token in the local API settings.",
+    "bridge.unknownMessage": "Message not recognized by Drawflow.",
+    "bridge.noReply": "Drawflow did not answer in time; the action may have run anyway.",
     "anomalies.general": "General",
     "guide.invalid": "The guide received from the engine is invalid.",
     "presets.invalid": "The preset list received from the engine is invalid.",

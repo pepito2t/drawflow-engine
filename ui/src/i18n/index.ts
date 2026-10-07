@@ -70,6 +70,12 @@ function interpolate(text: string, params: Params | undefined): string {
   );
 }
 
+export interface Translate<Keys extends string> {
+  (key: Keys, params?: Params): string;
+  /** For keys built at run time, such as error codes received from Rust. */
+  has: (key: string) => key is Keys;
+}
+
 /**
  * A catalog with the same keys in both languages; `t` resolves the current language at call time,
  * so plain functions and components use it alike. `{name}` placeholders take `params`.
@@ -77,8 +83,11 @@ function interpolate(text: string, params: Params | undefined): string {
 export function defineMessages<const Keys extends string>(messages: {
   fr: Record<Keys, string>;
   en: Record<Keys, string>;
-}): (key: Keys, params?: Params) => string {
-  return (key, params) => interpolate(messages[current][key], params);
+}): Translate<Keys> {
+  const translate = (key: Keys, params?: Params): string =>
+    interpolate(messages[current][key], params);
+  const has = (key: string): key is Keys => Object.hasOwn(messages.fr, key);
+  return Object.assign(translate, { has });
 }
 
 /** `one` when count is 1, `other` otherwise; both may use `{count}`. */

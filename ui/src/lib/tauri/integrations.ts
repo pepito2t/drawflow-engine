@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { z } from "zod";
+import { bridgeErrorSchema } from "./bridge-error";
 
 const COMMAND_EVENT = "integration-command";
 
@@ -9,7 +10,7 @@ const statusSchema = z.object({
   port: z.number().int(),
   token: z.string(),
   address: z.string().nullable(),
-  error: z.string().nullable(),
+  error: bridgeErrorSchema.nullable(),
 });
 
 const commandRequestSchema = z.object({ id: z.string(), command: z.string(), args: z.unknown() });

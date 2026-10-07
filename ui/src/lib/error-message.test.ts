@@ -10,6 +10,21 @@ describe("toReadableError", () => {
     );
   });
 
+  it("translates coded bridge errors", () => {
+    const readable = toReadableError({
+      code: "configCorrupted",
+      params: { file: "automations.json" },
+      message: "The file automations.json is unreadable.",
+    });
+
+    expect(readable).toEqual({
+      message:
+        "Le fichier automations.json est illisible : corrigez-le ou supprimez-le dans le dossier de configuration.",
+      hint: null,
+      file: null,
+    });
+  });
+
   it("suggests updating when the catalog is incompatible", () => {
     const readable = toReadableError(new CatalogError("Formulaire invalide"));
 

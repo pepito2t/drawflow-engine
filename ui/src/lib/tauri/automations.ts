@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { z } from "zod";
+import { bridgeErrorSchema } from "./bridge-error";
 
 const automationSchema = z.object({
   id: z.string().min(1),
@@ -10,7 +11,7 @@ const automationSchema = z.object({
 
 const statusSchema = z.object({
   automations: z.array(automationSchema),
-  errors: z.array(z.string()),
+  errors: z.array(bridgeErrorSchema),
 });
 
 export type Automation = z.infer<typeof automationSchema>;

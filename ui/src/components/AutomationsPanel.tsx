@@ -11,6 +11,7 @@ import {
   type Automation,
   type AutomationStatus,
 } from "../lib/tauri/automations";
+import { translateBridgeError } from "../lib/tauri/bridge-error";
 import { pickPaths } from "../lib/tauri/dialog";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
@@ -157,8 +158,12 @@ function AutomationsEditor({ statusPromise, modules }: AutomationsEditorProps) {
           </li>
         ))}
       </ul>
-      {watchErrors.map((message) => (
-        <ErrorPanel key={message} title={t("automations.watchError")} message={message} />
+      {watchErrors.map((watchError) => (
+        <ErrorPanel
+          key={watchError.message}
+          title={t("automations.watchError")}
+          message={translateBridgeError(watchError)}
+        />
       ))}
       {error && <ErrorPanel title={t("automations.notSaved")} message={error.message} />}
       <div className="run-controls">

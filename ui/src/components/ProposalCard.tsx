@@ -4,6 +4,7 @@ import type { ProposalStatus, RunProposal } from "../lib/assistant-chat";
 import type { CatalogModule } from "../lib/catalog";
 import { COMMAND_ARGUMENTS, COMMANDS } from "../lib/commands";
 import { describeInputs, describeSynonyms, proposalTitle } from "../lib/proposals";
+import { describeBridgeError } from "../lib/tauri/engine";
 import { Spinner } from "./Spinner";
 
 interface ProposalCardProps {
@@ -36,7 +37,7 @@ export function ProposalCard({ proposal, modules, onStatus }: ProposalCardProps)
         }
       })
       .catch((error: unknown) => {
-        onStatus("failed", error instanceof Error ? error.message : String(error));
+        onStatus("failed", describeBridgeError(error));
       });
   };
 
