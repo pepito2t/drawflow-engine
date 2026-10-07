@@ -13,7 +13,8 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "rootDir": "."
   },
   "include": ["src", "rollup.config.js", "eslint.config.js", "vitest.config.ts"]
 }

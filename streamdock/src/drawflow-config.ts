@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 import type { Connection } from "./drawflow-client";
 
 /** Drawflow's own local API settings; reading them spares the user any port or token entry. */
@@ -6,7 +6,7 @@ const DRAWFLOW_CONFIG_PARTS = ["ch.drawflow.desktop", "integrations.json"] as co
 
 const configSchema = z.object({
   enabled: z.boolean(),
-  port: z.number().int().positive(),
+  port: z.int().check(z.positive()),
   token: z.string(),
 });
 

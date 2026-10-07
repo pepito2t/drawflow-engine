@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 import type { SocketLike } from "./drawflow-client";
 
 /** How Stream Dock starts the plugin: `-port 1234 -pluginUUID … -registerEvent … -info {…}`. */
@@ -10,9 +10,9 @@ export interface LaunchArguments {
 
 const hostEventSchema = z.object({
   event: z.string(),
-  action: z.string().optional(),
-  context: z.string().optional(),
-  payload: z.record(z.string(), z.unknown()).optional(),
+  action: z.optional(z.string()),
+  context: z.optional(z.string()),
+  payload: z.optional(z.record(z.string(), z.unknown())),
 });
 
 export type HostEvent = z.infer<typeof hostEventSchema>;
