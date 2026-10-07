@@ -27,6 +27,9 @@ export const COMMAND_ARGUMENTS = {
   "automation.run": z.object({ automationId: z.string().min(1), path: z.string().min(1) }),
   "mail.open": z.object({}),
   "mail.fetch": z.object({}),
+  "console.toggle": z.object({}),
+  "console.detach": z.object({}),
+  "console.copy-errors": z.object({}),
 } as const;
 
 export type CommandId = keyof typeof COMMAND_ARGUMENTS;
@@ -55,6 +58,9 @@ export const COMMANDS = {
   runAutomation: "automation.run",
   openMail: "mail.open",
   fetchMail: "mail.fetch",
+  toggleConsole: "console.toggle",
+  detachConsole: "console.detach",
+  copyConsoleErrors: "console.copy-errors",
 } as const satisfies Record<string, CommandId>;
 
 export type CommandResult = { ok: true; data?: unknown } | { ok: false; error: string };

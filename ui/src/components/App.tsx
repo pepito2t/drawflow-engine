@@ -12,6 +12,7 @@ import { SettingsFeedProvider } from "../hooks/settings-feed";
 import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
 import { useAppCommands } from "../hooks/use-app-commands";
+import { useConsoleCommands } from "../hooks/use-console-commands";
 import { useConsoleNotifications } from "../hooks/use-console-notifications";
 import { useGlobalShortcuts } from "../hooks/use-global-shortcuts";
 import { useIntegrationBridge } from "../hooks/use-integration-bridge";
@@ -210,6 +211,7 @@ function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
   });
   useIntegrationBridge();
   useGlobalShortcuts();
+  useConsoleCommands();
   useConsoleNotifications();
 
   const sidebarActions = (

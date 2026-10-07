@@ -95,6 +95,9 @@ Les erreurs produites par Drawflow lui-même portent un champ `code` stable, à 
 | `update.install` | — | Installe la mise à jour disponible |
 | `mail.open` | — | Ouvre l'onglet Courriels |
 | `mail.fetch` | — | Récupère les nouveaux messages de la boîte connectée (résultat dans `data`) |
+| `console.toggle` | — | Ouvre ou ferme la console au pied de l'application et met l'app au premier plan |
+| `console.detach` | — | Ouvre la console dans sa propre fenêtre (ou la ramène au premier plan) |
+| `console.copy-errors` | — | Copie dans le presse-papiers les dernières erreurs de la console, prêtes à coller dans un courriel (`data.copied` : nombre d'erreurs) ; `ok: false` s'il n'y en a aucune |
 | `automation.run` | `automationId`, `path` | Lance le préréglage d'un dossier surveillé avec ce fichier (émis par l'application elle-même) |
 
 ## Événements diffusés
