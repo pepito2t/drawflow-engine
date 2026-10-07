@@ -42,17 +42,22 @@ export function useAssistantChat(): AssistantChat {
       const answerId = state.nextId + 1;
       const conversation = conversationWith(state, text);
       dispatch({ type: "sent", text });
-      startAssistantChat(conversation, (message) => {
-        if (message.kind === "stdout") {
-          dispatch({ type: "event", answerId, event: parseAssistantLine(message.line) });
-        } else if (message.kind === "exit") {
-          dispatch({ type: "exited", answerId, code: message.code });
-        } else {
-          console.warn("Assistant :", message.line);
-        }
-      }).catch((error: unknown) => {
+      const fail = (error: unknown) => {
         dispatch({ type: "failed", answerId, error: toReadableError(error) });
-      });
+      };
+      startAssistantChat(
+        conversation,
+        (message) => {
+          if (message.kind === "stdout") {
+            dispatch({ type: "event", answerId, event: parseAssistantLine(message.line) });
+          } else if (message.kind === "exit") {
+            dispatch({ type: "exited", answerId, code: message.code });
+          } else {
+            console.warn("Assistant :", message.line);
+          }
+        },
+        fail,
+      ).catch(fail);
     },
     [state, isAnswering],
   );

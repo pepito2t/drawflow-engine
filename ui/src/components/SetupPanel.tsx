@@ -76,7 +76,7 @@ export function SetupPanel({ onOpenTab }: { onOpenTab: (tabId: string) => void }
             reportPromise={promise}
             run={run}
             onStart={(action) => {
-              start(action, (onMessage) => runSetupAction(action, onMessage));
+              start(action, (onMessage, onInvalid) => runSetupAction(action, onMessage, onInvalid));
             }}
             onOpenTab={onOpenTab}
           />

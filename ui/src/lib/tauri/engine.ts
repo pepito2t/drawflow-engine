@@ -1,7 +1,9 @@
-import { Channel, invoke } from "@tauri-apps/api/core";
-import { engineMessageSchema, type EngineMessage } from "../engine-message";
+import { invoke } from "@tauri-apps/api/core";
+import { t } from "../../i18n/shell";
+import type { EngineMessageHandler, InvalidMessageHandler } from "../engine-message";
 import { unwrapEngineOutput } from "../engine-output";
 import type { FormValues } from "../form-schema";
+import { engineChannel } from "./engine-channel";
 
 export async function listModules(): Promise<string> {
   return unwrapEngineOutput(await invoke("list_modules"));
@@ -60,12 +62,11 @@ export async function engineRequest(
 export function runModule(
   moduleId: string,
   inputs: FormValues,
-  onMessage: (message: EngineMessage) => void,
+  onMessage: EngineMessageHandler,
+  onInvalid: InvalidMessageHandler,
 ): Promise<string> {
-  const channel = new Channel<unknown>((raw) => {
-    onMessage(engineMessageSchema.parse(raw));
-  });
-  return invoke<string>("run_module", { moduleId, inputs, onEvent: channel });
+  const onEvent = engineChannel(onMessage, onInvalid);
+  return invoke<string>("run_module", { moduleId, inputs, onEvent });
 }
 
 export function cancelRun(runId: string): Promise<void> {
@@ -76,5 +77,5 @@ export function describeBridgeError(error: unknown): string {
   if (typeof error === "string") {
     return error;
   }
-  return error instanceof Error ? error.message : "Erreur de communication avec le moteur.";
+  return error instanceof Error ? error.message : t("bridge.unknownError");
 }

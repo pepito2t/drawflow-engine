@@ -15,21 +15,32 @@ export function useModuleRun(moduleId: string): ModuleRun {
   const { state, dispatch } = useRunsStore();
   const { run, runId } = entryFor(state, moduleId);
 
+  const bridgeFailed = useCallback(
+    (message: string) => {
+      dispatch({ type: "run", moduleId, action: { type: "bridgeFailed", message } });
+    },
+    [dispatch, moduleId],
+  );
+
   const start = useCallback(
     (inputs: FormValues) => {
       dispatch({ type: "run", moduleId, action: { type: "started" } });
-      runModule(moduleId, inputs, (message) => {
-        dispatch({ type: "run", moduleId, action: { type: "message", message } });
-      })
+      runModule(
+        moduleId,
+        inputs,
+        (message) => {
+          dispatch({ type: "run", moduleId, action: { type: "message", message } });
+        },
+        bridgeFailed,
+      )
         .then((assignedRunId) => {
           dispatch({ type: "runIdAssigned", moduleId, runId: assignedRunId });
         })
         .catch((error: unknown) => {
-          const message = describeBridgeError(error);
-          dispatch({ type: "run", moduleId, action: { type: "bridgeFailed", message } });
+          bridgeFailed(describeBridgeError(error));
         });
     },
-    [dispatch, moduleId],
+    [dispatch, moduleId, bridgeFailed],
   );
 
   const cancel = useCallback(() => {
@@ -38,10 +49,9 @@ export function useModuleRun(moduleId: string): ModuleRun {
     }
     dispatch({ type: "run", moduleId, action: { type: "cancelRequested" } });
     cancelRun(runId).catch((error: unknown) => {
-      const message = describeBridgeError(error);
-      dispatch({ type: "run", moduleId, action: { type: "bridgeFailed", message } });
+      bridgeFailed(describeBridgeError(error));
     });
-  }, [dispatch, moduleId, runId]);
+  }, [dispatch, moduleId, runId, bridgeFailed]);
 
   return { state: run, start, cancel };
 }

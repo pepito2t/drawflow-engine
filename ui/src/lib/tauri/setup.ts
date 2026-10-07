@@ -1,7 +1,8 @@
-import { Channel, invoke } from "@tauri-apps/api/core";
-import { engineMessageSchema, type EngineMessage } from "../engine-message";
+import { invoke } from "@tauri-apps/api/core";
+import type { EngineMessageHandler, InvalidMessageHandler } from "../engine-message";
 import type { EngineSetupAction } from "../setup";
 import { engineRequest } from "./engine";
+import { engineChannel } from "./engine-channel";
 
 export function scanSetup(): Promise<string> {
   return engineRequest("setup.scan");
@@ -9,12 +10,11 @@ export function scanSetup(): Promise<string> {
 
 export function runSetupAction(
   action: EngineSetupAction,
-  onMessage: (message: EngineMessage) => void,
+  onMessage: EngineMessageHandler,
+  onInvalid: InvalidMessageHandler,
 ): Promise<string> {
-  const channel = new Channel<unknown>((raw) => {
-    onMessage(engineMessageSchema.parse(raw));
-  });
-  return invoke<string>("run_setup_action", { action, onEvent: channel });
+  const onEvent = engineChannel(onMessage, onInvalid);
+  return invoke<string>("run_setup_action", { action, onEvent });
 }
 
 export function openDownloadPage(url: string): Promise<void> {

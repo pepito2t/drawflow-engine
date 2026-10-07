@@ -131,6 +131,9 @@ export const t = defineMessages({
     "updateState.error": "Mise à jour impossible",
     "notificationRule.failed": "Le traitement a échoué.",
     "events.unreadable": "Message illisible reçu du moteur.",
+    "engineChannel.invalidMessage":
+      "Le moteur a envoyé un message que l'application ne comprend pas. Mettez l'application à jour puis réessayez.",
+    "bridge.unknownError": "Erreur de communication avec le moteur.",
     "anomalies.general": "Général",
     "guide.invalid": "Le guide reçu du moteur est invalide.",
     "presets.invalid": "La liste des préréglages reçue du moteur est invalide.",
@@ -275,6 +278,9 @@ export const t = defineMessages({
     "updateState.error": "Update failed",
     "notificationRule.failed": "The run failed.",
     "events.unreadable": "Unreadable message received from the engine.",
+    "engineChannel.invalidMessage":
+      "The engine sent a message the application does not understand. Update the application, then try again.",
+    "bridge.unknownError": "Communication error with the engine.",
     "anomalies.general": "General",
     "guide.invalid": "The guide received from the engine is invalid.",
     "presets.invalid": "The preset list received from the engine is invalid.",
