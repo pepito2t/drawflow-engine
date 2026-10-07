@@ -2,7 +2,6 @@
 
 import re
 import sys
-import unicodedata
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -10,6 +9,7 @@ from pathlib import Path
 from engine.core.errors import EngineError, InvalidInputError
 from engine.core.i18n import DEFAULT_LANGUAGE, Language, current_language
 from engine.core.messages import t
+from engine.core.text import fold
 
 GUIDE_FILES: dict[Language, tuple[str, ...]] = {
     "fr": ("docs", "guide.md"),
@@ -72,12 +72,12 @@ def read_section(topic: str) -> Section:
 
 
 def _find(topic: str, candidates: tuple[Section, ...]) -> Section | None:
-    wanted = _fold(topic)
+    wanted = fold(topic.strip())
     for section in candidates:
-        if section.id == topic or _fold(section.title) == wanted:
+        if section.id == topic or fold(section.title) == wanted:
             return section
     for section in candidates:
-        if wanted and wanted in _fold(section.title):
+        if wanted and wanted in fold(section.title):
             return section
     return None
 
@@ -105,8 +105,3 @@ def _split(text: str) -> list[Section]:
 
 def _section(title: str, lines: list[str]) -> Section:
     return Section(id=slug(title), title=title, markdown="\n".join(lines).strip())
-
-
-def _fold(text: str) -> str:
-    decomposed = unicodedata.normalize("NFD", text.casefold())
-    return "".join(char for char in decomposed if not unicodedata.combining(char)).strip()
