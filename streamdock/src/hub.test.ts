@@ -98,6 +98,21 @@ describe("DrawflowHub connection settings", () => {
 });
 
 describe("DrawflowHub resynchronisation", () => {
+  it("reloads the state once Drawflow is unlocked", () => {
+    const { hub, sockets } = setup();
+    hub.configure(51717, "secret");
+    const socket = sockets[0];
+    socket?.open();
+    socket?.receive({ type: "welcome", version: 1, locked: true });
+    expect(hub.connection).toBe("locked");
+    expect(socket ? commandsSent(socket) : null).toEqual([]);
+
+    socket?.receive({ type: "locked", locked: false });
+
+    expect(hub.connection).toBe("ready");
+    expect(socket ? commandsSent(socket) : null).toEqual(["app.state"]);
+  });
+
   it("reloads the state when Drawflow asks for a resync", () => {
     const { socket } = readyHub();
     answerLastCommand(socket, IDLE_STATE);

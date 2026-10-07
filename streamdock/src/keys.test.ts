@@ -58,6 +58,56 @@ describe("KeyController", () => {
     expect(decodeURIComponent((image?.payload as { image: string }).image)).toContain("Hors ligne");
   });
 
+  it("draws the progress of a run on the key of its preset", async () => {
+    const { host, drawflow } = setup();
+    host.receive({
+      event: "didReceiveGlobalSettings",
+      payload: { settings: { port: "51717", token: "secret" } },
+    });
+    const socket = drawflow[0];
+    if (!socket) throw new Error("no socket");
+    socket.open();
+    socket.receive({ type: "welcome", version: 1, locked: false });
+    const request = socket.sent.at(-1) as { id: string };
+    socket.receive({
+      type: "result",
+      id: request.id,
+      ok: true,
+      data: {
+        modules: [{ id: "dwg-parts", name: "Pièces", icon: "parts" }],
+        presets: [{ id: "p1", name: "Tour B", module: "dwg-parts" }],
+        runs: [],
+      },
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    host.receive({ event: "willAppear", ...PRESET_KEY, payload: { settings: { presetId: "p1" } } });
+
+    socket.receive({
+      type: "event",
+      event: { type: "runProgress", moduleId: "dwg-parts", current: 2, total: 4 },
+    });
+
+    expect(lastImage(host)).toContain("Tour B");
+    expect(lastImage(host)).toContain("50 %");
+    expect(lastImage(host)).toContain('width="56"');
+  });
+
+  it("stops drawing a key once it has disappeared", () => {
+    const { host, drawflow } = setup();
+    host.receive({ event: "willAppear", ...PRESET_KEY, payload: { settings: {} } });
+    host.receive({
+      event: "didReceiveGlobalSettings",
+      payload: { settings: { port: "51717", token: "secret" } },
+    });
+    host.receive({ event: "willDisappear", ...PRESET_KEY });
+    const drawn = host.sentEvents().filter((event) => event === "setImage").length;
+
+    drawflow[0]?.open();
+    drawflow[0]?.receive({ type: "welcome", version: 1, locked: false });
+
+    expect(host.sentEvents().filter((event) => event === "setImage")).toHaveLength(drawn);
+  });
+
   it("ignores keys of other plugins", () => {
     const { host } = setup();
 
