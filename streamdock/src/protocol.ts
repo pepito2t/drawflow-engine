@@ -37,11 +37,12 @@ export const appEventSchema = z.discriminatedUnion("type", [
 export const serverMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("welcome"), version: z.number(), locked: z.boolean() }),
   z.object({ type: z.literal("locked"), locked: z.boolean() }),
-  z.object({ type: z.literal("error"), message: z.string() }),
+  z.object({ type: z.literal("error"), code: z.optional(z.string()), message: z.string() }),
   z.object({
     type: z.literal("result"),
     id: z.string(),
     ok: z.boolean(),
+    code: z.optional(z.string()),
     error: z.optional(z.string()),
     data: z.optional(z.unknown()),
   }),

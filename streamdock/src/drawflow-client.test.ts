@@ -1,16 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { DrawflowClient } from "./drawflow-client";
 import { FakeSocket } from "./fake-socket.test-helper";
+import type { Language } from "./i18n";
 
 interface Timer {
   callback: () => void;
   delayMs: number;
 }
 
-function setup() {
+function setup(language: Language = "fr") {
   const sockets: FakeSocket[] = [];
   const timers: Timer[] = [];
   const client = new DrawflowClient({
+    language,
     createSocket: () => {
       const socket = new FakeSocket();
       sockets.push(socket);
@@ -34,8 +36,8 @@ function fire(timers: Timer[], timer: Timer | undefined): void {
   timer.callback();
 }
 
-function readyClient() {
-  const context = setup();
+function readyClient(language: Language = "fr") {
+  const context = setup(language);
   context.client.configure({ port: 51717, token: "secret" });
   const socket = context.sockets[0];
   if (!socket) throw new Error("no socket");
@@ -168,6 +170,80 @@ describe("DrawflowClient", () => {
       ok: false,
       error: expect.stringContaining("Jeton") as string,
     });
+  });
+
+  it("translates the coded failures of the local API", async () => {
+    const { client, socket } = readyClient("en");
+
+    const locked = client.command("preset.run");
+    socket.receive({
+      type: "result",
+      id: "1",
+      ok: false,
+      code: "locked",
+      error: "Drawflow is locked: enter the access code in the application.",
+    });
+    const late = client.command("mail.fetch");
+    socket.receive({
+      type: "result",
+      id: "2",
+      ok: false,
+      code: "noReply",
+      error: "Drawflow did not answer in time.",
+    });
+
+    await expect(locked).resolves.toEqual({
+      ok: false,
+      error: "Drawflow is locked: enter the access code in the application.",
+    });
+    await expect(late).resolves.toEqual({ ok: false, error: "Drawflow did not answer in time." });
+  });
+
+  it("translates the codes in the plugin's language", async () => {
+    const { client, socket } = readyClient("fr");
+
+    const pending = client.command("preset.run");
+    socket.receive({
+      type: "result",
+      id: "1",
+      ok: false,
+      code: "locked",
+      error: "Drawflow is locked: enter the access code in the application.",
+    });
+
+    await expect(pending).resolves.toEqual({
+      ok: false,
+      error: "Drawflow est verrouillée : saisissez le code d'accès dans l'application.",
+    });
+  });
+
+  it("keeps the received text for codes it does not know or replies without code", async () => {
+    const { client, socket } = readyClient();
+
+    const unknown = client.command("app.state");
+    socket.receive({ type: "result", id: "1", ok: false, code: "brandNew", error: "Nouveau." });
+    const uncoded = client.command("app.state");
+    socket.receive({ type: "result", id: "2", ok: false, error: "Ce préréglage n'existe plus." });
+    const empty = client.command("app.state");
+    socket.receive({ type: "result", id: "3", ok: false });
+
+    await expect(unknown).resolves.toEqual({ ok: false, error: "Nouveau." });
+    await expect(uncoded).resolves.toEqual({ ok: false, error: "Ce préréglage n'existe plus." });
+    await expect(empty).resolves.toEqual({ ok: false, error: "Erreur inconnue." });
+  });
+
+  it("treats a coded token refusal like any refusal", () => {
+    const { client, sockets } = setup();
+    client.configure({ port: 51717, token: "wrong" });
+    sockets[0]?.open();
+
+    sockets[0]?.receive({
+      type: "error",
+      code: "invalidToken",
+      message: "Invalid token or protocol version.",
+    });
+
+    expect(client.state).toBe("refused");
   });
 
   it("stays connected when Drawflow rejects a message after the welcome", () => {
