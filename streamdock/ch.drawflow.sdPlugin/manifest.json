@@ -8,7 +8,7 @@
   "Icon": "imgs/plugin.png",
   "URL": "https://github.com/pepito2t/drawflow-engine",
   "CodePathWin": "bin/plugin.js",
-  "PropertyInspectorPath": "ui/connection.html",
+  "PropertyInspectorPath": "ui/key.html",
   "SDKVersion": 1,
   "Software": {
     "MinimumVersion": "3.10.188.226"
@@ -40,7 +40,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "PropertyInspectorPath": "ui/preset.html"
+      "PropertyInspectorPath": "ui/key.html"
     },
     {
       "UUID": "ch.drawflow.open-tab",
@@ -59,7 +59,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "PropertyInspectorPath": "ui/open-tab.html"
+      "PropertyInspectorPath": "ui/key.html"
     },
     {
       "UUID": "ch.drawflow.cancel-all",
@@ -78,7 +78,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "PropertyInspectorPath": "ui/connection.html"
+      "PropertyInspectorPath": "ui/key.html"
     },
     {
       "UUID": "ch.drawflow.open-last",
@@ -97,7 +97,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "PropertyInspectorPath": "ui/connection.html"
+      "PropertyInspectorPath": "ui/key.html"
     },
     {
       "UUID": "ch.drawflow.runs-counter",
@@ -116,7 +116,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "PropertyInspectorPath": "ui/connection.html"
+      "PropertyInspectorPath": "ui/key.html"
     }
   ]
 }

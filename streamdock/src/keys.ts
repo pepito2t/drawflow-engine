@@ -14,6 +14,11 @@ interface Notice {
   timer: unknown;
 }
 
+interface InspectorItem {
+  label: string;
+  value: string;
+}
+
 const DEFAULT_PORT = 51717;
 const NOTICE_MS = 3_000;
 
@@ -126,18 +131,30 @@ export class KeyController {
   }
 
   private answerInspector(action: string, context: string, request: Settings): void {
-    if (request.event === "getPresets") {
-      const items = this.hub.app.presets.map((preset) => ({
-        label: `${preset.name} (${this.hub.moduleName(preset.module)})`,
-        value: preset.id,
-      }));
-      this.host.sendToPropertyInspector(action, context, { event: "getPresets", items });
-    } else if (request.event === "getModules") {
-      const items = this.hub.app.modules.map((module) => ({
-        label: module.name,
-        value: module.id,
-      }));
-      this.host.sendToPropertyInspector(action, context, { event: "getModules", items });
+    const source = request.event;
+    const items =
+      source === "getPresets"
+        ? this.presetItems()
+        : source === "getModules"
+          ? this.moduleItems()
+          : null;
+    if (typeof source === "string" && items !== null) {
+      this.host.sendToPropertyInspector(action, context, {
+        event: source,
+        items,
+        connection: this.hub.connection,
+      });
     }
+  }
+
+  private presetItems(): InspectorItem[] {
+    return this.hub.app.presets.map((preset) => ({
+      label: `${preset.name} (${this.hub.moduleName(preset.module)})`,
+      value: preset.id,
+    }));
+  }
+
+  private moduleItems(): InspectorItem[] {
+    return this.hub.app.modules.map((module) => ({ label: module.name, value: module.id }));
   }
 }

@@ -1,3 +1,4 @@
+import { isRecord } from "./guards";
 export type Language = "fr" | "en";
 
 export const DEFAULT_LANGUAGE: Language = "fr";
@@ -27,6 +28,17 @@ const FR = {
   "error.presetNotChosen": "Choisissez un préréglage dans les réglages de la touche",
   "error.presetGone": "Ce préréglage n'existe plus dans Drawflow",
   "error.tabNotChosen": "Choisissez un onglet dans les réglages de la touche",
+  "pi.port": "Port Drawflow",
+  "pi.token": "Jeton",
+  "pi.hint":
+    "Laissez vide : le plugin se connecte tout seul à Drawflow installé sur ce poste. À remplir seulement si Drawflow tourne sous un autre compte Windows (Drawflow → Paramètres → API locale).",
+  "pi.preset": "Préréglage",
+  "pi.tab": "Onglet",
+  "pi.status.offline": "Drawflow hors ligne : lancez Drawflow sur ce poste.",
+  "pi.status.locked": "Drawflow est verrouillée : saisissez le code d'accès dans l'application.",
+  "pi.status.refused": "Jeton refusé par Drawflow : vérifiez le jeton ci-dessous.",
+  "pi.status.noPresets": "Aucun préréglage enregistré dans Drawflow.",
+  "pi.status.noModules": "Aucune fonctionnalité disponible dans Drawflow.",
 } as const;
 
 export type MessageKey = keyof typeof FR;
@@ -56,6 +68,17 @@ const EN: Record<MessageKey, string> = {
   "error.presetNotChosen": "Choose a preset in the key settings",
   "error.presetGone": "This preset no longer exists in Drawflow",
   "error.tabNotChosen": "Choose a tab in the key settings",
+  "pi.port": "Drawflow port",
+  "pi.token": "Token",
+  "pi.hint":
+    "Leave empty: the plugin connects by itself to the Drawflow installed on this computer. Fill in only when Drawflow runs under another Windows account (Drawflow → Settings → Local API).",
+  "pi.preset": "Preset",
+  "pi.tab": "Tab",
+  "pi.status.offline": "Drawflow is offline: start Drawflow on this computer.",
+  "pi.status.locked": "Drawflow is locked: enter the access code in the application.",
+  "pi.status.refused": "Token refused by Drawflow: check the token below.",
+  "pi.status.noPresets": "No preset saved in Drawflow.",
+  "pi.status.noModules": "No feature available in Drawflow.",
 };
 
 const MESSAGES: Record<Language, Record<MessageKey, string>> = { fr: FR, en: EN };
@@ -86,8 +109,4 @@ export function languageFromInfo(info: string | undefined): Language {
   } catch {
     return DEFAULT_LANGUAGE;
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

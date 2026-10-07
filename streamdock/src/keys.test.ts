@@ -118,7 +118,7 @@ describe("KeyController", () => {
       event: "sendToPropertyInspector",
       action: "ch.drawflow.open-tab",
       context: "k3",
-      payload: { event: "getModules", items: [] },
+      payload: { event: "getModules", items: [], connection: "offline" },
     });
   });
 });

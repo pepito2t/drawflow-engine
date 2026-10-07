@@ -6,6 +6,7 @@ import {
   type SocketLike,
   type Timers,
 } from "./drawflow-client";
+import { isRecord } from "./guards";
 import { DEFAULT_LANGUAGE, translate, type Language } from "./i18n";
 import { appStateSchema, type AppState, type CommandResult } from "./protocol";
 import { acknowledge, applyEvent, runningCount, runsFromState, type Runs } from "./run-tracker";
@@ -131,8 +132,4 @@ export class DrawflowHub {
     this.scheduleResync();
     for (const listener of this.listeners) listener();
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

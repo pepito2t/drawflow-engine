@@ -4,7 +4,15 @@ import typescript from "@rollup/plugin-typescript";
 
 const PLUGIN_FOLDER = "ch.drawflow.sdPlugin";
 
-export default {
+const compileTypeScript = (outDir) =>
+  typescript({
+    noEmit: false,
+    outDir,
+    include: ["src/**/*.ts"],
+    exclude: ["src/**/*.test.ts", "src/**/*.test-helper.ts"],
+  });
+
+const plugin = {
   input: "src/plugin.ts",
   output: {
     file: `${PLUGIN_FOLDER}/bin/plugin.js`,
@@ -13,12 +21,7 @@ export default {
     sourcemap: true,
   },
   plugins: [
-    typescript({
-      noEmit: false,
-      outDir: `${PLUGIN_FOLDER}/bin`,
-      include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts"],
-    }),
+    compileTypeScript(`${PLUGIN_FOLDER}/bin`),
     nodeResolve({ browser: false, exportConditions: ["node"], preferBuiltins: true }),
     commonjs(),
     {
@@ -34,3 +37,12 @@ export default {
     },
   ],
 };
+
+// The settings panel runs in the browser of Stream Dock as a classic script.
+const inspector = {
+  input: "src/pi.ts",
+  output: { file: `${PLUGIN_FOLDER}/ui/pi.js`, format: "iife", sourcemap: false },
+  plugins: [compileTypeScript(`${PLUGIN_FOLDER}/ui`)],
+};
+
+export default [plugin, inspector];
