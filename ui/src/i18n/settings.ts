@@ -4,6 +4,9 @@ export const t = defineMessages({
   fr: {
     "settings.title": "Paramètres",
     "settings.close": "Fermer",
+    "settings.unsavedEdits": "Des modifications ne sont pas enregistrées.",
+    "settings.closeWithoutSaving": "Fermer sans enregistrer",
+    "settings.keepEditing": "Continuer la modification",
     "settings.loadError": "Impossible de charger les paramètres",
     "settings.loading": "Chargement des paramètres…",
     "settings.categories": "Catégories",
@@ -204,6 +207,9 @@ export const t = defineMessages({
   en: {
     "settings.title": "Settings",
     "settings.close": "Close",
+    "settings.unsavedEdits": "Some changes are not saved.",
+    "settings.closeWithoutSaving": "Close without saving",
+    "settings.keepEditing": "Keep editing",
     "settings.loadError": "Unable to load the settings",
     "settings.loading": "Loading settings…",
     "settings.categories": "Categories",
