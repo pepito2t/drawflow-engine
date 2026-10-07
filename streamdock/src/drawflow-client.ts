@@ -17,11 +17,21 @@ export interface SocketLike {
   onClose: (listener: () => void) => void;
 }
 
-export interface ClientOptions {
-  createSocket: (url: string) => SocketLike;
-  setTimer?: (callback: () => void, delayMs: number) => unknown;
-  clearTimer?: (timer: unknown) => void;
+export interface Timers {
+  setTimer: (callback: () => void, delayMs: number) => unknown;
+  clearTimer: (timer: unknown) => void;
 }
+
+export interface ClientOptions extends Partial<Timers> {
+  createSocket: (url: string) => SocketLike;
+}
+
+export const DEFAULT_TIMERS: Timers = {
+  setTimer: (callback, delayMs) => setTimeout(callback, delayMs),
+  clearTimer: (timer) => {
+    clearTimeout(timer as ReturnType<typeof setTimeout>);
+  },
+};
 
 export interface Connection {
   port: number;
@@ -58,16 +68,12 @@ export class DrawflowClient {
   private readonly pending = new Map<string, Pending>();
   private readonly stateListeners = new Set<(state: ConnectionState) => void>();
   private readonly eventListeners = new Set<(event: unknown) => void>();
-  private readonly setTimer: (callback: () => void, delayMs: number) => unknown;
-  private readonly clearTimer: (timer: unknown) => void;
+  private readonly setTimer: Timers["setTimer"];
+  private readonly clearTimer: Timers["clearTimer"];
 
   constructor(private readonly options: ClientOptions) {
-    this.setTimer = options.setTimer ?? ((callback, delayMs) => setTimeout(callback, delayMs));
-    this.clearTimer =
-      options.clearTimer ??
-      ((timer) => {
-        clearTimeout(timer as ReturnType<typeof setTimeout>);
-      });
+    this.setTimer = options.setTimer ?? DEFAULT_TIMERS.setTimer;
+    this.clearTimer = options.clearTimer ?? DEFAULT_TIMERS.clearTimer;
   }
 
   configure(connection: Connection | null): void {

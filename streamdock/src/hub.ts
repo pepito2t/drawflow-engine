@@ -1,13 +1,18 @@
 import {
+  DEFAULT_TIMERS,
   DrawflowClient,
   type Connection,
   type ConnectionState,
   type SocketLike,
+  type Timers,
 } from "./drawflow-client";
 import { appStateSchema, type AppState, type CommandResult } from "./protocol";
-import { acknowledge, applyEvent, runsFromState, type Runs } from "./run-tracker";
+import { acknowledge, applyEvent, runningCount, runsFromState, type Runs } from "./run-tracker";
 
 const EMPTY_STATE: AppState = { modules: [], presets: [], runs: [] };
+// Drawflow's relay may drop events under load; a periodic reload catches a missed `runFinished`.
+const RESYNC_WHILE_RUNNING_MS = 30_000;
+const RESYNC_EVENTS: ReadonlySet<string> = new Set(["presetSaved", "resync"]);
 
 /** Shared view of Drawflow for every key: connection, features, presets and runs. */
 export class DrawflowHub {
@@ -16,11 +21,14 @@ export class DrawflowHub {
   runs: Runs = new Map();
   private readonly listeners = new Set<() => void>();
   private readonly client: DrawflowClient;
+  private readonly timers: Timers;
   private manual: Connection | null = null;
   private automatic: Connection | null = null;
+  private resyncTimer: unknown = null;
 
-  constructor(createSocket: (url: string) => SocketLike) {
-    this.client = new DrawflowClient({ createSocket });
+  constructor(createSocket: (url: string) => SocketLike, timers: Partial<Timers> = {}) {
+    this.timers = { ...DEFAULT_TIMERS, ...timers };
+    this.client = new DrawflowClient({ createSocket, ...timers });
     this.client.onState((state) => {
       this.connection = state;
       if (state === "ready") {
@@ -30,7 +38,7 @@ export class DrawflowHub {
     });
     this.client.onEvent((event) => {
       this.runs = applyEvent(this.runs, event);
-      if (isRecord(event) && event.type === "presetSaved") {
+      if (isRecord(event) && typeof event.type === "string" && RESYNC_EVENTS.has(event.type)) {
         this.resync();
       }
       this.notify();
@@ -90,12 +98,30 @@ export class DrawflowHub {
   }
 
   private resync(): void {
-    this.refresh().catch((error: unknown) => {
-      console.error("Resynchronisation avec Drawflow impossible :", error);
-    });
+    this.refresh()
+      .then(() => {
+        this.scheduleResync();
+      })
+      .catch((error: unknown) => {
+        console.error("Resynchronisation avec Drawflow impossible :", error);
+      });
+  }
+
+  private scheduleResync(): void {
+    const needed = this.connection === "ready" && runningCount(this.runs) > 0;
+    if (needed && this.resyncTimer === null) {
+      this.resyncTimer = this.timers.setTimer(() => {
+        this.resyncTimer = null;
+        this.resync();
+      }, RESYNC_WHILE_RUNNING_MS);
+    } else if (!needed && this.resyncTimer !== null) {
+      this.timers.clearTimer(this.resyncTimer);
+      this.resyncTimer = null;
+    }
   }
 
   private notify(): void {
+    this.scheduleResync();
     for (const listener of this.listeners) listener();
   }
 }
