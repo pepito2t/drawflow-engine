@@ -10,6 +10,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
 import { CloseIcon } from "./icons";
 import { MarkdownText } from "./MarkdownText";
+import { ModalDialog } from "./ModalDialog";
 import { Loader } from "./Spinner";
 
 const EXTERNAL_LINK = /^https:\/\//;
@@ -27,56 +28,45 @@ export function HelpDialog({ topic, onClose }: HelpDialogProps) {
   useLanguage();
   const { id, promise, retry } = useRetryablePromise(loadGuide);
   return (
-    <div
-      className="dialog-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") onClose();
-      }}
-    >
-      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="help-title">
-        <header className="dialog-header">
-          <h2 id="help-title">{t("helpDialog.title")}</h2>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={t("helpDialog.close")}
-            autoFocus
-            onClick={onClose}
-          >
-            <CloseIcon />
-          </button>
-        </header>
-        <ErrorBoundary
-          key={id}
-          fallback={(error) => {
-            const { message, hint } = toReadableError(error);
-            return (
-              <div className="dialog-body centered">
-                <ErrorPanel
-                  title={t("helpDialog.unavailable")}
-                  message={message}
-                  hint={hint}
-                  onRetry={retry}
-                />
-              </div>
-            );
-          }}
+    <ModalDialog labelledBy="help-title" onCancel={onClose} onBackdropClick={onClose}>
+      <header className="dialog-header">
+        <h2 id="help-title">{t("helpDialog.title")}</h2>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label={t("helpDialog.close")}
+          onClick={onClose}
         >
-          <Suspense
-            fallback={
-              <div className="dialog-body">
-                <Loader label={t("helpDialog.loading")} />
-              </div>
-            }
-          >
-            <GuideView guidePromise={promise} topic={topic} />
-          </Suspense>
-        </ErrorBoundary>
-      </div>
-    </div>
+          <CloseIcon />
+        </button>
+      </header>
+      <ErrorBoundary
+        key={id}
+        fallback={(error) => {
+          const { message, hint } = toReadableError(error);
+          return (
+            <div className="dialog-body centered">
+              <ErrorPanel
+                title={t("helpDialog.unavailable")}
+                message={message}
+                hint={hint}
+                onRetry={retry}
+              />
+            </div>
+          );
+        }}
+      >
+        <Suspense
+          fallback={
+            <div className="dialog-body">
+              <Loader label={t("helpDialog.loading")} />
+            </div>
+          }
+        >
+          <GuideView guidePromise={promise} topic={topic} />
+        </Suspense>
+      </ErrorBoundary>
+    </ModalDialog>
   );
 }
 

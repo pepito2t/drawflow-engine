@@ -395,26 +395,27 @@ input[type="checkbox"] {
 
 /* Settings dialog */
 
-.dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgb(0 0 0 / 55%);
-}
-
 .dialog {
-  display: flex;
-  flex-direction: column;
-  width: min(960px, 100%);
-  height: min(680px, 100%);
+  width: min(960px, 100% - 32px);
+  max-width: none;
+  height: min(680px, 100% - 32px);
+  max-height: none;
+  padding: 0;
   border: 1px solid var(--color-border);
+  color: inherit;
   border-radius: 10px;
   background: var(--color-background);
   box-shadow: 0 24px 64px rgb(0 0 0 / 50%);
   overflow: hidden;
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 55%);
 }
 
 .dialog-header,

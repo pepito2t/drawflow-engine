@@ -40,6 +40,7 @@ import { AiModelsPanel } from "./AiModelsPanel";
 import { SetupPanel } from "./SetupPanel";
 import { TemplatesPanel } from "./TemplatesPanel";
 import { CloseIcon } from "./icons";
+import { ModalDialog } from "./ModalDialog";
 import { ModuleForm } from "./ModuleForm";
 import { Loader, Spinner } from "./Spinner";
 
@@ -88,63 +89,53 @@ export function SettingsDialog({ initialTab, modules, onClose }: SettingsDialogP
   };
 
   return (
-    <div
-      className="dialog-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          requestClose();
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "Escape") {
-          return;
-        }
+    <ModalDialog
+      labelledBy="settings-title"
+      onCancel={() => {
         if (confirmClose) {
           setConfirmClose(false);
         } else {
           requestClose();
         }
       }}
+      onBackdropClick={requestClose}
     >
-      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-        <header className="dialog-header">
-          <h2 id="settings-title">{t("settings.title")}</h2>
+      <header className="dialog-header">
+        <h2 id="settings-title">{t("settings.title")}</h2>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label={t("settings.close")}
+          onClick={requestClose}
+        >
+          <CloseIcon />
+        </button>
+      </header>
+      {confirmClose && (
+        <div className="setup-confirm dialog-confirm" role="alert">
+          <span>{t("settings.unsavedEdits")}</span>
+          <button type="button" className="primary" onClick={onClose}>
+            {t("settings.closeWithoutSaving")}
+          </button>
           <button
             type="button"
-            className="icon-button"
-            aria-label={t("settings.close")}
-            autoFocus
-            onClick={requestClose}
+            onClick={() => {
+              setConfirmClose(false);
+            }}
           >
-            <CloseIcon />
+            {t("settings.keepEditing")}
           </button>
-        </header>
-        {confirmClose && (
-          <div className="setup-confirm dialog-confirm" role="alert">
-            <span>{t("settings.unsavedEdits")}</span>
-            <button type="button" className="primary" onClick={onClose}>
-              {t("settings.closeWithoutSaving")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setConfirmClose(false);
-              }}
-            >
-              {t("settings.keepEditing")}
-            </button>
-          </div>
-        )}
-        <SettingsContent
-          attemptId={id}
-          promise={promise}
-          retry={retry}
-          initialTab={initialTab}
-          modules={modules}
-          onEditedChange={setHasUnsavedEdits}
-        />
-      </div>
-    </div>
+        </div>
+      )}
+      <SettingsContent
+        attemptId={id}
+        promise={promise}
+        retry={retry}
+        initialTab={initialTab}
+        modules={modules}
+        onEditedChange={setHasUnsavedEdits}
+      />
+    </ModalDialog>
   );
 }
 
