@@ -17,13 +17,13 @@ export function loadPresets(): Promise<Preset[]> {
 }
 
 export function PresetsProvider({
-  presetsPromise,
+  initialPresets,
   children,
 }: {
-  presetsPromise: Promise<Preset[]>;
+  initialPresets: Preset[];
   children: ReactNode;
 }) {
-  const [presets, setPresets] = useState(use(presetsPromise));
+  const [presets, setPresets] = useState(initialPresets);
 
   const save = useCallback(
     async (moduleId: string, name: string, inputs: FormValues, presetId?: string) => {

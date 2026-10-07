@@ -1,6 +1,7 @@
 import { plural } from "../i18n";
 import { t } from "../i18n/shell";
 import { Suspense, use, type ReactNode } from "react";
+import { useLanguage } from "../hooks/use-language";
 import { getAppVersion } from "../lib/tauri/app";
 
 export type EngineStatus =
@@ -19,6 +20,7 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ engine, updates }: StatusBarProps) {
+  useLanguage();
   return (
     <footer className="status-bar">
       <div className="status-group">

@@ -1,5 +1,6 @@
 import { t } from "../i18n/shell";
 import { Suspense, use, useState } from "react";
+import { useLanguage } from "../hooks/use-language";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError } from "../lib/error-message";
 import { parseGuide, sectionForAnchor, type GuideSection } from "../lib/guide";
@@ -23,6 +24,7 @@ interface HelpDialogProps {
 }
 
 export function HelpDialog({ topic, onClose }: HelpDialogProps) {
+  useLanguage();
   const { id, promise, retry } = useRetryablePromise(loadGuide);
   return (
     <div

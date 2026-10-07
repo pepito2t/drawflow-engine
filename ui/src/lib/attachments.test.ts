@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addAttachments, fileName, withAttachments } from "./attachments";
+import { addAttachments, withAttachments } from "./attachments";
 
 describe("attachments", () => {
   it("appends the dropped paths to the question as a visible list", () => {
@@ -13,11 +13,10 @@ describe("attachments", () => {
     expect(withAttachments("  ", ["C:\\a.pdf"]).startsWith("Que peux-tu faire")).toBe(true);
   });
 
-  it("keeps each path once and shows file names", () => {
+  it("keeps each path once", () => {
     expect(addAttachments(["C:\\a.dwg"], ["C:\\a.dwg", "C:\\b.dwg"])).toEqual([
       "C:\\a.dwg",
       "C:\\b.dwg",
     ]);
-    expect(fileName("C:\\Plans\\a.dwg")).toBe("a.dwg");
   });
 });

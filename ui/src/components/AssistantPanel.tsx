@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useAssistantChat } from "../hooks/use-assistant-chat";
 import { dropFieldProps, useFileDrop } from "../hooks/use-file-drop";
+import { useLanguage } from "../hooks/use-language";
 import { t } from "../i18n/panels";
-import { addAttachments, fileName, withAttachments } from "../lib/attachments";
+import { addAttachments, withAttachments } from "../lib/attachments";
 import type { CatalogModule } from "../lib/catalog";
+import { fileName } from "../lib/paths";
 import { AssistantConnection } from "./AssistantConnection";
 import { AssistantMessage } from "./AssistantMessage";
 import { CloseIcon, PlusIcon, SendIcon, StopIcon } from "./icons";
@@ -25,6 +27,7 @@ interface AssistantPanelProps {
 }
 
 export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: AssistantPanelProps) {
+  useLanguage();
   const { state, isAnswering, ask, stop, clear, markProposal } = useAssistantChat();
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
@@ -137,7 +140,7 @@ export function AssistantPanel({ modules, isOpen, onClose, onOpenSettings }: Ass
                     setAttachments((current) => current.filter((item) => item !== path));
                   }}
                 >
-                  ×
+                  <CloseIcon size={14} />
                 </button>
               </li>
             ))}
