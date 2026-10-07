@@ -45,7 +45,7 @@ Tests and checks: see the "Commandes" section of [CLAUDE.md](CLAUDE.md). In deve
 ## Releasing
 
 1. In `CHANGELOG.md`, move the `## Non publié` entries under a new `## X.Y.Z — YYYY-MM-DD` heading, then `pnpm version:bump X.Y.Z` (UI, Tauri, Rust, engine, Stream Dock plugin); commit through a PR.
-2. Once merged: `git tag vX.Y.Z && git push origin vX.Y.Z`. The workflow first runs `pnpm version:check -- --tag vX.Y.Z`: versions aligned with the tag, changelog section present, `## Non publié` empty.
+2. Once merged: `git tag vX.Y.Z && git push origin vX.Y.Z`. The workflow first waits for the `CI` run of the tagged commit and stops if it is missing or red, then runs `pnpm version:check -- --tag vX.Y.Z`: versions aligned with the tag, changelog section present, `## Non publié` empty.
 3. The `Release` workflow builds the Windows installer (NSIS), creates a draft release whose notes are that changelog section (also carried by the signed `latest.json`), attaches the Stream Dock plugin `ch.drawflow.sdPlugin.zip`, then publishes the release.
 
 One-time prerequisites:
