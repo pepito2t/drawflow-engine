@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import type { FormValues } from "../lib/form-schema";
 import type { RunState } from "../lib/run-state";
 import { entryFor } from "../lib/runs-store";
-import { cancelRun, describeBridgeError, runModule } from "../lib/tauri/engine";
+import { describeBridgeError, runModule } from "../lib/tauri/engine";
 import { useRunsStore } from "./runs-context";
 
 interface ModuleRun {
@@ -13,7 +13,7 @@ interface ModuleRun {
 
 export function useModuleRun(moduleId: string): ModuleRun {
   const { state, dispatch } = useRunsStore();
-  const { run, runId } = entryFor(state, moduleId);
+  const { run } = entryFor(state, moduleId);
 
   const bridgeFailed = useCallback(
     (message: string) => {
@@ -44,14 +44,11 @@ export function useModuleRun(moduleId: string): ModuleRun {
   );
 
   const cancel = useCallback(() => {
-    if (runId === null) {
+    if (run.status !== "running" || run.cancelRequested) {
       return;
     }
     dispatch({ type: "run", moduleId, action: { type: "cancelRequested" } });
-    cancelRun(runId).catch((error: unknown) => {
-      bridgeFailed(describeBridgeError(error));
-    });
-  }, [dispatch, moduleId, runId, bridgeFailed]);
+  }, [dispatch, moduleId, run.status, run.cancelRequested]);
 
   return { state: run, start, cancel };
 }

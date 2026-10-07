@@ -42,6 +42,20 @@ function applyRunAction(entry: ModuleRunEntry, action: RunAction): ModuleRunEntr
   return { ...entry, run, unseenOutcome: entry.unseenOutcome || justFinished };
 }
 
+export interface PendingCancellation {
+  moduleId: string;
+  runId: string;
+}
+
+/** Cancellations asked for while the engine was still starting become actionable once the run id arrives. */
+export function pendingCancellations(state: RunsState): PendingCancellation[] {
+  return Object.entries(state)
+    .filter(([, entry]) => entry.run.status === "running" && entry.run.cancelRequested)
+    .flatMap(([moduleId, entry]) =>
+      entry.runId === null ? [] : [{ moduleId, runId: entry.runId }],
+    );
+}
+
 export function runningModuleIds(state: RunsState): string[] {
   return Object.entries(state)
     .filter(([, entry]) => entry.run.status === "running")

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { CatalogModule } from "../lib/catalog";
 import { COMMANDS } from "../lib/commands";
 import { entryFor, runningModuleIds } from "../lib/runs-store";
-import { cancelRun, engineRequest } from "../lib/tauri/engine";
+import { engineRequest } from "../lib/tauri/engine";
 import { listHistory } from "../lib/tauri/history";
 import { fetchMail } from "../lib/tauri/mail";
 import { getAutomationStatus } from "../lib/tauri/automations";
@@ -93,14 +93,13 @@ export function useAppCommands({
   );
   useCommand(COMMANDS.runFeature, runFeature);
 
-  const cancelAll = useCallback(async () => {
-    const running = runningModuleIds(state)
-      .map((moduleId) => ({ moduleId, runId: entryFor(state, moduleId).runId }))
-      .filter((run): run is { moduleId: string; runId: string } => run.runId !== null);
-    for (const run of running) {
-      dispatch({ type: "run", moduleId: run.moduleId, action: { type: "cancelRequested" } });
+  const cancelAll = useCallback(() => {
+    for (const moduleId of runningModuleIds(state)) {
+      if (!entryFor(state, moduleId).run.cancelRequested) {
+        dispatch({ type: "run", moduleId, action: { type: "cancelRequested" } });
+      }
     }
-    await Promise.all(running.map((run) => cancelRun(run.runId)));
+    return Promise.resolve();
   }, [state, dispatch]);
   useCommand(COMMANDS.cancelAllRuns, cancelAll);
 
