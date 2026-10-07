@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FakeSocket } from "./fake-socket.test-helper";
 import { LaunchError, StreamDockHost, parseHostEvent, parseLaunchArguments } from "./host";
+import { isMessageKey, translate } from "./i18n";
 
 const ARGV = [
   "node",
@@ -60,5 +61,14 @@ describe("StreamDockHost", () => {
       event: "keyUp",
       context: "k1",
     });
+  });
+});
+
+describe("translations", () => {
+  it("only accepts keys that exist in both languages", () => {
+    expect(isMessageKey("pi.port")).toBe(true);
+    expect(isMessageKey("pi.unknown")).toBe(false);
+    expect(isMessageKey(undefined)).toBe(false);
+    expect(translate("en", "key.runs.count", { count: "3" })).toBe("3 running");
   });
 });

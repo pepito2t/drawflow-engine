@@ -83,6 +83,10 @@ const EN: Record<MessageKey, string> = {
 
 const MESSAGES: Record<Language, Record<MessageKey, string>> = { fr: FR, en: EN };
 
+export function isMessageKey(value: string | undefined): value is MessageKey {
+  return value !== undefined && value in FR;
+}
+
 export function translate(
   language: Language,
   key: MessageKey,

@@ -55,7 +55,7 @@ export interface PanelOptions {
 
 type Settings = Record<string, unknown>;
 
-export const DEFAULT_PORT = "51717";
+const DEFAULT_PORT = "51717";
 
 const STATUS_BY_CONNECTION: Record<Exclude<ConnectionState, "ready">, MessageKey> = {
   offline: "pi.status.offline",

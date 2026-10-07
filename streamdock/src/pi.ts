@@ -1,6 +1,6 @@
 // Settings panel of a Drawflow key, run by the browser of Stream Dock. Stream Dock calls
 // connectElgatoStreamDeckSocket (name kept from the Stream Deck SDK it is compatible with).
-import { languageFromInfo, translate, type Language, type MessageKey } from "./i18n";
+import { isMessageKey, languageFromInfo, translate, type Language } from "./i18n";
 import { Panel, parseActionInfo, type PanelView } from "./pi-panel";
 
 type ConnectInspector = (
@@ -28,7 +28,10 @@ function element<T extends HTMLElement>(id: string, kind: new () => T): T {
 function applyTranslations(language: Language): void {
   document.documentElement.lang = language;
   for (const node of document.querySelectorAll<HTMLElement>("[data-i18n]")) {
-    node.textContent = translate(language, node.dataset.i18n as MessageKey);
+    const key = node.dataset.i18n;
+    if (isMessageKey(key)) {
+      node.textContent = translate(language, key);
+    }
   }
 }
 
