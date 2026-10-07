@@ -67,6 +67,7 @@ Réponse (même `id`) :
 | `preset.run` | `presetId` | Ouvre l'onglet, remplit le formulaire et lance le traitement |
 | `feature.run` | `moduleId`, `inputs` | Ouvre l'onglet, remplit le formulaire avec `inputs` et lance le traitement |
 | `runs.cancel-all` | — | Annule tous les traitements en cours |
+| `runs.cancel` | `moduleId` | Annule le traitement en cours de cette fonctionnalité (sans effet si elle ne traite rien) |
 | `result.open-last` | — | Ouvre le dernier fichier produit |
 | `history.open` | — | Ouvre l'onglet Historique |
 | `history.rerun` | `entryId` | Relance un traitement de l'historique avec les mêmes fichiers |

@@ -12,6 +12,8 @@ export type PressOutcome = "ok" | "silent" | { failed: string };
 export interface KeyBehavior {
   face: (hub: DrawflowHub, settings: Settings) => KeyFace;
   press: (hub: DrawflowHub, settings: Settings) => Promise<PressOutcome>;
+  /** Action of a key held down; null when holding it means nothing now, so release presses it. */
+  longPress?: (hub: DrawflowHub, settings: Settings) => Promise<PressOutcome> | null;
 }
 
 const text = (settings: Settings, name: string): string | null => {
@@ -44,6 +46,16 @@ const preset: KeyBehavior = {
     hub.acknowledge(found.module);
     const result = await hub.command("preset.run", { presetId });
     return result.ok ? "silent" : { failed: result.error };
+  },
+  longPress(hub, settings) {
+    const presetId = text(settings, "presetId");
+    const found = presetId ? hub.presetModule(presetId) : null;
+    if (found === null || runFor(hub.runs, found.module).status !== "running") {
+      return null;
+    }
+    return hub
+      .cancelRun(found.module)
+      .then((result) => (result.ok ? "silent" : { failed: result.error }));
   },
 };
 

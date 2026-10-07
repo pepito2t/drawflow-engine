@@ -11,6 +11,7 @@ import { appStateSchema, type AppState, type CommandResult } from "./protocol";
 import {
   acknowledge,
   applyEvent,
+  markCancelRequested,
   needsResync,
   runningCount,
   runsFromState,
@@ -86,6 +87,21 @@ export class DrawflowHub {
     this.notify();
   }
 
+  /** The key shows the cancellation at once; Drawflow confirms it with `runFinished`. */
+  async cancelRun(moduleId: string): Promise<CommandResult> {
+    this.setCancelRequested(moduleId, true);
+    const result = await this.client.command("runs.cancel", { moduleId });
+    if (!result.ok) {
+      this.setCancelRequested(moduleId, false);
+    }
+    return result;
+  }
+
+  private setCancelRequested(moduleId: string, requested: boolean): void {
+    this.runs = markCancelRequested(this.runs, moduleId, requested);
+    this.notify();
+  }
+
   moduleName(moduleId: string): string {
     return this.app.modules.find((module) => module.id === moduleId)?.name ?? "Drawflow";
   }
@@ -105,7 +121,7 @@ export class DrawflowHub {
       return { ok: false, error: translate(this.language, "error.unreadableState") };
     }
     this.app = parsed.data;
-    this.runs = runsFromState(parsed.data);
+    this.runs = runsFromState(parsed.data, this.runs);
     this.notify();
     return { ok: true };
   }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FakeSocket } from "./fake-socket.test-helper";
 import { StreamDockHost, parseLaunchArguments } from "./host";
 import { DrawflowHub } from "./hub";
-import { KeyController } from "./keys";
+import { KeyController, LONG_PRESS_MS } from "./keys";
 
 const ARGV = ["-port", "1", "-pluginUUID", "plugin", "-registerEvent", "registerPlugin"];
 
@@ -35,6 +35,50 @@ function setup(): { host: FakeSocket; drawflow: FakeSocket[]; timers: Timer[] } 
 }
 
 const PRESET_KEY = { action: "ch.drawflow.preset", context: "k1" };
+const RUNNING_STATE = {
+  modules: [{ id: "a", name: "Pièces", icon: "parts" }],
+  presets: [{ id: "p1", name: "Tour B", module: "a" }],
+  runs: [{ moduleId: "a", status: "running", current: 1, total: 4 }],
+};
+
+const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+interface ReadyKey {
+  host: FakeSocket;
+  socket: FakeSocket;
+  timers: Timer[];
+}
+
+/** A preset key whose run is going, Drawflow connected and its state loaded. */
+async function runningPresetKey(): Promise<ReadyKey> {
+  const { host, drawflow, timers } = setup();
+  host.receive({
+    event: "didReceiveGlobalSettings",
+    payload: { settings: { port: "51717", token: "secret" } },
+  });
+  const socket = drawflow[0];
+  if (!socket) throw new Error("no Drawflow socket");
+  socket.open();
+  socket.receive({ type: "welcome", version: 1, locked: false });
+  answerLast(socket, { ok: true, data: RUNNING_STATE });
+  await settle();
+  host.receive({ event: "willAppear", ...PRESET_KEY, payload: { settings: { presetId: "p1" } } });
+  return { host, socket, timers };
+}
+
+function answerLast(socket: FakeSocket, answer: object): void {
+  const request = socket.sent.at(-1) as { id: string };
+  socket.receive({ type: "result", id: request.id, ...answer });
+}
+
+const commandsSent = (socket: FakeSocket): unknown[] =>
+  socket.sent.filter((message) => message.type === "command").map((message) => message.command);
+
+function fireLongPress(timers: Timer[]): void {
+  const hold = timers.find((timer) => timer.delayMs === LONG_PRESS_MS);
+  if (!hold) throw new Error("no long-press timer");
+  hold.callback();
+}
 
 const lastImage = (host: FakeSocket): string => {
   const image = host.sent.findLast((message) => message.event === "setImage");
@@ -188,5 +232,61 @@ describe("KeyController", () => {
       label: "Relever les courriels",
       value: "mail.fetch",
     });
+  });
+
+  it("cancels the run of a preset key held down, then ignores its release", async () => {
+    const { host, socket, timers } = await runningPresetKey();
+
+    host.receive({ event: "keyDown", ...PRESET_KEY });
+    fireLongPress(timers);
+
+    expect(socket.sent.at(-1)).toMatchObject({ command: "runs.cancel", args: { moduleId: "a" } });
+    expect(lastImage(host)).toContain("Annulation…");
+    answerLast(socket, { ok: true });
+    host.receive({ event: "keyUp", ...PRESET_KEY });
+    await settle();
+
+    expect(commandsSent(socket)).toEqual(["app.state", "runs.cancel"]);
+    expect(lastImage(host)).toContain("Annulation…");
+  });
+
+  it("presses the key normally when it is released before the long press", async () => {
+    const { host, socket, timers } = await runningPresetKey();
+
+    host.receive({ event: "keyDown", ...PRESET_KEY });
+    host.receive({ event: "keyUp", ...PRESET_KEY });
+    await settle();
+
+    expect(timers.filter((timer) => timer.delayMs === LONG_PRESS_MS)).toHaveLength(0);
+    expect(commandsSent(socket)).toEqual(["app.state", "preset.run"]);
+  });
+
+  it("presses a held key normally on release when nothing is running", async () => {
+    const { host, socket, timers } = await runningPresetKey();
+    socket.receive({
+      type: "event",
+      event: { type: "runFinished", moduleId: "a", outcome: "succeeded" },
+    });
+
+    host.receive({ event: "keyDown", ...PRESET_KEY });
+    fireLongPress(timers);
+    host.receive({ event: "keyUp", ...PRESET_KEY });
+    await settle();
+
+    expect(commandsSent(socket)).toEqual(["app.state", "preset.run"]);
+  });
+
+  it("shows why a cancellation was refused and the run again", async () => {
+    const { host, socket, timers } = await runningPresetKey();
+
+    host.receive({ event: "keyDown", ...PRESET_KEY });
+    fireLongPress(timers);
+    answerLast(socket, { ok: false, error: "Refusé" });
+    await settle();
+
+    expect(host.sentEvents()).toContain("showAlert");
+    expect(lastImage(host)).toContain("Refusé");
+    timers.find((timer) => timer.delayMs === 3_000)?.callback();
+    expect(lastImage(host)).toContain("25 %");
   });
 });

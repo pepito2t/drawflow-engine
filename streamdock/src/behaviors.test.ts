@@ -112,3 +112,12 @@ describe("runs-counter key", () => {
     });
   });
 });
+
+describe("preset key held down", () => {
+  it("has nothing to do when its preset is not running", () => {
+    const { hub } = readyHub();
+
+    expect(BEHAVIORS["ch.drawflow.preset"]?.longPress?.(hub, { presetId: "p1" })).toBeNull();
+    expect(BEHAVIORS["ch.drawflow.preset"]?.longPress?.(hub, {})).toBeNull();
+  });
+});

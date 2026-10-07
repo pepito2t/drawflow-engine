@@ -59,6 +59,9 @@ export function faceFor(
   switch (run.status) {
     case "running": {
       const progress = progressRatio(run);
+      if (run.cancelRequested === true) {
+        return { tone: "warning", label, detail: translate(language, "face.cancelling"), progress };
+      }
       const detail =
         progress === null
           ? translate(language, "face.running")
