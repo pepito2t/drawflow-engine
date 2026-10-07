@@ -12,7 +12,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::{broadcast, oneshot};
 
 use crate::access::AccessLock;
-use crate::error::BridgeError;
+use crate::error::{BridgeError, ErrorPayload};
 use config::IntegrationConfig;
 use protocol::{CommandReply, CommandRequest, ServerMessage};
 use server::{Dispatcher, ReplyFuture, ServerHandle};
@@ -20,7 +20,8 @@ use server::{Dispatcher, ReplyFuture, ServerHandle};
 const COMMAND_EVENT: &str = "integration-command";
 const REPLY_TIMEOUT: Duration = Duration::from_secs(15);
 const EVENT_BUFFER: usize = 256;
-const NO_REPLY_MESSAGE: &str = "Drawflow n'a pas répondu à temps.";
+const NO_REPLY_CODE: &str = "noReply";
+const NO_REPLY_MESSAGE: &str = "Drawflow did not answer in time.";
 /// Below this range the OS reserves the ports; 0 would pick a random one the plugin cannot find.
 const MIN_PORT: u16 = 1024;
 
@@ -31,14 +32,14 @@ pub struct IntegrationStatus {
     port: u16,
     token: String,
     address: Option<String>,
-    error: Option<String>,
+    error: Option<ErrorPayload>,
 }
 
 pub struct IntegrationState {
     events: broadcast::Sender<String>,
     pending: Arc<Mutex<HashMap<String, oneshot::Sender<CommandReply>>>>,
     server: tauri::async_runtime::Mutex<Option<ServerHandle>>,
-    last_error: Mutex<Option<String>>,
+    last_error: Mutex<Option<ErrorPayload>>,
     next_request: AtomicU64,
 }
 
@@ -69,9 +70,9 @@ impl IntegrationState {
         self.pending.lock().map_err(|_| BridgeError::StatePoisoned)
     }
 
-    fn set_error(&self, error: Option<String>) {
+    fn set_error(&self, error: Option<&BridgeError>) {
         if let Ok(mut last) = self.last_error.lock() {
-            *last = error;
+            *last = error.map(ErrorPayload::from);
         }
     }
 }
@@ -104,14 +105,14 @@ pub async fn dispatch_to_ui(app: &AppHandle, request: CommandRequest) -> Command
         Ok(mut pending) => {
             pending.insert(ticket.clone(), sender);
         }
-        Err(error) => return CommandReply::failure(request.id, error.to_string()),
+        Err(error) => return CommandReply::from_error(request.id, &error),
     }
     let forwarded = CommandRequest {
         id: ticket.clone(),
         ..request.clone()
     };
     if let Err(error) = app.emit(COMMAND_EVENT, forwarded) {
-        return CommandReply::failure(request.id, error.to_string());
+        return CommandReply::from_error(request.id, &BridgeError::from(error));
     }
     let reply = tokio::time::timeout(REPLY_TIMEOUT, receiver).await;
     if let Ok(mut pending) = state.pending() {
@@ -122,7 +123,7 @@ pub async fn dispatch_to_ui(app: &AppHandle, request: CommandRequest) -> Command
             id: request.id,
             ..reply
         },
-        _ => CommandReply::failure(request.id, NO_REPLY_MESSAGE),
+        _ => CommandReply::failure(request.id, NO_REPLY_CODE, NO_REPLY_MESSAGE),
     }
 }
 
@@ -149,10 +150,10 @@ pub async fn apply(app: &AppHandle, config: &IntegrationConfig) {
             *server = Some(handle);
             state.set_error(None);
         }
-        Err(error) => state.set_error(Some(format!(
-            "Port {} indisponible : {error}. Choisissez un autre port.",
-            config.port
-        ))),
+        Err(error) => state.set_error(Some(&BridgeError::PortUnavailable {
+            port: config.port,
+            detail: error.to_string(),
+        })),
     }
 }
 
@@ -182,8 +183,7 @@ pub fn start_at_launch(app: &AppHandle) -> Result<(), BridgeError> {
     let config = match config::load(&config::config_file(app)?) {
         Ok(config) => config,
         Err(error) => {
-            app.state::<IntegrationState>()
-                .set_error(Some(error.to_string()));
+            app.state::<IntegrationState>().set_error(Some(&error));
             return Ok(());
         }
     };
@@ -230,7 +230,10 @@ pub async fn integration_update(
 ) -> Result<(), BridgeError> {
     lock.ensure_unlocked()?;
     if port < MIN_PORT {
-        return Err(BridgeError::InvalidPort(port));
+        return Err(BridgeError::InvalidPort {
+            port,
+            min: MIN_PORT,
+        });
     }
     let path = config::config_file(&app)?;
     let mut updated = config::load(&path)?;

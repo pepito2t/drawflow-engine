@@ -15,7 +15,7 @@ use tauri::{AppHandle, Manager, State};
 
 use crate::access::AccessLock;
 use crate::bounded_set::BoundedSet;
-use crate::error::BridgeError;
+use crate::error::{BridgeError, ErrorPayload};
 use crate::integrations::{dispatch_to_ui, protocol::CommandRequest};
 use crate::paths::write_atomically;
 
@@ -47,14 +47,14 @@ pub struct Automation {
 #[serde(rename_all = "camelCase")]
 pub struct AutomationStatus {
     pub automations: Vec<Automation>,
-    pub errors: Vec<String>,
+    pub errors: Vec<ErrorPayload>,
 }
 
 type FolderWatcher = Box<dyn Watcher + Send>;
 
 pub struct AutomationState {
     watchers: Mutex<Vec<FolderWatcher>>,
-    errors: Mutex<Vec<String>>,
+    errors: Mutex<Vec<ErrorPayload>>,
     pending: Mutex<HashSet<PathBuf>>,
     seen: Mutex<BoundedSet>,
 }
@@ -71,7 +71,7 @@ impl Default for AutomationState {
 }
 
 impl AutomationState {
-    fn errors(&self) -> Vec<String> {
+    fn errors(&self) -> Vec<ErrorPayload> {
         self.errors
             .lock()
             .map(|errors| errors.clone())
@@ -123,15 +123,12 @@ pub fn save(path: &Path, automations: &[Automation]) -> Result<(), BridgeError> 
 pub fn validate(automations: &[Automation]) -> Result<(), BridgeError> {
     for automation in automations {
         if automation.id.is_empty() || automation.preset_id.is_empty() {
-            return Err(BridgeError::InvalidAutomation(
-                "Chaque automatisation doit avoir un préréglage.".to_owned(),
-            ));
+            return Err(BridgeError::AutomationWithoutPreset);
         }
         if automation.enabled && !automation.folder.is_dir() {
-            return Err(BridgeError::InvalidAutomation(format!(
-                "Le dossier « {} » n'existe pas.",
-                automation.folder.display()
-            )));
+            return Err(BridgeError::AutomationFolderMissing(
+                automation.folder.display().to_string(),
+            ));
         }
     }
     Ok(())
@@ -288,10 +285,10 @@ pub fn apply(app: &AppHandle, automations: &[Automation]) {
     for automation in automations.iter().filter(|automation| automation.enabled) {
         match watch(app.clone(), automation.clone()) {
             Ok(watcher) => watchers.push(watcher),
-            Err(error) => errors.push(format!(
-                "Surveillance impossible pour « {} » : {error}",
-                automation.folder.display()
-            )),
+            Err(error) => errors.push(ErrorPayload::from(&BridgeError::AutomationWatchFailed {
+                folder: automation.folder.display().to_string(),
+                detail: error.to_string(),
+            })),
         }
     }
     let state = app.state::<AutomationState>();
@@ -313,7 +310,7 @@ pub fn start_at_launch(app: &AppHandle) -> Result<(), BridgeError> {
         Ok(automations) => apply(app, &automations),
         Err(error) => replace(
             &app.state::<AutomationState>().errors,
-            vec![error.to_string()],
+            vec![ErrorPayload::from(&error)],
         ),
     }
     Ok(())
@@ -401,12 +398,18 @@ mod tests {
         let folder = tempfile::tempdir().unwrap();
         assert!(validate(&[automation(folder.path())]).is_ok());
         let mut missing = automation(&folder.path().join("absent"));
-        assert!(validate(&[missing.clone()]).is_err());
+        assert!(matches!(
+            validate(&[missing.clone()]),
+            Err(BridgeError::AutomationFolderMissing(_))
+        ));
         missing.enabled = false;
         assert!(validate(&[missing]).is_ok());
         let mut no_preset = automation(folder.path());
         no_preset.preset_id.clear();
-        assert!(validate(&[no_preset]).is_err());
+        assert!(matches!(
+            validate(&[no_preset]),
+            Err(BridgeError::AutomationWithoutPreset)
+        ));
     }
 
     #[test]

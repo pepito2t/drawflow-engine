@@ -119,9 +119,7 @@ pub fn open_logs_folder(app: AppHandle, lock: State<'_, AccessLock>) -> Result<(
         .parent()
         .map(|parent| parent.join(LOGS_FOLDER))
         .ok_or_else(|| {
-            BridgeError::LogsFolder(std::io::Error::other(
-                "dossier de configuration sans parent",
-            ))
+            BridgeError::LogsFolder(std::io::Error::other("configuration folder has no parent"))
         })?;
     std::fs::create_dir_all(&folder).map_err(BridgeError::LogsFolder)?;
     app.opener()
