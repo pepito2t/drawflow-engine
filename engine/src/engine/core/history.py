@@ -151,6 +151,11 @@ def run_with_history(
     except EngineError as error:
         _record(history, entry(status="failed", summary="", error=error.message), emit)
         raise
+    except Exception:
+        _record(
+            history, entry(status="failed", summary="", error=t("history.internal_error")), emit
+        )
+        raise
     if result.preview:
         return result
     _record(

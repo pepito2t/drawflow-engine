@@ -68,6 +68,20 @@ def test_failed_run_is_recorded_then_the_error_still_surfaces(tmp_path: Path) ->
     assert entry.error == "Aucun plan n'a pu être lu."
 
 
+def test_internal_error_is_recorded_as_failed_then_still_surfaces(tmp_path: Path) -> None:
+    store = HistoryStore(tmp_path / "settings.json")
+
+    def crashing(_: object) -> ModuleResult:
+        raise ValueError("boom")
+
+    with pytest.raises(ValueError, match="boom"):
+        run_with_history(store, MODULE, INPUTS, lambda _: None, crashing)
+
+    [entry] = store.entries()
+    assert entry.status == "failed"
+    assert entry.error == "Erreur interne inattendue."
+
+
 def test_without_a_store_the_run_is_untouched(tmp_path: Path) -> None:
     result = run_with_history(
         None, MODULE, INPUTS, lambda _: None, lambda _: ModuleResult(summary="ok")
