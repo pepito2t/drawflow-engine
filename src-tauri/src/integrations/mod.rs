@@ -129,7 +129,9 @@ pub async fn dispatch_to_ui(app: &AppHandle, request: CommandRequest) -> Command
 pub async fn apply(app: &AppHandle, config: &IntegrationConfig) {
     let state = app.state::<IntegrationState>();
     let mut server = state.server.lock().await;
-    server.take();
+    if let Some(previous) = server.take() {
+        previous.stop().await;
+    }
     if !config.enabled {
         state.set_error(None);
         return;
