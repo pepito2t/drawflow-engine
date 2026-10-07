@@ -31,6 +31,7 @@ export const appEventSchema = z.discriminatedUnion("type", [
     outcome: z.enum(["succeeded", "failed", "cancelled"]),
   }),
   z.object({ type: z.literal("presetSaved") }),
+  z.object({ type: z.literal("resync") }),
 ]);
 
 export const serverMessageSchema = z.discriminatedUnion("type", [

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   acknowledge,
   applyEvent,
+  needsResync,
   progressRatio,
   runFor,
   runningCount,
@@ -39,6 +40,14 @@ describe("run tracker", () => {
     const runs = apply([{ type: "runStarted", moduleId: "a" }]);
 
     expect(acknowledge(runs, "a")).toBe(runs);
+  });
+
+  it("asks for a full reload on presetSaved and resync only", () => {
+    expect(needsResync({ type: "resync" })).toBe(true);
+    expect(needsResync({ type: "presetSaved" })).toBe(true);
+    expect(needsResync({ type: "runStarted", moduleId: "a" })).toBe(false);
+    expect(needsResync("resync")).toBe(false);
+    expect(applyEvent(new Map(), { type: "resync" }).size).toBe(0);
   });
 
   it("ignores unknown events", () => {

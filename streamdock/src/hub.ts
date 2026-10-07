@@ -6,15 +6,20 @@ import {
   type SocketLike,
   type Timers,
 } from "./drawflow-client";
-import { isRecord } from "./guards";
 import { DEFAULT_LANGUAGE, translate, type Language } from "./i18n";
 import { appStateSchema, type AppState, type CommandResult } from "./protocol";
-import { acknowledge, applyEvent, runningCount, runsFromState, type Runs } from "./run-tracker";
+import {
+  acknowledge,
+  applyEvent,
+  needsResync,
+  runningCount,
+  runsFromState,
+  type Runs,
+} from "./run-tracker";
 
 const EMPTY_STATE: AppState = { modules: [], presets: [], runs: [] };
 // Drawflow's relay may drop events under load; a periodic reload catches a missed `runFinished`.
 const RESYNC_WHILE_RUNNING_MS = 30_000;
-const RESYNC_EVENTS: ReadonlySet<string> = new Set(["presetSaved", "resync"]);
 
 export interface HubOptions extends Partial<Timers> {
   language?: Language;
@@ -46,7 +51,7 @@ export class DrawflowHub {
     });
     this.client.onEvent((event) => {
       this.runs = applyEvent(this.runs, event);
-      if (isRecord(event) && typeof event.type === "string" && RESYNC_EVENTS.has(event.type)) {
+      if (needsResync(event)) {
         this.resync();
       }
       this.notify();

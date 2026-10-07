@@ -42,8 +42,15 @@ export function applyEvent(runs: Runs, raw: unknown): Runs {
       next.set(event.moduleId, { status: event.outcome, current: null, total: null });
       return next;
     case "presetSaved":
+    case "resync":
       return runs;
   }
+}
+
+/** Events after which the whole state must be read again from Drawflow. */
+export function needsResync(raw: unknown): boolean {
+  const parsed = appEventSchema.safeParse(raw);
+  return parsed.success && (parsed.data.type === "presetSaved" || parsed.data.type === "resync");
 }
 
 /** A finished result stays on the key until it is pressed again. */
