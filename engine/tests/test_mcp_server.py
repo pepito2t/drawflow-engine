@@ -1,13 +1,12 @@
 import json
-from datetime import timedelta
 from pathlib import Path
 from typing import Any, cast
 
 import anyio
 from mcp import ClientSession
 from mcp.client.stdio import stdio_client
-from mcp.shared.exceptions import McpError
-from mcp.types import CallToolResult, ErrorData, TextContent
+from mcp.shared.exceptions import MCPError
+from mcp.types import REQUEST_TIMEOUT, CallToolResult, TextContent
 
 from engine.assistant.mcp_server import server_parameters
 from engine.assistant.toolbox import McpToolBox, ToolOutcome
@@ -15,7 +14,7 @@ from engine.assistant.tools import describe_today
 from engine.core.presets import PresetStore
 from engine.core.registry import get_module
 
-MCP_REQUEST_TIMEOUT = timedelta(seconds=60)
+MCP_REQUEST_TIMEOUT_SECONDS = 60.0
 EXPECTED_TOOLS = {
     "inspect_file",
     "list_features",
@@ -36,7 +35,7 @@ EXPECTED_TOOLS = {
 async def _call_tools(settings: Path, *names: str) -> tuple[set[str], list[CallToolResult]]:
     async with (
         stdio_client(server_parameters(settings)) as (read, write),
-        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT) as session,
+        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT_SECONDS) as session,
     ):
         await session.initialize()
         tools = await session.list_tools()
@@ -73,7 +72,7 @@ def test_unreadable_store_becomes_readable_tool_error(tmp_path: Path) -> None:
 
     _, [result] = anyio.run(_call_tools, settings, "list_presets")
 
-    assert result.isError
+    assert result.is_error
     content = result.content[0]
     assert isinstance(content, TextContent)
     assert "préréglages est illisible" in content.text
@@ -81,7 +80,7 @@ def test_unreadable_store_becomes_readable_tool_error(tmp_path: Path) -> None:
 
 class _SilentSession:
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> CallToolResult:
-        raise McpError(ErrorData(code=408, message="Timed out"))
+        raise MCPError(code=REQUEST_TIMEOUT, message="Timed out")
 
 
 def test_tool_that_never_answers_is_reported_to_the_model() -> None:
@@ -96,7 +95,7 @@ def test_tool_that_never_answers_is_reported_to_the_model() -> None:
 async def _toolbox_call(settings: Path, name: str, arguments: dict[str, Any]) -> ToolOutcome:
     async with (
         stdio_client(server_parameters(settings)) as (read, write),
-        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT) as session,
+        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT_SECONDS) as session,
     ):
         await session.initialize()
         return await McpToolBox(session).call(name, arguments)

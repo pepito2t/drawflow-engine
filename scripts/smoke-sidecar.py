@@ -6,7 +6,6 @@ import socket
 import subprocess
 import sys
 import tempfile
-from datetime import timedelta
 from pathlib import Path
 
 import anyio
@@ -22,7 +21,7 @@ from engine.parts.tests.plans import build_facade_plan
 from engine.testing.pdf import PdfSpec, TextItem, write_pdf
 
 PARALLEL_BATCH_SIZE = 2
-MCP_REQUEST_TIMEOUT = timedelta(seconds=120)
+MCP_REQUEST_TIMEOUT_SECONDS = 120.0
 INTERNAL_FOLDER = "_internal"
 DEVELOPMENT_ONLY_PACKAGES = frozenset({"_pytest", "pytest", "mypy"})
 ENGINE_TESTS_PACKAGE = re.compile(r"^engine\..*\.tests(\.|$)")
@@ -106,13 +105,13 @@ async def smoke_mcp(binary: Path, settings_file: Path) -> None:
     )
     async with (
         stdio_client(parameters) as (read, write),
-        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT) as session,
+        ClientSession(read, write, read_timeout_seconds=MCP_REQUEST_TIMEOUT_SECONDS) as session,
     ):
         await session.initialize()
         tools = sorted(tool.name for tool in (await session.list_tools()).tools)
         features = await session.call_tool("list_features", {})
         guide = await session.call_tool("read_help", {"topic": "premiers-pas"})
-    if tools != expected_tools or features.isError or guide.isError:
+    if tools != expected_tools or features.is_error or guide.is_error:
         raise SystemExit(
             f"Unexpected MCP server answer: {tools} (expected {expected_tools}) {features} {guide}"
         )

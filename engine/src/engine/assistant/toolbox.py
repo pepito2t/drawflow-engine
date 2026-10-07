@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from mcp import ClientSession
-from mcp.shared.exceptions import McpError
+from mcp.shared.exceptions import MCPError
 from mcp.types import TextContent
 from pydantic import ValidationError
 
@@ -44,7 +44,7 @@ class McpToolBox:
                 "function": {
                     "name": tool.name,
                     "description": tool.description or tool.name,
-                    "parameters": tool.inputSchema,
+                    "parameters": tool.input_schema,
                 },
             }
             for tool in listed.tools
@@ -53,14 +53,14 @@ class McpToolBox:
     async def call(self, name: str, arguments: dict[str, Any]) -> ToolOutcome:
         try:
             result = await self._session.call_tool(name, arguments)
-        except McpError as error:
+        except MCPError as error:
             return ToolOutcome(ok=False, text=t("toolbox.tool_failed", name=name, error=error))
         texts = [part.text for part in result.content if isinstance(part, TextContent)]
-        if not texts and result.structuredContent is not None:
-            texts = [json.dumps(result.structuredContent, ensure_ascii=False)]
-        proposal = None if result.isError else _proposal(result.structuredContent)
+        if not texts and result.structured_content is not None:
+            texts = [json.dumps(result.structured_content, ensure_ascii=False)]
+        proposal = None if result.is_error else _proposal(result.structured_content)
         return ToolOutcome(
-            ok=not result.isError, text=_truncate("\n".join(texts)), proposal=proposal
+            ok=not result.is_error, text=_truncate("\n".join(texts)), proposal=proposal
         )
 
 
