@@ -1,4 +1,12 @@
-import { createContext, use, useReducer, useRef, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useCallback,
+  useMemo,
+  useReducer,
+  useRef,
+  type ReactNode,
+} from "react";
 import type { EngineMessageHandler, InvalidMessageHandler } from "../lib/engine-message";
 import { toReadableError } from "../lib/error-message";
 import { IDLE_SETUP_RUNS, setupRunsReducer, type SetupRuns, type SetupScope } from "../lib/setup";
@@ -22,16 +30,16 @@ export function SetupRunsProvider({ children }: { children: ReactNode }) {
   const [runs, dispatch] = useReducer(setupRunsReducer, IDLE_SETUP_RUNS);
   const listeners = useRef(new Map<SetupScope, () => void>());
 
-  const subscribe = (scope: SetupScope, onFinished: () => void) => {
+  const subscribe = useCallback((scope: SetupScope, onFinished: () => void) => {
     listeners.current.set(scope, onFinished);
     return () => {
       if (listeners.current.get(scope) === onFinished) {
         listeners.current.delete(scope);
       }
     };
-  };
+  }, []);
 
-  const start = (scope: SetupScope, action: string, launch: TaskLauncher) => {
+  const start = useCallback((scope: SetupScope, action: string, launch: TaskLauncher) => {
     dispatch({ scope, message: { kind: "started", action } });
     const fail = (error: unknown) => {
       dispatch({ scope, message: { kind: "failed", error: toReadableError(error) } });
@@ -46,9 +54,10 @@ export function SetupRunsProvider({ children }: { children: ReactNode }) {
         console.warn(`${action} :`, message.line);
       }
     }, fail).catch(fail);
-  };
+  }, []);
 
-  return <SetupRunsContext value={{ runs, start, subscribe }}>{children}</SetupRunsContext>;
+  const store = useMemo(() => ({ runs, start, subscribe }), [runs, start, subscribe]);
+  return <SetupRunsContext value={store}>{children}</SetupRunsContext>;
 }
 
 export function useSetupRunsStore(): SetupRunsStore {
