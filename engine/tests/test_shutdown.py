@@ -203,12 +203,12 @@ def test_engine_run_runs_its_hooks_and_exits_when_the_app_writes_a_cancel() -> N
     )
     assert process.stdin is not None and process.stdout is not None
     try:
-        assert process.stdout.readline() == b"ready\n"
+        assert process.stdout.readline().rstrip() == b"ready"
         process.stdin.write(CANCEL_REQUEST)
         process.stdin.flush()
 
         assert process.wait(WAIT_SECONDS) == EXIT_CANCELLED, process.stderr
-        assert process.stdout.read() == b"hook\n"
+        assert process.stdout.read().splitlines() == [b"hook"]
     finally:
         process.stdin.close()
         process.kill()
