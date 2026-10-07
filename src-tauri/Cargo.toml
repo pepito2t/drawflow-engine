@@ -29,7 +29,7 @@ tokio-tungstenite = "0.30"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 argon2 = { version = "0.5", features = ["std"] }
 subtle = "2.6"
-password-hash = { version = "0.5", features = ["getrandom"] }
+password-hash = { version = "0.6", features = ["getrandom"] }
 notify = "8"
 sha2 = "0.10"
 
