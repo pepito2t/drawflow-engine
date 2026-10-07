@@ -3,6 +3,7 @@
 import json
 import shutil
 import zipfile
+import zlib
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,7 @@ PRESETS_MEMBER = "presets.json"
 TEMPLATES_PREFIX = "templates/"
 MAX_MEMBER_BYTES = 50_000_000
 UNKNOWN_VERSION = "0.0.0"
+CORRUPT_ARCHIVE_ERRORS = (zipfile.BadZipFile, zlib.error)
 
 
 def export_profile(
@@ -92,6 +94,8 @@ def import_profile(
     source: Path, settings_file: Path, modules: dict[str, AnyModule], app_version: str | None
 ) -> dict[str, Any]:
     contents = _read_archive(source, modules, app_version)
+    # An unreadable settings file must be found before any template or preset is replaced.
+    read_document(settings_file)
     library = TemplateLibrary(settings_file)
     try:
         library.folder.mkdir(parents=True, exist_ok=True)
@@ -108,6 +112,8 @@ def import_profile(
             PresetStore(settings_file).path,
             [preset.model_dump(mode="json") for preset in contents.presets],
         )
+    except CORRUPT_ARCHIVE_ERRORS as error:
+        raise _corrupt(source) from error
     except OSError as error:
         raise SettingsFileError(t("profile.apply_failed"), file=source) from error
     save_settings(settings_file, contents.document, modules)
@@ -150,38 +156,30 @@ def _read_archive(
 ) -> _Contents:
     if not zipfile.is_zipfile(source):
         raise InvalidSettingsError(t("profile.not_a_profile"), file=source)
-    with zipfile.ZipFile(source) as archive:
-        if PROFILE_FILE not in archive.namelist():
-            raise InvalidSettingsError(t("profile.not_a_profile"), file=source)
-        manifest = _member_json(archive, PROFILE_FILE, source)
-        if not isinstance(manifest, dict) or manifest.get("format") != PROFILE_FORMAT:
-            raise InvalidSettingsError(t("profile.not_a_profile"), file=source)
-        exported_by = str(manifest.get("app_version", UNKNOWN_VERSION))
-        if _version_key(exported_by) > _version_key(app_version or UNKNOWN_VERSION):
-            raise InvalidSettingsError(
-                t("profile.newer_version", version=exported_by),
-                file=source,
-                hint=t("profile.newer_version_hint"),
-            )
-        sections, document = _validated_sections(manifest.get("sections"), modules, source)
-        presets = _validated_presets(_member_json(archive, PRESETS_MEMBER, source), source)
-        templates = [
-            _Template(name)
-            for name in archive.namelist()
-            if name.startswith(TEMPLATES_PREFIX)
-            and Path(name).suffix.lower() in SUFFIX_KINDS
-            and Path(name).name == name.removeprefix(TEMPLATES_PREFIX)
-        ]
-        for template in templates:
-            if archive.getinfo(template.member).file_size > MAX_MEMBER_BYTES:
-                raise InvalidSettingsError(
-                    t("profile.template_too_large", name=template.name), file=source
-                )
-        defaults = None
-        if TEMPLATES_PREFIX + DEFAULTS_FILE in archive.namelist():
-            raw_defaults = _member_json(archive, TEMPLATES_PREFIX + DEFAULTS_FILE, source)
-            if isinstance(raw_defaults, dict):
-                defaults = {str(key): str(value) for key, value in raw_defaults.items()}
+    try:
+        with zipfile.ZipFile(source) as archive:
+            return _read_members(archive, source, modules, app_version)
+    except CORRUPT_ARCHIVE_ERRORS as error:
+        raise _corrupt(source) from error
+
+
+def _read_members(
+    archive: zipfile.ZipFile, source: Path, modules: dict[str, AnyModule], app_version: str | None
+) -> _Contents:
+    if PROFILE_FILE not in archive.namelist():
+        raise InvalidSettingsError(t("profile.not_a_profile"), file=source)
+    manifest = _member_json(archive, PROFILE_FILE, source)
+    if not isinstance(manifest, dict) or manifest.get("format") != PROFILE_FORMAT:
+        raise InvalidSettingsError(t("profile.not_a_profile"), file=source)
+    exported_by = str(manifest.get("app_version", UNKNOWN_VERSION))
+    if _version_key(exported_by) > _version_key(app_version or UNKNOWN_VERSION):
+        raise InvalidSettingsError(
+            t("profile.newer_version", version=exported_by),
+            file=source,
+            hint=t("profile.newer_version_hint"),
+        )
+    sections, document = _validated_sections(manifest.get("sections"), modules, source)
+    presets = _validated_presets(_member_json(archive, PRESETS_MEMBER, source), source)
     exported_at = manifest.get("exported_at")
     return _Contents(
         exported_by,
@@ -189,9 +187,34 @@ def _read_archive(
         sections,
         document,
         presets,
-        templates,
-        defaults,
+        _templates(archive, source),
+        _defaults(archive, source),
     )
+
+
+def _templates(archive: zipfile.ZipFile, source: Path) -> list[_Template]:
+    templates = [
+        _Template(name)
+        for name in archive.namelist()
+        if name.startswith(TEMPLATES_PREFIX)
+        and Path(name).suffix.lower() in SUFFIX_KINDS
+        and Path(name).name == name.removeprefix(TEMPLATES_PREFIX)
+    ]
+    for template in templates:
+        if archive.getinfo(template.member).file_size > MAX_MEMBER_BYTES:
+            raise InvalidSettingsError(
+                t("profile.template_too_large", name=template.name), file=source
+            )
+    return templates
+
+
+def _defaults(archive: zipfile.ZipFile, source: Path) -> dict[str, str] | None:
+    if TEMPLATES_PREFIX + DEFAULTS_FILE not in archive.namelist():
+        return None
+    raw_defaults = _member_json(archive, TEMPLATES_PREFIX + DEFAULTS_FILE, source)
+    if not isinstance(raw_defaults, dict):
+        return None
+    return {str(key): str(value) for key, value in raw_defaults.items()}
 
 
 def _member_json(archive: zipfile.ZipFile, member: str, source: Path) -> Any:
@@ -201,6 +224,10 @@ def _member_json(archive: zipfile.ZipFile, member: str, source: Path) -> Any:
         raise InvalidSettingsError(
             t("profile.member_unreadable", member=member), file=source
         ) from error
+
+
+def _corrupt(source: Path) -> InvalidSettingsError:
+    return InvalidSettingsError(t("profile.corrupt"), file=source, hint=t("profile.corrupt_hint"))
 
 
 def _validated_sections(

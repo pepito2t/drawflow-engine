@@ -46,6 +46,7 @@ def run_module(
         general=settings.general,
         module_settings=settings.module,
         document=settings.document,
+        settings_file=settings.path,
     )
     result = module.run(inputs, context)
     emit(ResultEvent(summary=result.summary, outputs=[str(path) for path in result.outputs]))

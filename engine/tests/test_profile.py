@@ -1,11 +1,12 @@
 import json
 import zipfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 from openpyxl import Workbook
 
-from engine.core.errors import InvalidSettingsError
+from engine.core.errors import InvalidSettingsError, SettingsFileError
 from engine.core.presets import PresetStore
 from engine.core.profile import export_profile, import_profile, read_profile
 from engine.core.registry import discover_modules
@@ -102,3 +103,61 @@ def test_profile_with_invalid_settings_changes_nothing(tmp_path: Path) -> None:
         import_profile(archive, target, MODULES, APP_VERSION)
 
     assert load_general_settings(target).batch_size == 7
+
+
+def _corrupted_copy(archive: Path, member: str) -> Path:
+    """Flips bytes inside one compressed member: the zip opens, the member does not inflate."""
+    with zipfile.ZipFile(archive) as readable:
+        info = readable.getinfo(member)
+        with archive.open("rb") as stream:
+            stream.seek(info.header_offset)
+            header = stream.read(zipfile.sizeFileHeader)
+        name_length = int.from_bytes(header[26:28], "little")
+        extra_length = int.from_bytes(header[28:30], "little")
+        data_start = info.header_offset + zipfile.sizeFileHeader + name_length + extra_length
+    content = bytearray(archive.read_bytes())
+    for offset in range(data_start + 2, data_start + info.compress_size - 2):
+        content[offset] ^= 0xFF
+    damaged = archive.with_name("endommagé.zip")
+    damaged.write_bytes(bytes(content))
+    return damaged
+
+
+def _archive_with_presets(tmp_path: Path, presets: list[dict[str, Any]]) -> Path:
+    archive = tmp_path / "profil.zip"
+    manifest = {"format": "drawflow-profile", "version": 1, "sections": {"general": {}}}
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as writer:
+        writer.writestr("profile.json", json.dumps(manifest))
+        writer.writestr("presets.json", json.dumps(presets))
+    return archive
+
+
+def test_corrupt_profile_is_refused_readably_and_changes_nothing(tmp_path: Path) -> None:
+    presets = [
+        {"id": f"{index:08x}", "name": f"Préréglage {index}", "module": "dwg-parts", "inputs": {}}
+        for index in range(40)
+    ]
+    damaged = _corrupted_copy(_archive_with_presets(tmp_path, presets), "presets.json")
+    target = _workstation(tmp_path / "B")
+
+    with pytest.raises(InvalidSettingsError, match="endommagé"):
+        read_profile(damaged, target, MODULES, APP_VERSION)
+    with pytest.raises(InvalidSettingsError, match="endommagé"):
+        import_profile(damaged, target, MODULES, APP_VERSION)
+
+    assert [preset.name for preset in PresetStore(target).presets()] == ["Façade nord"]
+
+
+def test_unreadable_settings_file_stops_the_import_before_any_write(tmp_path: Path) -> None:
+    source = _workstation(tmp_path / "A")
+    archive = tmp_path / "profil.zip"
+    export_profile(source, archive, MODULES, APP_VERSION)
+    target = tmp_path / "B" / "settings.json"
+    target.parent.mkdir()
+    target.write_text("pas du json", encoding="utf-8")
+
+    with pytest.raises(SettingsFileError, match="illisible"):
+        import_profile(archive, target, MODULES, APP_VERSION)
+
+    assert sorted(path.name for path in target.parent.iterdir()) == ["settings.json"]
+    assert target.read_text(encoding="utf-8") == "pas du json"

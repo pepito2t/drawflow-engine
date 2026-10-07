@@ -210,15 +210,22 @@ def test_local_machine_reads_a_manifest_or_nothing(tmp_path: Path) -> None:
     assert LocalMachine().read_text(tmp_path / "absent.json") is None
 
 
-def test_scan_stores_the_model_that_fits_the_memory_until_the_user_picks_one(
-    tmp_path: Path,
-) -> None:
+def test_scan_recommends_the_model_that_fits_the_memory_without_writing(tmp_path: Path) -> None:
     settings = tmp_path / "settings.json"
     eight_gb = FakeMachine(memory=8_000_000_000)
 
-    first = service.scan(settings, eight_gb, _server({"version": "0.12.0"}))
-    service.scan(settings, FakeMachine(memory=64_000_000_000), _server({"version": "0.12.0"}))
+    scanned = service.scan(settings, eight_gb, _server({"version": "0.12.0"}))
 
-    stored = json.loads(settings.read_text(encoding="utf-8"))["assistant"]["model"]
-    assert stored == "qwen3.5:4b"
-    assert first["items"][2]["detail"].startswith("qwen3.5:4b")
+    assert scanned["recommended_model"] == "qwen3.5:4b"
+    assert scanned["items"][2]["detail"].startswith("qwen3.5:4b")
+    assert not settings.exists()
+
+
+def test_scan_keeps_the_model_the_user_chose(tmp_path: Path) -> None:
+    settings = tmp_path / "settings.json"
+    settings.write_text(json.dumps({"assistant": {"model": "llama3.1:8b"}}), encoding="utf-8")
+
+    scanned = service.scan(settings, FakeMachine(memory=8_000_000_000), _server({"version": "1"}))
+
+    assert scanned["recommended_model"] == "qwen3.5:4b"
+    assert scanned["items"][2]["detail"].startswith("llama3.1:8b")

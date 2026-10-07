@@ -175,3 +175,20 @@ def test_one_project_per_folder_adds_a_project_column_and_a_total_sheet(tmp_path
     assert total[0][0] != "Projet"
     doubled = [row for row in total[1:] if row[1] == "P-1200"]
     assert doubled and doubled[0][-2] == 4
+
+
+def test_missing_plan_from_a_preset_is_a_warning_naming_it(tmp_path: Path, plans: Path) -> None:
+    gone = tmp_path / "Disparu.dxf"
+    inputs = write_json(
+        tmp_path / "inputs.json",
+        {"files": [str(gone), str(plans / "Nord.dxf")], "output_folder": str(tmp_path / "Sortie")},
+    )
+
+    completed = run_engine("run", "dwg-parts", "--input", str(inputs))
+    events = [json.loads(line) for line in completed.stdout.splitlines()]
+
+    assert completed.returncode == 0, completed.stderr
+    missing = next(event for event in events if event["type"] == "warning")
+    assert missing["file"] == str(gone) and "introuvable" in missing["message"]
+    assert "préréglage" in missing["hint"]
+    assert events[-1]["type"] == "result"

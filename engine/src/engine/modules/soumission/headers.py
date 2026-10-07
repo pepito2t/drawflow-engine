@@ -1,6 +1,7 @@
 """What a submission file calls its columns, and how to teach the norm these names."""
 
 from io import BytesIO
+from itertools import islice
 from pathlib import Path
 from typing import IO, Any
 
@@ -46,7 +47,7 @@ def inspect_headers(path: Path, settings: SoumissionSettings) -> dict[str, Any]:
         workbook = open_workbook(stream, name)
         try:
             for sheet in workbook.worksheets[:MAX_SHEETS]:
-                rows = list(sheet.iter_rows(values_only=True))[: settings.header_search_rows]
+                rows = list(islice(sheet.iter_rows(values_only=True), settings.header_search_rows))
                 candidates = header_candidates(rows)
                 best = rows[candidates[0].row] if candidates else []
                 sheets.append(

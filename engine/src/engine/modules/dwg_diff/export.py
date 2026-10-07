@@ -1,6 +1,8 @@
 from collections.abc import Sequence
 from pathlib import Path
 
+from openpyxl.worksheet.worksheet import Worksheet
+
 from engine.core.xlsx import CellValue, fit_columns, open_sheet, save_workbook, write_row
 from engine.modules.dwg_diff.messages import t
 from engine.modules.dwg_diff.service import (
@@ -72,11 +74,8 @@ def _quantity(value: float) -> CellValue:
 
 
 def _write(
-    sheet: object, headers: Sequence[CellValue], rows: Sequence[Sequence[CellValue]]
+    sheet: Worksheet, headers: Sequence[CellValue], rows: Sequence[Sequence[CellValue]]
 ) -> None:
-    from openpyxl.worksheet.worksheet import Worksheet
-
-    assert isinstance(sheet, Worksheet)
     write_row(sheet, HEADER_ROW, headers, bold=True)
     for offset, row in enumerate(rows, start=1):
         write_row(sheet, HEADER_ROW + offset, row)

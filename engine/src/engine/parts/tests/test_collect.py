@@ -58,3 +58,16 @@ def test_missing_folder_is_reported(tmp_path: Path) -> None:
 def test_no_plan_found_is_an_error(tmp_path: Path) -> None:
     with pytest.raises(FileCollectionError):
         collect_plans([], [tmp_path], recursive=True, emit=lambda _: None)
+
+
+def test_missing_file_is_a_warning_with_a_hint(tree: Path) -> None:
+    events: list[Event] = []
+    gone = tree / "Façades" / "Disparu.dwg"
+
+    plans = collect_plans(
+        [gone, tree / "Façades" / "Nord.DWG"], [], recursive=True, emit=events.append
+    )
+
+    assert [plan.name for plan in plans] == ["Nord.DWG"]
+    [warning] = [event for event in events if isinstance(event, WarningEvent)]
+    assert warning.file == str(gone) and warning.hint is not None

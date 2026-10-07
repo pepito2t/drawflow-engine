@@ -41,6 +41,10 @@ t = define_messages(
         "actions.installing": "Installation de {name}…",
         "actions.install_failed": "L'installation de {name} a échoué (code {code}).",
         "actions.retry_or_page": "Réessayez, ou utilisez la page de téléchargement.",
+        "commands.timeout": "Le programme « {program} » ne s'est pas terminé après {minutes} min.",
+        "commands.timeout.hint": "Réessayez ; si cela se reproduit, installez-le depuis sa page.",
+        "commands.start_failed": "Impossible de lancer le programme « {program} ».",
+        "commands.start_failed.hint": "Vérifiez qu'il est installé, puis analysez à nouveau.",
         "installer_download.unavailable": (
             "{name} : l'installeur n'est plus disponible sur le site officiel (HTTP {status})."
         ),
@@ -193,6 +197,10 @@ t = define_messages(
         "actions.installing": "Installing {name}…",
         "actions.install_failed": "The installation of {name} failed (code {code}).",
         "actions.retry_or_page": "Try again, or use the download page.",
+        "commands.timeout": 'The program "{program}" did not finish after {minutes} min.',
+        "commands.timeout.hint": "Try again; if it happens again, install it from its page.",
+        "commands.start_failed": 'The program "{program}" could not be started.',
+        "commands.start_failed.hint": "Check that it is installed, then scan again.",
         "installer_download.unavailable": (
             "{name}: the installer is no longer available on the official site (HTTP {status})."
         ),

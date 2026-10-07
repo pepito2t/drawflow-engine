@@ -42,7 +42,12 @@ def run_parts_list(inputs: DwgPartsInputs, context: RunContext, moment: datetime
         cache_root=resolve_cache_root(context.general),
     )
     outcome = process_batch(
-        plans, worker, batch_size=context.general.batch_size, emit=emit, label=READ_LABEL
+        plans,
+        worker,
+        batch_size=context.general.batch_size,
+        emit=emit,
+        label=READ_LABEL,
+        settings_file=context.settings_file,
     )
     if not outcome.results:
         raise EngineError(t("pipeline.no_file"), hint=t("pipeline.no_file_hint"))

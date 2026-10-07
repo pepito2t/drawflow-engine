@@ -50,3 +50,4 @@ class SystemInfo(_Frozen):
 class SetupReport(_Frozen):
     system: SystemInfo
     items: list[SetupItem]
+    recommended_model: str

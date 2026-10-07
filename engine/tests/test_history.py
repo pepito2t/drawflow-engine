@@ -121,3 +121,32 @@ def test_entries_with_plain_text_warnings_from_older_versions_still_load(tmp_pat
 
     assert entry.warnings[0].message == "Bloc inconnu"
     assert entry.warnings[0].location is None
+
+
+def test_unwritable_history_warns_instead_of_failing_the_run(tmp_path: Path) -> None:
+    (tmp_path / "history.json").mkdir()
+    store = HistoryStore(tmp_path / "settings.json")
+    seen: list[Event] = []
+
+    result = run_with_history(
+        store, MODULE, INPUTS, seen.append, lambda _: ModuleResult(summary="2 pièces")
+    )
+
+    assert result.summary == "2 pièces"
+    [warning] = seen
+    assert isinstance(warning, WarningEvent)
+    assert warning.message == "Impossible d'enregistrer l'historique."
+
+
+def test_unreadable_history_warns_and_the_failure_still_surfaces(tmp_path: Path) -> None:
+    (tmp_path / "history.json").write_text("pas du json", encoding="utf-8")
+    store = HistoryStore(tmp_path / "settings.json")
+    seen: list[Event] = []
+
+    def failing(_: object) -> ModuleResult:
+        raise EngineError("Aucun plan n'a pu être lu.")
+
+    with pytest.raises(EngineError, match="Aucun plan"):
+        run_with_history(store, MODULE, INPUTS, seen.append, failing)
+
+    assert [event.type for event in seen] == ["warning"]

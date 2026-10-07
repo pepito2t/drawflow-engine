@@ -7,7 +7,7 @@ from pathlib import Path
 import anyio
 import httpx
 
-from engine.core.errors import EngineError, InvalidInputError
+from engine.core.errors import InvalidInputError
 from engine.core.events import Emit, LogEvent, ProgressEvent, ResultEvent
 from engine.core.registry import discover_modules
 from engine.core.settings import load_assistant_settings, load_general_settings, save_settings
@@ -18,6 +18,7 @@ from engine.setup.commands import (
     run_command,
     start_detached,
 )
+from engine.setup.errors import SetupError
 from engine.setup.installer_download import DownloadProgress
 from engine.setup.locations import (
     AUTOCAD_PLUGIN,
@@ -29,6 +30,7 @@ from engine.setup.locations import (
 )
 from engine.setup.machine import LocalMachine, Machine
 from engine.setup.messages import t
+from engine.setup.model_choice import chosen_model, effective_assistant_settings, remember_model
 from engine.setup.oda_installer import install_oda
 from engine.setup.ollama import START_WAIT_SECONDS, pull_model, wait_until_up
 from engine.setup.ollama_installer import install_ollama_windows
@@ -42,10 +44,6 @@ from engine.setup.stream_dock import (
 OLLAMA_CASK = "ollama"
 OLLAMA_APP_WINDOWS = Path("Programs") / "Ollama" / "ollama app.exe"
 PERCENT = 100
-
-
-class SetupError(EngineError):
-    pass
 
 
 @dataclass(frozen=True)
@@ -116,7 +114,7 @@ def _start_ollama(context: SetupContext) -> str:
 
 
 def _pull_model(context: SetupContext) -> str:
-    assistant = load_assistant_settings(context.settings)
+    assistant = effective_assistant_settings(context.settings, context.machine)
 
     def on_percent(percent: int, status: str) -> None:
         context.emit(ProgressEvent(current=percent, total=PERCENT, message=status))
@@ -124,6 +122,9 @@ def _pull_model(context: SetupContext) -> str:
     anyio.run(
         pull_model, assistant.model_server_url, assistant.model, on_percent, context.transport
     )
+    if chosen_model(context.settings) is None:
+        # The user asked for this model: from now on the assistant uses it.
+        remember_model(context.settings, assistant)
     return t("actions.model_downloaded", model=assistant.model)
 
 

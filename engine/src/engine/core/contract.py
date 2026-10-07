@@ -51,6 +51,7 @@ class RunContext:
     module_settings: ModuleSettings | None = None
     # Every section of the settings file: a feature built on another one reads its norm here.
     document: dict[str, Any] = field(default_factory=dict)
+    settings_file: Path | None = None
 
     def settings_as[SettingsT: ModuleSettings](self, model: type[SettingsT]) -> SettingsT:
         if not isinstance(self.module_settings, model):

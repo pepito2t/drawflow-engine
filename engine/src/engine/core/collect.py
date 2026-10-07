@@ -22,10 +22,16 @@ def collect_files(
     """Gathers matching files from explicit paths and folders, without duplicates."""
     found: dict[Path, Path] = {}
     for file in files:
-        if has_suffix(file, suffixes):
-            found.setdefault(file.resolve(), file)
-        else:
+        if not has_suffix(file, suffixes):
             emit(WarningEvent(message=t("collect.ignored", kind=kind), file=str(file)))
+        elif not file.is_file():
+            emit(
+                WarningEvent(
+                    message=t("collect.missing"), file=str(file), hint=t("collect.missing_hint")
+                )
+            )
+        else:
+            found.setdefault(file.resolve(), file)
     for folder in folders:
         for path in _files_in(folder, suffixes, recursive=recursive):
             found.setdefault(path.resolve(), path)

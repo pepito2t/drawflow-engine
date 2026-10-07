@@ -1,4 +1,5 @@
 import fnmatch
+import math
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -72,9 +73,12 @@ def _quantity(part: RawPart, tag: str) -> tuple[float, bool]:
     if not raw:
         return float(part.count), True
     try:
-        return float(raw.replace(DECIMAL_COMMA, ".")) * part.count, True
+        quantity = float(raw.replace(DECIMAL_COMMA, "."))
     except ValueError:
         return float(part.count), False
+    if not math.isfinite(quantity):
+        return float(part.count), False
+    return quantity * part.count, True
 
 
 def _warnings(missing: Counter[str], invalid_quantities: int, quantity_tag: str) -> list[Anomaly]:

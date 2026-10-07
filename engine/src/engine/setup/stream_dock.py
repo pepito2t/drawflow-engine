@@ -3,7 +3,7 @@
 import io
 import shutil
 import zipfile
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import anyio
 import httpx
@@ -28,6 +28,9 @@ MAX_PLUGIN_BYTES = 50_000_000
 STAGING_PREFIX = "."
 STAGING_SUFFIX = ".new"
 REPLACED_SUFFIX = ".old"
+PARENT_PART = ".."
+BACKSLASH = "\\"
+DRIVE_SEPARATOR = ":"
 
 
 class StreamDockError(EngineError):
@@ -93,7 +96,9 @@ def _unpack(archive: bytes, staging: Path, plugin_id: str) -> None:
                 relative = _relative_member(member.filename, plugin_id)
                 if relative is None or member.is_dir():
                     continue
-                target = staging.joinpath(*relative.parts)
+                target = _inside(staging, relative)
+                if target is None:
+                    continue
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(plugin_zip.read(member))
     except zipfile.BadZipFile as error:
@@ -103,13 +108,27 @@ def _unpack(archive: bytes, staging: Path, plugin_id: str) -> None:
 
 
 def _relative_member(name: str, plugin_id: str) -> PurePosixPath | None:
-    path = PurePosixPath(name)
-    if path.is_absolute() or ".." in path.parts or not path.parts:
+    # Zip names are "/"-separated; a backslash or a colon only means something to Windows.
+    if BACKSLASH in name or DRIVE_SEPARATOR in name or _escapes(name):
         return None
+    path = PurePosixPath(name)
     inside = path.parts[1:]
-    if path.parts[0] != plugin_id or not inside:
+    if not path.parts or path.parts[0] != plugin_id or not inside:
         return None
     return PurePosixPath(*inside)
+
+
+def _escapes(name: str) -> bool:
+    posix, windows = PurePosixPath(name), PureWindowsPath(name)
+    if posix.is_absolute() or windows.is_absolute():
+        return True
+    return PARENT_PART in posix.parts or PARENT_PART in windows.parts
+
+
+def _inside(staging: Path, relative: PurePosixPath) -> Path | None:
+    target = staging.joinpath(*relative.parts)
+    root = staging.resolve()
+    return target if target.resolve().is_relative_to(root) else None
 
 
 def _swap_in(staging: Path, target: Path, plugin_id: str) -> None:

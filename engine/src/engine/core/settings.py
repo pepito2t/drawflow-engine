@@ -44,6 +44,7 @@ class RunSettings:
     general: GeneralSettings
     module: ModuleSettings | None
     document: Document = field(default_factory=dict)
+    path: Path | None = None
 
 
 def section_specs(modules: dict[str, AnyModule]) -> list[SectionSpec]:
@@ -92,10 +93,10 @@ def load_run_settings(path: Path | None, module: AnyModule) -> RunSettings:
     document = read_document(path)
     general = load_section(GeneralSettings, GENERAL_SECTION_ID, GENERAL_SECTION_TITLE, document)
     if module.settings_model is None:
-        return RunSettings(general=general, module=None, document=document)
+        return RunSettings(general=general, module=None, document=document, path=path)
     manifest = module.manifest
     module_settings = load_section(module.settings_model, manifest.id, manifest.name, document)
-    return RunSettings(general=general, module=module_settings, document=document)
+    return RunSettings(general=general, module=module_settings, document=document, path=path)
 
 
 def load_general_settings(path: Path | None) -> GeneralSettings:

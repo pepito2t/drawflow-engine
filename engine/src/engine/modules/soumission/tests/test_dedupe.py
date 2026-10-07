@@ -21,3 +21,14 @@ def test_digest_is_injectable() -> None:
     paths = [Path("a"), Path("b")]
 
     assert deduplicate(paths, digest=lambda _: "same").unique == [Path("a")]
+
+
+def test_a_vanished_file_is_set_aside_instead_of_stopping(tmp_path: Path) -> None:
+    present = tmp_path / "offre.xlsx"
+    present.write_bytes(b"1")
+    gone = tmp_path / "disparue.xlsx"
+
+    result = deduplicate([gone, present])
+
+    assert result.unique == [present]
+    assert result.unreadable == [gone]

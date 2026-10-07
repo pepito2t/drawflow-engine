@@ -84,6 +84,9 @@ t = define_messages(
         "pipeline.writing": "Écriture de {name}",
         "pipeline.summary": "{rows} ligne(s) issues de {tables} tableau(x), {files} fichier(s)",
         "pipeline.duplicate": "Doublon ignoré : même contenu que {name}.",
+        "pipeline.unreadable_source": "Fichier introuvable ou illisible, ignoré.",
+        "pipeline.unreadable_source.hint": "Réenregistrez le préréglage ou vérifiez le chemin.",
+        "pipeline.no_source": "Aucune soumission n'a pu être lue.",
     },
     en={
         "manifest.name": "Submission",
@@ -166,5 +169,8 @@ t = define_messages(
         "pipeline.writing": "Writing {name}",
         "pipeline.summary": "{rows} row(s) from {tables} table(s), {files} file(s)",
         "pipeline.duplicate": "Duplicate skipped: same content as {name}.",
+        "pipeline.unreadable_source": "File not found or unreadable, skipped.",
+        "pipeline.unreadable_source.hint": "Save the preset again or check the path.",
+        "pipeline.no_source": "No submission could be read.",
     },
 )

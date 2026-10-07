@@ -149,20 +149,30 @@ def run_with_history(
     try:
         result = run(observing)
     except EngineError as error:
-        history.record(entry(status="failed", summary="", error=error.message))
+        _record(history, entry(status="failed", summary="", error=error.message), emit)
         raise
     if result.preview:
         return result
-    history.record(
+    _record(
+        history,
         entry(
             status="succeeded",
             summary=result.summary,
             outputs=[str(path) for path in result.outputs],
-        )
+        ),
+        emit,
     )
     if counters is not None:
         _count(counters, module, raw_inputs, emit)
     return result
+
+
+def _record(history: HistoryStore, entry: HistoryEntry, emit: Emit) -> None:
+    try:
+        history.record(entry)
+    except EngineError as error:
+        # The run itself is over: a broken history file must not turn it into a failure.
+        _warn(error, emit)
 
 
 def _count(counters: UsageCounters, module: AnyModule, inputs: dict[str, Any], emit: Emit) -> None:
@@ -172,8 +182,12 @@ def _count(counters: UsageCounters, module: AnyModule, inputs: dict[str, Any], e
         )
     except EngineError as error:
         # The output is already written: a broken counter file must not fail the run.
-        file = str(error.file) if error.file is not None else None
-        emit(WarningEvent(message=error.message, file=file, hint=error.hint))
+        _warn(error, emit)
+
+
+def _warn(error: EngineError, emit: Emit) -> None:
+    file = str(error.file) if error.file is not None else None
+    emit(WarningEvent(message=error.message, file=file, hint=error.hint))
 
 
 def handle_history(action: str, settings_file: Path, request: dict[str, Any]) -> dict[str, Any]:

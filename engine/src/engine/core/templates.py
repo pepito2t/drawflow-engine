@@ -7,6 +7,7 @@ from typing import Any
 
 from engine.core.contract import TemplateKind
 from engine.core.errors import EngineError, OutputWriteError
+from engine.core.json_files import write_json_atomically
 from engine.core.messages import t
 from engine.core.naming import unique_output_path
 
@@ -143,9 +144,6 @@ class TemplateLibrary:
 
     def _write_defaults(self, defaults: dict[str, str]) -> None:
         try:
-            self.folder.mkdir(parents=True, exist_ok=True)
-            (self.folder / DEFAULTS_FILE).write_text(
-                json.dumps(defaults, ensure_ascii=False), encoding="utf-8"
-            )
+            write_json_atomically(self.folder / DEFAULTS_FILE, defaults)
         except OSError as error:
             raise OutputWriteError(t("templates.default_save_failed"), file=self.folder) from error
