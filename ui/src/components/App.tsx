@@ -10,14 +10,16 @@ import { loadPresets, PresetsProvider } from "../hooks/presets-context";
 import { UpdateProvider } from "../hooks/update-center";
 import { useAppCommands } from "../hooks/use-app-commands";
 import { useIntegrationBridge } from "../hooks/use-integration-bridge";
+import { useLanguage } from "../hooks/use-language";
+import { loadCatalog, useModuleCatalog } from "../hooks/use-module-catalog";
 import { useRunEvents } from "../hooks/use-run-events";
 import { useSetupCheck } from "../hooks/use-setup-check";
 import { useSystemNotifications } from "../hooks/use-system-notifications";
 import { useLanguageSync } from "../hooks/use-language-sync";
-import { parseCatalog, type CatalogModule } from "../lib/catalog";
+import type { CatalogModule } from "../lib/catalog";
 import { toReadableError } from "../lib/error-message";
+import type { Preset } from "../lib/presets";
 import { getLockStatus, type LockStatus } from "../lib/tauri/access";
-import { listModules } from "../lib/tauri/engine";
 import { AppShell } from "./AppShell";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorPanel } from "./ErrorPanel";
@@ -44,11 +46,19 @@ const MAIL_SETTINGS_TAB = "mail";
 const DEFAULT_SETTINGS_TAB = "";
 const ASSISTANT_SETTINGS_TAB = "assistant";
 
-function loadCatalog(): Promise<CatalogModule[]> {
-  return listModules().then(parseCatalog);
+interface Startup {
+  modules: CatalogModule[];
+  presets: Preset[];
+}
+
+/** Both come from the engine at start; one Retry recovers either of them. */
+async function loadStartup(): Promise<Startup> {
+  const [modules, presets] = await Promise.all([loadCatalog(), loadPresets()]);
+  return { modules, presets };
 }
 
 export function App() {
+  useLanguage();
   const { id, promise, retry } = useRetryablePromise(getLockStatus);
   return (
     <ErrorBoundary key={id} fallback={(error) => <CatalogFailure error={error} onRetry={retry} />}>
@@ -83,8 +93,7 @@ function LockGate({ statusPromise }: { statusPromise: Promise<LockStatus> }) {
 }
 
 function CatalogApp() {
-  const { id, promise, retry } = useRetryablePromise(loadCatalog);
-  const [presetsPromise] = useState(loadPresets);
+  const { id, promise, retry } = useRetryablePromise(loadStartup);
 
   return (
     <ErrorBoundary key={id} fallback={(error) => <CatalogFailure error={error} onRetry={retry} />}>
@@ -99,15 +108,22 @@ function CatalogApp() {
           <SetupRunsProvider>
             <NotificationProvider>
               <CommandProvider>
-                <PresetsProvider presetsPromise={presetsPromise}>
-                  <CatalogView catalogPromise={promise} />
-                </PresetsProvider>
+                <StartupGate startupPromise={promise} />
               </CommandProvider>
             </NotificationProvider>
           </SetupRunsProvider>
         </RunsProvider>
       </Suspense>
     </ErrorBoundary>
+  );
+}
+
+function StartupGate({ startupPromise }: { startupPromise: Promise<Startup> }) {
+  const { modules, presets } = use(startupPromise);
+  return (
+    <PresetsProvider initialPresets={presets}>
+      <CatalogView initialModules={modules} />
+    </PresetsProvider>
   );
 }
 
@@ -127,8 +143,8 @@ function CatalogFailure({ error, onRetry }: { error: unknown; onRetry: () => voi
   );
 }
 
-function CatalogView({ catalogPromise }: { catalogPromise: Promise<CatalogModule[]> }) {
-  const modules = use(catalogPromise);
+function CatalogView({ initialModules }: { initialModules: CatalogModule[] }) {
+  const modules = useModuleCatalog(initialModules);
   const [selectedId, setSelectedId] = useState<string | null>(TODAY_TAB_ID);
   const [settingsTab, setSettingsTab] = useState<string | null>(null);
   const [help, setHelp] = useState<{ topic: string | undefined } | null>(null);

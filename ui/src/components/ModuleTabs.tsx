@@ -1,6 +1,7 @@
 import { t } from "../i18n/shell";
 import type { ReactNode } from "react";
 import { useRunsStore } from "../hooks/runs-context";
+import { useLanguage } from "../hooks/use-language";
 import type { CatalogModule } from "../lib/catalog";
 import { entryFor } from "../lib/runs-store";
 import type { RunStatus } from "../lib/run-state";
@@ -32,6 +33,7 @@ export function ModuleTabs({
   onSelect,
   footer,
 }: ModuleTabsProps) {
+  useLanguage();
   const { state } = useRunsStore();
 
   return (

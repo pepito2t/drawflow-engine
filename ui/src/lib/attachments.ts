@@ -1,7 +1,5 @@
 import { t } from "../i18n/shell";
 
-const PATH_SEPARATORS = /[\\/]/;
-
 /** The paths travel inside the message text: visible to the user, readable by the model. */
 export function withAttachments(question: string, paths: string[]): string {
   const text = question.trim();
@@ -14,8 +12,4 @@ export function withAttachments(question: string, paths: string[]): string {
 
 export function addAttachments(current: string[], dropped: string[]): string[] {
   return [...new Set([...current, ...dropped])];
-}
-
-export function fileName(path: string): string {
-  return path.split(PATH_SEPARATORS).at(-1) ?? path;
 }

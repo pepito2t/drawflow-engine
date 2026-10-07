@@ -1,9 +1,20 @@
-import { Suspense, use, useCallback, useState, type SetStateAction } from "react";
+import {
+  Suspense,
+  use,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type SetStateAction,
+} from "react";
 import { useFieldDrop } from "../hooks/use-field-drop";
+import { useLanguage } from "../hooks/use-language";
 import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError, type ReadableError } from "../lib/error-message";
 import type { FormValue, FormValues } from "../lib/form-schema";
 import {
+  editedSections,
+  mergeReloadedSettings,
   parseSettings,
   toSettingsPayload,
   valuesBySection,
@@ -62,6 +73,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ initialTab, modules, onClose }: SettingsDialogProps) {
+  useLanguage();
   const { id, promise, retry } = useRetryablePromise(loadSettings);
   return (
     <div
@@ -160,10 +172,11 @@ function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: Sett
   const { publish } = useNotificationCenter();
   const [activeId, setActiveId] = useState(initialTab ?? sections[0]?.id ?? null);
   const isSaving = saveState.status === "saving";
+  useExternalSettingsChanges(sections, setSections, setValues);
 
   const save = () => {
     setSaveState({ status: "saving" });
-    saveSettings(toSettingsPayload(sections, values))
+    saveSettings(toSettingsPayload(editedSections(sections, values), values))
       .then(parseSettings)
       .then((saved) => {
         setSections(saved);
@@ -267,6 +280,36 @@ function SettingsEditor({ sectionsPromise, initialTab, modules, onReload }: Sett
         </div>
       </footer>
     </>
+  );
+}
+
+/** Other screens (AI models tab, assistant) save settings too: reload them, keeping unsaved edits. */
+function useExternalSettingsChanges(
+  sections: SettingsSection[],
+  setSections: (sections: SettingsSection[]) => void,
+  setValues: (update: SetStateAction<SettingsValues>) => void,
+): void {
+  const { subscribe } = useNotificationCenter();
+  const latest = useRef(sections);
+  useEffect(() => {
+    latest.current = sections;
+  }, [sections]);
+  useEffect(
+    () =>
+      subscribe((event) => {
+        if (event.type !== "settingsSaved") {
+          return;
+        }
+        loadSettings()
+          .then((reloaded) => {
+            setValues((current) => mergeReloadedSettings(latest.current, current, reloaded));
+            setSections(reloaded);
+          })
+          .catch((error: unknown) => {
+            console.error("Paramètres non rechargés :", error);
+          });
+      }),
+    [subscribe, setSections, setValues],
   );
 }
 

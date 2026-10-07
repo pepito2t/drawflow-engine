@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { CatalogError } from "./catalog";
 import {
+  editedSections,
+  mergeReloadedSettings,
   parseSettings,
   readNotificationThreshold,
   toSettingsPayload,
@@ -49,6 +51,50 @@ describe("toSettingsPayload", () => {
     const values = valuesBySection(sections);
 
     expect(toSettingsPayload(sections, values)).toEqual({ general: { batch_size: "8" } });
+  });
+});
+
+const twoSections = {
+  sections: [
+    response.sections[0],
+    {
+      id: "assistant",
+      title: "Assistant",
+      schema: { properties: { model: { title: "Modèle", "x-ui": "text", default: "" } } },
+      values: { model: "llama3" },
+      error: null,
+    },
+  ],
+};
+
+describe("editedSections", () => {
+  it("keeps only the sections whose values differ from the loaded ones", () => {
+    const sections = parseSettings(JSON.stringify(twoSections));
+    const values = {
+      ...valuesBySection(sections),
+      general: { oda_converter_path: "", batch_size: "2" },
+    };
+
+    expect(editedSections(sections, values).map((section) => section.id)).toEqual(["general"]);
+    expect(editedSections(sections, valuesBySection(sections))).toEqual([]);
+  });
+});
+
+describe("mergeReloadedSettings", () => {
+  it("takes the reloaded values except for sections still edited", () => {
+    const sections = parseSettings(JSON.stringify(twoSections));
+    const values = {
+      ...valuesBySection(sections),
+      general: { oda_converter_path: "", batch_size: "2" },
+    };
+    const reloaded = structuredClone(twoSections);
+    Object.assign(reloaded.sections[1]?.values ?? {}, { model: "mistral" });
+    Object.assign(reloaded.sections[0]?.values ?? {}, { batch_size: 16 });
+
+    const merged = mergeReloadedSettings(sections, values, parseSettings(JSON.stringify(reloaded)));
+
+    expect(merged.assistant).toEqual({ model: "mistral" });
+    expect(merged.general).toEqual({ oda_converter_path: "", batch_size: "2" });
   });
 });
 

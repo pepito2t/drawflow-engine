@@ -5,12 +5,12 @@ import { useRetryablePromise } from "../hooks/use-retryable-promise";
 import { toReadableError, type ReadableError } from "../lib/error-message";
 import { t } from "../i18n/settings";
 import {
-  fileName,
   parseTemplateLibrary,
   templateFileFilters,
   templatesOfKind,
   type TemplateLibrary,
 } from "../lib/templates";
+import { fileName } from "../lib/paths";
 import { pickPaths } from "../lib/tauri/dialog";
 import { engineRequest, type EngineRequestName } from "../lib/tauri/engine";
 import { ErrorBoundary } from "./ErrorBoundary";

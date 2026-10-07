@@ -37,7 +37,3 @@ export function templatesOfKind(library: TemplateLibrary, kind: TemplateKind): s
     .filter((template) => template.kind === kind)
     .map((template) => template.id);
 }
-
-export function fileName(path: string): string {
-  return path.split(/[\\/]/).at(-1) ?? path;
-}

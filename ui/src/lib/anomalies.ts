@@ -1,4 +1,5 @@
 import { t } from "../i18n/shell";
+import { fileName } from "./paths";
 import type { LogEntry } from "./run-state";
 
 export interface AnomalyGroup {
@@ -6,8 +7,6 @@ export interface AnomalyGroup {
   fileName: string;
   items: LogEntry[];
 }
-
-const PATH_SEPARATORS = /[\\/]/;
 
 export function anomaliesOf(log: LogEntry[]): LogEntry[] {
   return log.filter((entry) => entry.level === "warning");
@@ -24,7 +23,7 @@ export function groupAnomalies(log: LogEntry[]): AnomalyGroup[] {
   return [...groups.entries()]
     .map(([file, items]) => ({
       file,
-      fileName: file === null ? t("anomalies.general") : baseName(file),
+      fileName: file === null ? t("anomalies.general") : fileName(file),
       items,
     }))
     .sort((left, right) => Number(left.file !== null) - Number(right.file !== null));
@@ -42,8 +41,4 @@ export function anomaliesAsText(groups: AnomalyGroup[]): string {
       return [group.file ?? t("anomalies.general"), ...lines].join("\n");
     })
     .join("\n\n");
-}
-
-function baseName(path: string): string {
-  return path.split(PATH_SEPARATORS).at(-1) ?? path;
 }

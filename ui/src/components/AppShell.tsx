@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useLanguage } from "../hooks/use-language";
 import { StatusBar, type EngineStatus } from "./StatusBar";
 
 interface AppShellProps {
@@ -8,6 +9,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ engine, updates, children }: AppShellProps) {
+  useLanguage();
   return (
     <div className="app-shell">
       <div className="app-content">{children}</div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CatalogError } from "./catalog";
-import { fileName, parseTemplateLibrary, templatesOfKind } from "./templates";
+import { parseTemplateLibrary, templatesOfKind } from "./templates";
 
 const library = {
   templates: [
@@ -19,10 +19,5 @@ describe("templates", () => {
 
   it("rejects malformed responses", () => {
     expect(() => parseTemplateLibrary('{"templates": 1}')).toThrow(CatalogError);
-  });
-
-  it("extracts file names from Windows and Unix paths", () => {
-    expect(fileName("C:\\Modèles\\liste.xlsx")).toBe("liste.xlsx");
-    expect(fileName("/tmp/rapport.docx")).toBe("rapport.docx");
   });
 });

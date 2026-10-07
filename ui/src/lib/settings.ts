@@ -65,6 +65,40 @@ export function toSettingsPayload(
   );
 }
 
+export function isSectionEdited(section: SettingsSection, values: FormValues | undefined): boolean {
+  if (values === undefined) {
+    return false;
+  }
+  return section.fields.some(
+    (field) =>
+      JSON.stringify(values[field.name] ?? null) !==
+      JSON.stringify(section.values[field.name] ?? null),
+  );
+}
+
+/** Only the sections the user touched are sent, so other screens' saves are never overwritten. */
+export function editedSections(
+  sections: SettingsSection[],
+  values: SettingsValues,
+): SettingsSection[] {
+  return sections.filter((section) => isSectionEdited(section, values[section.id]));
+}
+
+/** Fresh values everywhere except the sections still carrying unsaved edits. */
+export function mergeReloadedSettings(
+  previous: SettingsSection[],
+  values: SettingsValues,
+  reloaded: SettingsSection[],
+): SettingsValues {
+  const edited = new Set(editedSections(previous, values).map((section) => section.id));
+  return Object.fromEntries(
+    reloaded.map((section) => [
+      section.id,
+      edited.has(section.id) ? (values[section.id] ?? section.values) : section.values,
+    ]),
+  );
+}
+
 const GENERAL_SECTION_ID = "general";
 const LANGUAGE_FIELD = "language";
 const NOTIFICATION_THRESHOLD_FIELD = "notification_threshold_seconds";

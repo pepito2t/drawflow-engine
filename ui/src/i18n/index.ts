@@ -17,6 +17,7 @@ export function currentLanguage(): Language {
 }
 
 export function setLanguage(language: Language): void {
+  applyDocumentLanguage(language);
   if (language === current) {
     return;
   }
@@ -28,6 +29,12 @@ export function setLanguage(language: Language): void {
   }
   for (const listener of listeners) {
     listener(language);
+  }
+}
+
+function applyDocumentLanguage(language: Language): void {
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = language;
   }
 }
 
