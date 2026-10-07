@@ -134,7 +134,7 @@ Drawflow fonctionne avec le **Stream Dock** de Mirabox (logiciel Stream Dock pou
 
 Le plugin se connecte tout seul à Drawflow installé sur ce poste : il n'y a ni port ni jeton à saisir. Les champs de la touche ne servent que si Drawflow tourne sous un autre compte Windows (port et jeton dans Paramètres → API locale).
 
-Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée et « Hors ligne » quand Drawflow est fermée.
+Les touches lancent un préréglage (progression, puis vert ou rouge), ouvrent un onglet, annulent les traitements, ouvrent le dernier résultat ou comptent les traitements. Elles affichent « Verrouillé » tant que Drawflow est verrouillée, « Hors ligne » quand Drawflow est fermée ou que le port ne répond pas, et « Jeton invalide » quand Drawflow est ouverte mais que le jeton ou le port saisi dans la touche est incorrect : copiez le jeton depuis Paramètres → API locale. Après un appui refusé (préréglage supprimé, traitement déjà en cours…), la touche affiche la raison pendant trois secondes.
 
 **Plugin AutoCAD** : la ligne **Plugin AutoCAD pour Stream Dock** installe de la même façon le plugin [streamdock_autocad](https://github.com/pepito2t/streamdock_autocad) : macros, calques, bascules (ORTHO, accrochages…) et état d'AutoCAD sur les touches. Il faut AutoCAD complet (pas LT), ouvert pendant l'utilisation.
 
@@ -173,4 +173,5 @@ Paramètres → **À propos** compte les traitements terminés et les fichiers t
 | « Le modèle … est introuvable » | Paramètres → Installation → **Télécharger**, ou choisissez un modèle installé dans le panneau |
 | « Le fichier de paramètres est illisible » | Il n'est jamais écrasé : restaurez une sauvegarde ou supprimez `settings.json` |
 | Autre erreur, ou erreur qui se répète | Paramètres → Installation → **Journaux** : envoyez `engine.log` (chaque échec y est noté avec la cause exacte, par exemple la réponse d'Ollama) |
-| Touches Stream Dock « Hors ligne » | Lancez Drawflow, vérifiez l'API locale et le jeton |
+| Touches Stream Dock « Hors ligne » | Lancez Drawflow et vérifiez que l'API locale est activée (Paramètres → API locale) |
+| Touches Stream Dock « Jeton invalide » | Drawflow est ouverte mais refuse la touche : copiez le jeton depuis Paramètres → API locale dans les réglages de la touche, ou videz les champs si Drawflow tourne sous le même compte Windows |
