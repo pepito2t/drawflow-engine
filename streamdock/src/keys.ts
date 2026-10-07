@@ -64,7 +64,6 @@ export class KeyController {
     const key = this.keys.get(context);
     const behavior = key ? BEHAVIORS[key.action] : undefined;
     if (key && behavior) {
-      this.host.setTitle(context, "");
       this.host.setImage(context, renderKey(behavior.face(this.hub, key.settings)));
     }
   }

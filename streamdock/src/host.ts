@@ -68,10 +68,6 @@ export class StreamDockHost {
     this.send({ event: "setImage", context, payload: { image, target: 0 } });
   }
 
-  setTitle(context: string, title: string): void {
-    this.send({ event: "setTitle", context, payload: { title, target: 0 } });
-  }
-
   showAlert(context: string): void {
     this.send({ event: "showAlert", context });
   }

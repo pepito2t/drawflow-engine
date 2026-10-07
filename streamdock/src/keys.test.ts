@@ -31,6 +31,7 @@ describe("KeyController", () => {
 
     const image = host.sent.find((message) => message.event === "setImage");
     expect(image).toMatchObject({ context: "k1" });
+    expect(host.sentEvents()).not.toContain("setTitle");
     expect(decodeURIComponent((image?.payload as { image: string }).image)).toContain("Hors ligne");
   });
 
