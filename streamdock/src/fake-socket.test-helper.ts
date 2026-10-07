@@ -3,15 +3,18 @@ import type { SocketLike } from "./drawflow-client";
 /** In-memory socket: records what the plugin sends and lets a test play the other side. */
 export class FakeSocket implements SocketLike {
   readonly sent: Record<string, unknown>[] = [];
+  closed = false;
   private openListener: () => void = () => undefined;
   private messageListener: (data: string) => void = () => undefined;
+  private closeListener: () => void = () => undefined;
 
   send(data: string): void {
     this.sent.push(JSON.parse(data) as Record<string, unknown>);
   }
 
   close(): void {
-    return undefined;
+    this.closed = true;
+    this.closeListener();
   }
 
   onOpen(listener: () => void): void {
@@ -22,8 +25,8 @@ export class FakeSocket implements SocketLike {
     this.messageListener = listener;
   }
 
-  onClose(): void {
-    return undefined;
+  onClose(listener: () => void): void {
+    this.closeListener = listener;
   }
 
   open(): void {
@@ -32,6 +35,10 @@ export class FakeSocket implements SocketLike {
 
   receive(message: object): void {
     this.messageListener(JSON.stringify(message));
+  }
+
+  remoteClose(): void {
+    this.closeListener();
   }
 
   sentEvents(): unknown[] {

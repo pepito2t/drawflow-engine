@@ -1,39 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DrawflowClient, type SocketLike } from "./drawflow-client";
-
-class FakeSocket implements SocketLike {
-  sent: unknown[] = [];
-  closed = false;
-  private open: () => void = () => undefined;
-  private message: (data: string) => void = () => undefined;
-  private close_: () => void = () => undefined;
-
-  send(data: string): void {
-    this.sent.push(JSON.parse(data));
-  }
-  close(): void {
-    this.closed = true;
-    this.close_();
-  }
-  onOpen(listener: () => void): void {
-    this.open = listener;
-  }
-  onMessage(listener: (data: string) => void): void {
-    this.message = listener;
-  }
-  onClose(listener: () => void): void {
-    this.close_ = listener;
-  }
-  serverOpens(): void {
-    this.open();
-  }
-  serverSays(message: object): void {
-    this.message(JSON.stringify(message));
-  }
-  serverCloses(): void {
-    this.close_();
-  }
-}
+import { DrawflowClient } from "./drawflow-client";
+import { FakeSocket } from "./fake-socket.test-helper";
 
 function setup() {
   const sockets: FakeSocket[] = [];
@@ -58,8 +25,8 @@ function readyClient() {
   context.client.configure({ port: 51717, token: "secret" });
   const socket = context.sockets[0];
   if (!socket) throw new Error("no socket");
-  socket.serverOpens();
-  socket.serverSays({ type: "welcome", version: 1, locked: false });
+  socket.open();
+  socket.receive({ type: "welcome", version: 1, locked: false });
   return { ...context, socket };
 }
 
@@ -89,14 +56,14 @@ describe("DrawflowClient", () => {
       command: "tab.open",
       args: { moduleId: "dwg-parts" },
     });
-    socket.serverSays({ type: "result", id: "1", ok: true });
+    socket.receive({ type: "result", id: "1", ok: true });
 
     await expect(pending).resolves.toEqual({ ok: true, data: undefined });
   });
 
   it("refuses commands while locked", async () => {
     const { client, socket } = readyClient();
-    socket.serverSays({ type: "locked", locked: true });
+    socket.receive({ type: "locked", locked: true });
 
     const result = await client.command("preset.run", { presetId: "a" });
 
@@ -109,7 +76,7 @@ describe("DrawflowClient", () => {
     const events: unknown[] = [];
     client.onEvent((event) => events.push(event));
 
-    socket.serverSays({ type: "event", event: { type: "runStarted", moduleId: "a" } });
+    socket.receive({ type: "event", event: { type: "runStarted", moduleId: "a" } });
 
     expect(events).toEqual([{ type: "runStarted", moduleId: "a" }]);
   });
@@ -118,7 +85,7 @@ describe("DrawflowClient", () => {
     const { client, socket, sockets, timers } = readyClient();
     const pending = client.command("app.state");
 
-    socket.serverCloses();
+    socket.remoteClose();
 
     expect(client.state).toBe("offline");
     await expect(pending).resolves.toMatchObject({ ok: false });
@@ -130,7 +97,7 @@ describe("DrawflowClient", () => {
   it("ignores malformed server messages", () => {
     const { client, socket } = readyClient();
 
-    socket.serverSays({ type: "surprise" });
+    socket.receive({ type: "surprise" });
 
     expect(client.state).toBe("ready");
   });
