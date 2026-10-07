@@ -74,7 +74,7 @@ const cancelAll = commandKey("runs.cancel-all", (hub) => {
   const running = runningCount(hub.runs);
   const face = faceFor(hub.connection, "Annuler", null);
   return face.tone === "idle" && running > 0
-    ? { ...face, tone: "failed", detail: `${String(running)} en cours` }
+    ? { ...face, tone: "warning", detail: `${String(running)} en cours` }
     : face;
 });
 

@@ -37,6 +37,15 @@ describe("key faces", () => {
     );
   });
 
+  it("says that a run was cancelled until the key is pressed again", () => {
+    expect(faceFor("ready", "A", { status: "cancelled", current: null, total: null })).toEqual({
+      tone: "idle",
+      label: "A",
+      detail: "Annulé",
+      progress: null,
+    });
+  });
+
   it("renders an escaped svg with a progress bar", () => {
     const svg = decode(
       renderKey({ tone: "running", label: "R&D <Tour>", detail: "50 %", progress: 0.5 }),
