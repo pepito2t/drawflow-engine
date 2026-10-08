@@ -132,11 +132,17 @@ def check(tag: str | None) -> None:
         if tag != f"{TAG_PREFIX}{version}":
             raise SystemExit(f"Le tag {tag} ne correspond pas à la version {version}")
         check_changelog_ready(version)
-    sys.stdout.write(f"Version {version} cohérente\n")
+    write_output(f"Version {version} cohérente\n")
+
+
+def write_output(text: str) -> None:
+    # The Windows runner's console is cp1252: the changelog holds characters it cannot encode.
+    sys.stdout.buffer.write(text.encode("utf-8"))
+    sys.stdout.flush()
 
 
 def notes() -> None:
-    sys.stdout.write(release_notes(current_version()) + "\n")
+    write_output(release_notes(current_version()) + "\n")
 
 
 def bump(version: str) -> None:
@@ -156,9 +162,7 @@ def bump(version: str) -> None:
     STREAMDOCK_MANIFEST.write_text(content, encoding="utf-8")
     for path in (ROOT / "src-tauri" / "tauri.conf.json", STREAMDOCK_MANIFEST):
         json.loads(path.read_text(encoding="utf-8"))
-    sys.stdout.write(
-        f"Version {version} appliquée ; commit puis tag {TAG_PREFIX}{version}\n"
-    )
+    write_output(f"Version {version} appliquée ; commit puis tag {TAG_PREFIX}{version}\n")
 
 
 def main() -> None:
