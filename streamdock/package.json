@@ -16,22 +16,22 @@
   },
   "dependencies": {
     "ws": "8.22.0",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@rollup/plugin-commonjs": "29.0.3",
     "@rollup/plugin-node-resolve": "16.0.3",
-    "@rollup/plugin-typescript": "12.3.0",
+    "@rollup/plugin-typescript": "12.3.1",
     "@types/node": "20.19.43",
     "@types/ws": "8.18.2",
-    "eslint": "10.12.0",
+    "eslint": "10.13.0",
     "globals": "17.13.0",
-    "prettier": "3.9.9",
-    "rollup": "4.64.0",
+    "prettier": "3.9.10",
+    "rollup": "4.65.0",
     "tslib": "2.8.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.0",
-    "vitest": "5.0.3"
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
   }
 }
