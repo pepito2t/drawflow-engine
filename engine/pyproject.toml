@@ -4,16 +4,16 @@ version = "0.21.0"
 description = "Moteur de traitement drawflow-engine (sidecar Tauri)"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "anyio>=4.15,<5",
+    "anyio>=4.16.0,<5",
     "docxtpl>=0.20.2,<0.21",
-    "ezdxf>=1.4.4,<2",
+    "ezdxf>=1.4.5,<2",
     "httpx>=0.28,<1",
     "jinja2>=3.1.6,<4",
     "mcp>=2.3,<3",
     "openpyxl>=3.1.5,<4",
     "pdfminer.six>=20260107,<20270101",
     "pdfplumber>=0.11.10,<0.12",
-    "pydantic>=2.13,<3",
+    "pydantic>=2.14.3,<3",
     "pypdf>=6,<7",
     "python-docx>=1.2,<2",
 ]
@@ -23,11 +23,11 @@ engine = "engine.cli:main"
 
 [dependency-groups]
 dev = [
-  "mypy>=2.4",
+  "mypy>=2.4.1",
   "pyinstaller>=6.22",
-  "pytest>=9.1",
+  "pytest>=9.2.0",
   "pytest-timeout>=2.4",
-  "ruff>=0.16",
+  "ruff>=0.17.4",
   "types-openpyxl>=3.1.5.20260827",
 ]
 audit = [
